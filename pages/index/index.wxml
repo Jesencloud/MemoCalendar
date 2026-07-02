@@ -1,0 +1,214 @@
+<!--pages/index/index.wxml-->
+<view class="container {{lang === 'zh' ? 'lang-zh' : 'lang-en'}}">
+  <view class="header">
+    <view class="header-main">
+      <view>
+        <text class="title">{{text.title}}</text>
+        <text class="subtitle">{{text.subtitle}}</text>
+      </view>
+      <view class="lang-toggle" hover-class="lang-toggle-hover" hover-stay-time="100" bindtap="toggleLang">
+        <text>{{text.langToggle}}</text>
+      </view>
+    </view>
+  </view>
+
+  <calendar
+     id="calendar"
+     lang="{{lang}}"
+     selectedDate="{{selectedDate}}"
+     memoDates="{{memoDates}}"
+     bind:selectdate="onDateSelect"
+   />
+
+  <view class="event-section">
+    <view class="section-header">
+      <view class="section-title">
+        <text>{{selectedDate}} {{text.events}}</text>
+      </view>
+      <view wx:if="{{showTodayButton}}" class="today-btn" hover-class="today-btn-hover" hover-stay-time="100" bindtap="goToday">
+        <text>{{text.today}}</text>
+      </view>
+    </view>
+    
+    <view wx:if="{{selectedMemos.length > 0}}" class="memo-list">
+      <block wx:for="{{selectedMemos}}" wx:key="id">
+        <view
+          class="memo-card-wrapper {{item.isSwiped ? 'swiped' : ''}} {{item.id === draggingId ? 'dragging' : ''}}"
+          data-id="{{item.id}}"
+          data-index="{{index}}"
+          bindtouchstart="onSwipeTouchStart"
+          bindtouchend="onSwipeTouchEnd"
+          style="transform: translateY({{item.id === draggingId ? dragTranslateY : 0}}px); z-index: {{item.id === draggingId ? 99 : 1}};"
+        >
+          <view
+            class="memo-card"
+            hover-class="{{item.isSwiped || draggingId ? 'none' : 'memo-card-hover'}}"
+            data-id="{{item.id}}"
+            bindtap="onEditMemoTap"
+            style="border-left: 8rpx solid {{item.color || '#3b82f6'}}"
+          >
+            <view class="memo-card-main">
+              <view class="memo-row-inline">
+                <text class="memo-time-inline" wx:if="{{item.time}}">{{item.time}}</text>
+                <text class="memo-title-inline">{{item.title}}</text>
+                <view class="memo-location-inline" wx:if="{{item.location}}">
+                  <text class="location-pin">📌</text>
+                  <text class="location-text">{{item.location}}</text>
+                </view>
+                <view class="memo-tag-inline" style="background-color: {{item.color}}15; color: {{item.color}}">
+                  <text class="tag-icon-small">{{item.categoryIcon}}</text>
+                  <text>{{lang === 'zh' ? item.tagCn : item.tagEn}}</text>
+                </view>
+                <!-- Drag Handle -->
+                <view
+                  class="drag-handle"
+                  catchtouchstart="onDragStart"
+                  catchtouchmove="onDragMove"
+                  catchtouchend="onDragEnd"
+                  data-id="{{item.id}}"
+                  data-index="{{index}}"
+                >
+                  <text>☰</text>
+                </view>
+              </view>
+            </view>
+          </view>
+          
+          <view class="memo-delete-btn" catchtap="onSwipeDeleteTap" data-id="{{item.id}}">
+            <text>{{lang === 'zh' ? '删除' : 'Delete'}}</text>
+          </view>
+        </view>
+      </block>
+    </view>
+    
+    <view wx:else class="no-events">
+      <text class="no-events-icon">📝</text>
+      <text class="no-events-text">{{text.noEvents}}</text>
+    </view>
+  </view>
+
+  <!-- Floating Add Button -->
+  <view class="fab" hover-class="fab-hover" hover-stay-time="100" bindtap="onAddMemoTap">
+    <text class="fab-icon">+</text>
+  </view>
+
+  <!-- Memo Edit/Add Modal -->
+  <view wx:if="{{modalVisible}}" class="modal-mask" bindtap="closeModal">
+    <view class="modal-panel" catchtap="stopBubble">
+      <view class="modal-header">
+        <text class="modal-title">{{memoForm.id ? text.editMemo : text.addMemo}}</text>
+        <view class="modal-header-actions">
+          <view wx:if="{{memoForm.id}}" class="modal-delete-icon" bindtap="onDeleteMemo">🗑️</view>
+          <view class="modal-close" bindtap="closeModal">×</view>
+        </view>
+      </view>
+      
+      <scroll-view scroll-y class="modal-form">
+        <!-- Title Input -->
+        <view class="form-item">
+          <input
+            class="input-title"
+            placeholder="{{text.inputTitlePlaceholder}}"
+            value="{{memoForm.title}}"
+            bindinput="onFormTitleInput"
+            maxlength="40"
+          />
+        </view>
+        
+        <!-- Category Selector -->
+        <view class="form-item">
+          <text class="form-label">{{text.selectCategory}}</text>
+          <view class="tag-selector">
+            <view
+              wx:for="{{categories}}"
+              wx:key="key"
+              class="tag-item {{memoForm.tag === item.key ? 'active' : ''}} {{item.isCustom ? 'custom-tag-item' : ''}}"
+              style="--tag-color: {{item.color}}; --tag-bg: {{item.color}}15"
+              data-key="{{item.key}}"
+              bindtap="onSelectTag"
+            >
+              <text class="tag-icon">{{item.icon}}</text>
+              <text class="tag-text">{{lang === 'zh' ? item.labelCn : item.labelEn}}</text>
+              <!-- Delete icon for custom categories -->
+              <view
+                wx:if="{{item.isCustom}}"
+                class="tag-delete-btn"
+                catchtap="onDeleteCustomTag"
+                data-key="{{item.key}}"
+                data-name="{{item.labelCn}}"
+              >×</view>
+            </view>
+            <!-- Add Custom Category Tag Button -->
+            <view
+              class="tag-item tag-item-add"
+              bindtap="onAddCustomTag"
+            >
+              <text class="tag-icon">＋</text>
+              <text class="tag-text">{{lang === 'zh' ? '自定义' : 'Custom'}}</text>
+            </view>
+          </view>
+        </view>
+        
+        <!-- Time Picker -->
+        <view class="form-item">
+          <text class="form-label">{{lang === 'zh' ? '时间' : 'Time'}}</text>
+          <picker mode="time" value="{{memoForm.time}}" bindchange="onFormTimeChange">
+            <view class="picker-value {{memoForm.time ? '' : 'placeholder'}}">
+              <text class="field-emoji">⏰</text>
+              <text>{{memoForm.time || text.inputTimePlaceholder}}</text>
+            </view>
+          </picker>
+        </view>
+        
+        <!-- Location Input -->
+        <view class="form-item">
+          <text class="form-label">{{lang === 'zh' ? '地点' : 'Location'}}</text>
+          <view class="input-container">
+            <text class="field-emoji">📌</text>
+            <input
+              class="input-field"
+              placeholder="{{text.inputLocationPlaceholder}}"
+              value="{{memoForm.location}}"
+              bindinput="onFormLocationInput"
+              maxlength="100"
+            />
+          </view>
+        </view>
+        
+        <!-- Notes Input -->
+        <!-- Notes Input -->
+        <view class="form-item">
+          <view class="form-label-row">
+            <text class="form-label">{{lang === 'zh' ? '详细备注' : 'Notes'}}</text>
+            <text class="word-counter">{{memoForm.notes ? memoForm.notes.length : 0}}/200</text>
+          </view>
+          <textarea
+            class="textarea-field"
+            placeholder="{{text.inputNotesPlaceholder}}"
+            value="{{memoForm.notes}}"
+            bindinput="onFormNotesInput"
+            maxlength="200"
+            fixed="{{true}}"
+          />
+        </view>
+      </scroll-view>
+      
+      <view class="modal-actions">
+        <button
+          class="modal-btn btn-cancel"
+          hover-class="btn-cancel-hover"
+          bindtap="closeModal"
+        >
+          {{text.cancel}}
+        </button>
+        <button
+          class="modal-btn btn-save"
+          hover-class="btn-save-hover"
+          bindtap="onSaveMemo"
+        >
+          {{text.save}}
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

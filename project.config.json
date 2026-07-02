@@ -1,0 +1,112 @@
+{
+  "setting": {
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "uglifyFileName": false,
+    "enhance": true,
+    "packNpmRelationList": [],
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    },
+    "useCompilerPlugins": false,
+    "minifyWXML": true,
+    "condition": false,
+    "compileWorklet": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "minifyWXSS": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "swc": false,
+    "disableSWC": true
+  },
+  "compileType": "miniprogram",
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [
+      {
+        "value": "private.key",
+        "type": "file"
+      },
+      {
+        "value": "project.private.config.json",
+        "type": "file"
+      },
+      {
+        "value": "README.md",
+        "type": "file"
+      },
+      {
+        "value": ".gitignore",
+        "type": "file"
+      },
+      {
+        "value": ".DS_Store",
+        "type": "file"
+      },
+      {
+        "value": ".stfolder",
+        "type": "folder"
+      },
+      {
+        "value": ".git",
+        "type": "folder"
+      },
+      {
+        "value": ".agents",
+        "type": "folder"
+      },
+      {
+        "value": ".codex",
+        "type": "folder"
+      },
+      {
+        "value": "114ebaf10db53f10b015d60a5308a968",
+        "type": "folder"
+      },
+      {
+        "value": "d0c8a9c565612ec51736cc8b7481f065",
+        "type": "folder"
+      },
+      {
+        "value": "scripts",
+        "type": "folder"
+      },
+      {
+        "value": "node_modules",
+        "type": "folder"
+      },
+      {
+        "value": "dist",
+        "type": "folder"
+      },
+      {
+        "value": "build",
+        "type": "folder"
+      },
+      {
+        "value": ".log",
+        "type": "suffix"
+      },
+      {
+        "value": "npm-debug.log",
+        "type": "prefix"
+      },
+      {
+        "value": "yarn-debug.log",
+        "type": "prefix"
+      },
+      {
+        "value": "yarn-error.log",
+        "type": "prefix"
+      }
+    ],
+    "include": []
+  },
+  "appid": "wx5f8d0550761656c7",
+  "editorSetting": {},
+  "libVersion": "3.12.1"
+}

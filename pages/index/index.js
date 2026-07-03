@@ -695,8 +695,8 @@ Page({
       wx.showModal({
         title: this.data.lang === 'zh' ? '提示' : 'Tip',
         content: this.data.lang === 'zh' ? '有未保存的修改，确定放弃并退出吗？' : 'Discard unsaved changes?',
-        confirmText: this.data.lang === 'zh' ? '放弃' : 'Discard',
-        cancelText: this.data.lang === 'zh' ? '继续编辑' : 'Keep Editing',
+        confirmText: this.data.lang === 'zh' ? '放弃' : 'Yes',
+        cancelText: this.data.lang === 'zh' ? '继续编辑' : 'No',
         confirmColor: '#d09a04',
         success: (res) => {
           if (res.confirm) {

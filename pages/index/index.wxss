@@ -157,24 +157,63 @@ page {
 }
 
 .memo-card-wrapper.swiped .memo-card {
-  transform: translateX(-150rpx);
+  transform: translateX(-280rpx);
 }
 
-.memo-delete-btn {
+.swipe-actions {
   position: absolute;
   right: 0;
   top: 0;
   bottom: 0;
-  width: 150rpx;
-  background: #ef4444;
-  color: #fff;
+  width: 280rpx;
+  display: flex;
+  z-index: 1;
+  border-radius: 0 20rpx 20rpx 0;
+  overflow: hidden;
+}
+
+.swipe-btn {
+  flex: 1;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28rpx;
   font-weight: 600;
-  z-index: 1;
-  border-radius: 0 20rpx 20rpx 0;
+  color: #fff;
+  transition: opacity 0.15s ease;
+}
+
+.swipe-btn:active {
+  opacity: 0.85;
+}
+
+.swipe-btn.btn-done {
+  background: #34c759;
+}
+
+.swipe-btn.btn-delete {
+  background: #ef4444;
+}
+
+.memo-card-completed {
+  opacity: 0.65;
+}
+
+.memo-card-completed .memo-title-inline {
+  color: #9ca3af;
+}
+
+.memo-card-completed .memo-time-inline {
+  color: #9ca3af;
+}
+
+.memo-card-completed .memo-location-inline {
+  opacity: 0.6;
+}
+
+.memo-card-completed .notes-section {
+  opacity: 0.6;
 }
 
 .memo-card-hover {
@@ -637,4 +676,11 @@ page {
 
 .btn-save-hover {
   filter: brightness(0.95);
+}
+
+.form-item-switch {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10rpx 0;
 }

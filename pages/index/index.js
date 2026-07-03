@@ -42,7 +42,8 @@ const DEFAULT_FORM = {
   location: '',
   tag: 'Sport',
   color: '#ff9500',
-  notes: ''
+  notes: '',
+  completed: false
 };
 
 function getText(lang) {
@@ -601,6 +602,31 @@ Page({
     wx.vibrateShort({ type: 'medium', fail: () => {} });
   },
 
+  onSwipeDoneTap(e) {
+    const { id } = e.currentTarget.dataset;
+    const { selectedDate, memoDates } = this.data;
+    
+    wx.vibrateShort({ type: 'light', fail: () => {} });
+    
+    const updatedMemoDates = Object.assign({}, memoDates);
+    const dayMemos = (updatedMemoDates[selectedDate] || []).map(item => {
+      const cleanItem = Object.assign({}, item);
+      if (cleanItem.id === id) {
+        cleanItem.completed = !cleanItem.completed;
+      }
+      return cleanItem;
+    });
+    
+    updatedMemoDates[selectedDate] = this.cleanMemosUIFields(dayMemos);
+    this.saveMemosToStorage(updatedMemoDates);
+    
+    this.setData({
+      memoDates: updatedMemoDates
+    }, () => {
+      this.updateSelectedMemos();
+    });
+  },
+
   onSwipeDeleteTap(e) {
     const { id } = e.currentTarget.dataset;
     const { selectedDate, memoDates, lang, text } = this.data;
@@ -707,6 +733,12 @@ Page({
     });
   },
 
+  onFormCompletedChange(e) {
+    this.setData({
+      'memoForm.completed': e.detail.value
+    });
+  },
+
   onFormLocationInput(e) {
     this.setData({
       'memoForm.location': e.detail.value
@@ -760,7 +792,8 @@ Page({
       notes: memoForm.notes.trim(),
       tagCn: category.labelCn,
       tagEn: category.labelEn,
-      categoryIcon: category.icon
+      categoryIcon: category.icon,
+      completed: memoForm.completed || false
     };
 
     const updatedMemoDates = Object.assign({}, memoDates);

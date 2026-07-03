@@ -47,11 +47,11 @@
           style="transform: translateY({{item.id === draggingId ? dragTranslateY : 0}}px); z-index: {{item.id === draggingId ? 99 : 1}};"
         >
           <view
-            class="memo-card"
+            class="memo-card {{item.completed ? 'memo-card-completed' : ''}}"
             hover-class="{{item.isSwiped || draggingId ? 'none' : 'memo-card-hover'}}"
             data-id="{{item.id}}"
             bindtap="onEditMemoTap"
-            style="border: 2rpx solid {{item.color || '#d09a04'}}40; border-left: 8rpx solid {{item.color || '#d09a04'}};"
+            style="border-left: 8rpx solid {{item.completed ? '#d1d5db' : (item.color || '#d09a04')}}; border-top: 2rpx solid {{item.completed ? '#e5e7eb' : (item.color || '#d09a04')}}40; border-right: 2rpx solid {{item.completed ? '#e5e7eb' : (item.color || '#d09a04')}}40; border-bottom: 2rpx solid {{item.completed ? '#e5e7eb' : (item.color || '#d09a04')}}40;"
           >
             <view class="memo-card-main">
               <view class="memo-row-inline">
@@ -60,7 +60,7 @@
                 <view class="memo-location-inline" wx:if="{{item.location}}">
                   <text class="location-text">{{item.location}}</text>
                 </view>
-                <text class="memo-tag-inline" style="color: {{item.color}}">{{item.categoryIcon}}</text>
+                <text class="memo-tag-inline" style="color: {{item.completed ? '#d1d5db' : item.color}}">{{item.categoryIcon}}</text>
                 <!-- Drag Handle -->
                 <view
                   class="drag-handle"
@@ -76,8 +76,13 @@
             </view>
           </view>
           
-          <view class="memo-delete-btn" catchtap="onSwipeDeleteTap" data-id="{{item.id}}">
-            <text>{{lang === 'zh' ? '删除' : 'Delete'}}</text>
+          <view class="swipe-actions">
+            <view class="swipe-btn btn-done" catchtap="onSwipeDoneTap" data-id="{{item.id}}">
+              <text>{{item.completed ? (lang === 'zh' ? '待办' : 'Todo') : (lang === 'zh' ? '完成' : 'Done')}}</text>
+            </view>
+            <view class="swipe-btn btn-delete" catchtap="onSwipeDeleteTap" data-id="{{item.id}}">
+              <text>{{lang === 'zh' ? '删除' : 'Delete'}}</text>
+            </view>
           </view>
         </view>
       </block>
@@ -116,6 +121,12 @@
             cursor-spacing="20"
             maxlength="40"
           />
+        </view>
+
+        <!-- Completed Switch -->
+        <view class="form-item form-item-switch" wx:if="{{memoForm.id}}">
+          <text class="form-label">{{lang === 'zh' ? '标记已完成' : 'Mark Completed'}}</text>
+          <switch checked="{{memoForm.completed}}" bindchange="onFormCompletedChange" color="#d09a04" />
         </view>
         
         <!-- Category Selector -->

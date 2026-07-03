@@ -260,14 +260,9 @@ page {
 }
 
 .memo-tag-inline {
-  display: flex;
-  align-items: center;
+  font-size: 28rpx;
   flex-shrink: 0;
   margin-left: auto;
-}
-
-.tag-icon-small {
-  font-size: 24rpx;
 }
 
 .memo-card-notes {

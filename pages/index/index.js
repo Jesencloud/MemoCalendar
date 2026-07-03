@@ -324,16 +324,21 @@ Page({
 
     const nextOrder = (sortOrder === 'asc') ? 'desc' : 'asc';
 
-    const sorted = [...selectedMemos].sort((a, b) => {
-      if (a.time && b.time) {
-        return nextOrder === 'asc' 
-          ? a.time.localeCompare(b.time)
-          : b.time.localeCompare(a.time);
-      }
+    const compareAsc = (a, b) => {
+      if (a.time && b.time) return a.time.localeCompare(b.time);
       if (a.time) return -1;
       if (b.time) return 1;
       return 0;
-    });
+    };
+
+    const compareDesc = (a, b) => {
+      if (a.time && b.time) return b.time.localeCompare(a.time);
+      if (a.time) return -1;
+      if (b.time) return 1;
+      return 0;
+    };
+
+    const sorted = [...selectedMemos].sort(nextOrder === 'asc' ? compareAsc : compareDesc);
 
     const updatedMemoDates = Object.assign({}, memoDates);
     updatedMemoDates[selectedDate] = sorted;

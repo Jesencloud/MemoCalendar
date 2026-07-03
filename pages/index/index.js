@@ -320,8 +320,10 @@ Page({
   updateSelectedMemos() {
     const { selectedDate, memoDates } = this.data;
     const list = memoDates[selectedDate] || [];
+    // Deep clone each memo item to isolate runtime UI state from cache
+    const clonedList = list.map(item => Object.assign({}, item));
     this.setData({
-      selectedMemos: list
+      selectedMemos: clonedList
     });
   },
 

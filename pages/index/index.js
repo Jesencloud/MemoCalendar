@@ -155,6 +155,15 @@ Page({
     };
   },
 
+  onShareTimeline() {
+    const { lang } = this.data;
+    const title = lang === 'zh' ? '备忘录日历 - 记录日程规划生活' : 'Memo Calendar - Track schedule & plan life';
+    return {
+      title,
+      query: `lang=${lang}`
+    };
+  },
+
   loadMemosFromStorage() {
     try {
       const memos = wx.getStorageSync('memoCalendarMemos');

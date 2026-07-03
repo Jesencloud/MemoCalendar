@@ -53,7 +53,7 @@ const translations = {
     navTitle: 'Memo Calendar',
     today: 'Today',
     events: '\'s Memos',
-    noEvents: 'No memos for today. Click the FAB in the bottom right to add one!',
+    noEvents: 'No memos for today. Tap the "+" button in the bottom right to add one!',
     langToggle: '中文',
     weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     months: [

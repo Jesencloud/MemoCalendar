@@ -196,7 +196,7 @@ page {
   background: #ef4444;
 }
 
-.memo-card-completed {
+.memo-card-completed .memo-card-main {
   opacity: 0.65;
 }
 

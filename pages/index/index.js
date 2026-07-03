@@ -570,7 +570,8 @@ Page({
     this.setData({
       draggingId: '',
       dragTranslateY: 0,
-      memoDates: updatedMemoDates
+      memoDates: updatedMemoDates,
+      sortOrder: 'desc'
     });
     
     this.cardRects = null;

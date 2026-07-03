@@ -51,7 +51,7 @@
             hover-class="{{item.isSwiped || draggingId ? 'none' : 'memo-card-hover'}}"
             data-id="{{item.id}}"
             bindtap="onEditMemoTap"
-            style="border: 2rpx solid {{item.color || '#3b82f6'}}40; border-left: 8rpx solid {{item.color || '#3b82f6'}};"
+            style="border: 2rpx solid {{item.color || '#d09a04'}}40; border-left: 8rpx solid {{item.color || '#d09a04'}};"
           >
             <view class="memo-card-main">
               <view class="memo-row-inline">

@@ -26,8 +26,13 @@
       <view class="section-title">
         <text>{{selectedDate}} {{text.events}}</text>
       </view>
-      <view wx:if="{{showTodayButton}}" class="today-btn" hover-class="today-btn-hover" hover-stay-time="100" bindtap="goToday">
-        <text>{{text.today}}</text>
+      <view class="section-actions">
+        <view wx:if="{{selectedMemos.length > 1}}" class="sort-btn" hover-class="sort-btn-hover" hover-stay-time="100" bindtap="sortByTime">
+          <text>⏳</text>
+        </view>
+        <view wx:if="{{showTodayButton}}" class="today-btn" hover-class="today-btn-hover" hover-stay-time="100" bindtap="goToday">
+          <text>{{text.today}}</text>
+        </view>
       </view>
     </view>
     

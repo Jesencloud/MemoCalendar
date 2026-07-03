@@ -72,7 +72,8 @@ function getText(lang) {
     'selectCategory',
     'confirmDelete',
     'titleRequired',
-    'invalidDate'
+    'invalidDate',
+    'sortByTime'
   ];
   return keys.reduce((text, key) => {
     text[key] = t(key, lang);
@@ -313,6 +314,52 @@ Page({
     const list = memoDates[selectedDate] || [];
     this.setData({
       selectedMemos: list
+    });
+  },
+
+  sortByTime() {
+    const { selectedMemos, selectedDate, memoDates, lang } = this.data;
+    if (!selectedMemos || selectedMemos.length <= 1) return;
+
+    const sorted = [...selectedMemos].sort((a, b) => {
+      if (a.time && b.time) {
+        return a.time.localeCompare(b.time);
+      }
+      if (a.time) return -1;
+      if (b.time) return 1;
+      return 0;
+    });
+
+    let changed = false;
+    for (let i = 0; i < selectedMemos.length; i++) {
+      if (selectedMemos[i].id !== sorted[i].id) {
+        changed = true;
+        break;
+      }
+    }
+
+    if (!changed) {
+      wx.showToast({
+        title: lang === 'zh' ? '已按时间排序' : 'Already sorted',
+        icon: 'none'
+      });
+      return;
+    }
+
+    const updatedMemoDates = Object.assign({}, memoDates);
+    updatedMemoDates[selectedDate] = sorted;
+    
+    this.saveMemosToStorage(updatedMemoDates);
+    wx.vibrateShort({ type: 'light', fail: () => {} });
+    
+    this.setData({
+      selectedMemos: sorted,
+      memoDates: updatedMemoDates
+    }, () => {
+      wx.showToast({
+        title: lang === 'zh' ? '排序成功' : 'Sorted',
+        icon: 'success'
+      });
     });
   },
 

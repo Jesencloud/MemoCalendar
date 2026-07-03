@@ -85,6 +85,12 @@ page {
   border-radius: 99rpx;
 }
 
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
 .today-btn {
   padding: 10rpx 26rpx;
   border-radius: 99rpx;
@@ -97,6 +103,24 @@ page {
 
 .today-btn-hover {
   background: #dbeafe;
+  transform: scale(0.95);
+}
+
+.sort-btn {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 26rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.sort-btn-hover {
+  background: #e5e7eb;
   transform: scale(0.95);
 }
 

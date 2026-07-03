@@ -44,7 +44,8 @@ const translations = {
     categoryImportant: '重要',
     confirmDelete: '确定要删除这条便签吗？',
     titleRequired: '请填写便签标题/内容',
-    invalidDate: '日期无效'
+    invalidDate: '日期无效',
+    sortByTime: '时间排序'
   },
   en: {
     title: 'Memo Calendar',
@@ -87,7 +88,8 @@ const translations = {
     categoryImportant: 'Important',
     confirmDelete: 'Are you sure you want to delete this memo?',
     titleRequired: 'Please enter a memo title',
-    invalidDate: 'Invalid date'
+    invalidDate: 'Invalid date',
+    sortByTime: 'Sort by Time'
   }
 };
 

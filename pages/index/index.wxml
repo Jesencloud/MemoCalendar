@@ -114,7 +114,7 @@
             placeholder="{{text.inputTitlePlaceholder}}"
             value="{{memoForm.title}}"
             bindinput="onFormTitleInput"
-            adjust-position="{{false}}"
+            cursor-spacing="20"
             maxlength="40"
           />
         </view>
@@ -174,7 +174,7 @@
               placeholder="{{text.inputLocationPlaceholder}}"
               value="{{memoForm.location}}"
               bindinput="onFormLocationInput"
-              adjust-position="{{false}}"
+              cursor-spacing="30"
               maxlength="100"
             />
           </view>
@@ -194,7 +194,7 @@
             bindinput="onFormNotesInput"
             maxlength="200"
             fixed="{{true}}"
-            adjust-position="{{false}}"
+            cursor-spacing="50"
           />
         </view>
       </scroll-view>

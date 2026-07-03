@@ -522,13 +522,13 @@ page {
 }
 
 .tag-selector {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 16rpx;
 }
 
 .tag-item {
-  padding: 14rpx 28rpx;
+  padding: 14rpx 20rpx;
   border-radius: 99rpx;
   background: #f3f4f6;
   border: 2rpx solid transparent;
@@ -539,6 +539,8 @@ page {
   font-weight: 500;
   color: #4b5563;
   transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .tag-item.active {
@@ -547,6 +549,14 @@ page {
   color: var(--tag-color);
   font-weight: 600;
 }
+
+.tag-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .custom-tag-item {
   position: relative;
   padding-right: 48rpx;

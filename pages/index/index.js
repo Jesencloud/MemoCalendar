@@ -112,9 +112,6 @@ Page({
     // Load memos from local storage
     const memoDates = this.loadMemosFromStorage();
 
-    // Load custom categories
-    this.loadCategories();
-
     this.setData({
       lang,
       text: getText(lang),
@@ -130,6 +127,8 @@ Page({
 
   onReady() {
     this.calendarCtx = this.selectComponent('#calendar');
+    // Load custom categories after initial page paint completes
+    this.loadCategories();
   },
 
   onShow() {
@@ -738,9 +737,7 @@ Page({
 
   // Form Inputs
   onFormTitleInput(e) {
-    this.setData({
-      'memoForm.title': e.detail.value
-    });
+    this.data.memoForm.title = e.detail.value;
   },
 
   onFormCompletedChange(e) {
@@ -750,15 +747,11 @@ Page({
   },
 
   onFormLocationInput(e) {
-    this.setData({
-      'memoForm.location': e.detail.value
-    });
+    this.data.memoForm.location = e.detail.value;
   },
 
   onFormNotesInput(e) {
-    this.setData({
-      'memoForm.notes': e.detail.value
-    });
+    this.data.memoForm.notes = e.detail.value;
   },
 
   onFormTimeChange(e) {

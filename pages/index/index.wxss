@@ -232,9 +232,6 @@ page {
 }
 
 .memo-location-inline {
-  display: flex;
-  align-items: center;
-  gap: 6rpx;
   font-size: 24rpx;
   color: #6b7280;
   flex-shrink: 1;
@@ -243,10 +240,6 @@ page {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 200rpx;
-}
-
-.location-pin {
-  font-size: 24rpx;
 }
 
 .location-text {

@@ -58,7 +58,6 @@
                 <text class="memo-time-inline" wx:if="{{item.time}}">{{item.time}}</text>
                 <text class="memo-title-inline">{{item.title}}</text>
                 <view class="memo-location-inline" wx:if="{{item.location}}">
-                  <text class="location-pin">📌</text>
                   <text class="location-text">{{item.location}}</text>
                 </view>
                 <text class="memo-tag-inline" style="color: {{item.color}}">{{item.categoryIcon}}</text>

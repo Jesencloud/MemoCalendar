@@ -13,7 +13,7 @@ const CATEGORIES = [
   { key: 'Gaming', labelCn: '游戏', labelEn: 'Gaming', color: '#ff453a', icon: '🎮' },
   { key: 'Life', labelCn: '生活', labelEn: 'Life', color: '#34c759', icon: '🏠' },
   { key: 'Study', labelCn: '学习', labelEn: 'Study', color: '#5856d6', icon: '📚' },
-  { key: 'Social', labelCn: '社交', labelEn: 'Social', color: '#ff2d55', icon: '🤝' },
+  { key: 'Social', labelCn: '社交', labelEn: 'Social', color: '#ff2d55', icon: '🥂' },
   { key: 'Family', labelCn: '家庭', labelEn: 'Family', color: '#ff9500', icon: '🍼' },
   { key: 'Finance', labelCn: '财务', labelEn: 'Finance', color: '#30b0c7', icon: '💰' },
   { key: 'Reading', labelCn: '阅读', labelEn: 'Reading', color: '#d09a04', icon: '📖' },
@@ -416,8 +416,10 @@ Page({
   onAddMemoTap() {
     this.clearModalCloseTimer();
     wx.vibrateShort({ type: 'light', fail: () => {} });
+    const initialForm = Object.assign({}, DEFAULT_FORM, { id: '' });
+    this.originalForm = JSON.stringify(initialForm);
     this.setData({
-      memoForm: Object.assign({}, DEFAULT_FORM, { id: '' }),
+      memoForm: initialForm,
       modalVisible: true,
       modalClosing: false
     });
@@ -446,6 +448,7 @@ Page({
 
     wx.vibrateShort({ type: 'light', fail: () => {} });
     this.clearModalCloseTimer();
+    this.originalForm = JSON.stringify(memo);
     this.setData({
       memoForm: Object.assign({}, memo),
       modalVisible: true,
@@ -632,7 +635,23 @@ Page({
   },
 
   closeModal() {
-    this._closeModalWithData();
+    const isDirty = this.originalForm && this.originalForm !== JSON.stringify(this.data.memoForm);
+    if (isDirty) {
+      wx.showModal({
+        title: this.data.lang === 'zh' ? '提示' : 'Tip',
+        content: this.data.lang === 'zh' ? '有未保存的修改，确定放弃并退出吗？' : 'Discard unsaved changes?',
+        confirmText: this.data.lang === 'zh' ? '放弃' : 'Discard',
+        cancelText: this.data.lang === 'zh' ? '继续编辑' : 'Keep Editing',
+        confirmColor: '#d09a04',
+        success: (res) => {
+          if (res.confirm) {
+            this._closeModalWithData();
+          }
+        }
+      });
+    } else {
+      this._closeModalWithData();
+    }
   },
 
   _closeModalWithData(extraData = {}, callback = null) {

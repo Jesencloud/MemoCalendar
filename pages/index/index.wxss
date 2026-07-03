@@ -143,7 +143,11 @@ page {
 .memo-card-wrapper.dragging .memo-card {
   transform: scale(1.02);
   box-shadow: 0 16rpx 36rpx rgba(0, 0, 0, 0.12);
-  opacity: 0.95;
+  opacity: 1;
+}
+
+.memo-card-wrapper.dragging .swipe-actions {
+  display: none !important;
 }
 
 .memo-card {

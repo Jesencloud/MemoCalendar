@@ -207,21 +207,13 @@ Page({
   loadCategories() {
     try {
       const custom = wx.getStorageSync('memoCustomCategories') || [];
-      let list = [...CATEGORIES, ...custom];
-      if (this.data.lang === 'en') {
-        list.sort((a, b) => a.labelEn.localeCompare(b.labelEn));
-      }
       this.setData({
-        categories: list
+        categories: [...CATEGORIES, ...custom]
       });
     } catch (e) {
       console.error('Failed to load custom categories:', e);
-      let list = [...CATEGORIES];
-      if (this.data.lang === 'en') {
-        list.sort((a, b) => a.labelEn.localeCompare(b.labelEn));
-      }
       this.setData({
-        categories: list
+        categories: CATEGORIES
       });
     }
   },
@@ -401,7 +393,6 @@ Page({
       text: getText(nextLang)
     }, () => {
       this.updateSelectedMemos();
-      this.loadCategories();
     });
     this.updateNavigationTitle(nextLang);
   },

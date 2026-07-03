@@ -348,6 +348,12 @@ page {
   animation: fadeIn 0.25s ease;
 }
 
+.modal-mask.modal-closing {
+  background: transparent;
+  pointer-events: none;
+  animation: none;
+}
+
 .modal-panel {
   width: 100%;
   background: #fff;
@@ -358,7 +364,15 @@ page {
   display: flex;
   flex-direction: column;
   box-shadow: 0 -8rpx 30rpx rgba(0, 0, 0, 0.1);
+  opacity: 1;
+  transition: opacity 0.12s ease;
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden; /* Ensure inner scroll view handles all scrolling */
+}
+
+.modal-mask.modal-closing .modal-panel {
+  opacity: 0;
+  animation: none;
 }
 
 @keyframes fadeIn {
@@ -376,6 +390,7 @@ page {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 40rpx;
+  flex-shrink: 0;
 }
 
 .modal-header-actions {
@@ -415,8 +430,12 @@ page {
 
 .modal-form {
   flex: 1;
+  min-height: 0; /* Crucial for flex children scroll containers */
   overflow-y: auto;
   margin-bottom: 40rpx;
+  -webkit-overflow-scrolling: touch; /* Momentum scrolling on iOS */
+  transform: translateZ(0); /* Enable hardware acceleration */
+  will-change: transform;
 }
 
 .form-item {
@@ -585,6 +604,7 @@ page {
 .modal-actions {
   display: flex;
   gap: 20rpx;
+  flex-shrink: 0;
 }
 
 .modal-btn {
@@ -597,11 +617,7 @@ page {
   align-items: center;
   justify-content: center;
   border: none;
-  transition: all 0.2s ease;
-}
-
-.modal-btn::after {
-  border: none;
+  transition: background-color 0.2s ease, filter 0.2s ease;
 }
 
 .btn-cancel {
@@ -611,7 +627,6 @@ page {
 
 .btn-cancel-hover {
   background: #e5e7eb;
-  transform: scale(0.97);
 }
 
 .btn-save {
@@ -622,5 +637,4 @@ page {
 
 .btn-save-hover {
   filter: brightness(0.95);
-  transform: scale(0.97);
 }

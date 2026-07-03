@@ -91,6 +91,7 @@ Page({
     lang: 'zh',
     text: getText('zh'),
     modalVisible: false,
+    modalClosing: false,
     categories: CATEGORIES,
     memoForm: Object.assign({}, DEFAULT_FORM),
     draggingId: '',
@@ -142,6 +143,10 @@ Page({
         showTodayButton: this.data.selectedDate !== todayDate
       });
     }
+  },
+
+  onUnload() {
+    this.clearModalCloseTimer();
   },
 
   onShareAppMessage() {
@@ -368,10 +373,12 @@ Page({
 
   // Modal Actions
   onAddMemoTap() {
+    this.clearModalCloseTimer();
     wx.vibrateShort({ type: 'light', fail: () => {} });
     this.setData({
       memoForm: Object.assign({}, DEFAULT_FORM, { id: '' }),
-      modalVisible: true
+      modalVisible: true,
+      modalClosing: false
     });
   },
 
@@ -397,9 +404,11 @@ Page({
     if (!memo) return;
 
     wx.vibrateShort({ type: 'light', fail: () => {} });
+    this.clearModalCloseTimer();
     this.setData({
       memoForm: Object.assign({}, memo),
-      modalVisible: true
+      modalVisible: true,
+      modalClosing: false
     });
   },
 
@@ -581,9 +590,32 @@ Page({
   },
 
   closeModal() {
-    this.setData({
-      modalVisible: false
+    this._closeModalWithData();
+  },
+
+  _closeModalWithData(extraData = {}, callback = null) {
+    if (!this.data.modalVisible || this.data.modalClosing) return;
+
+    const dataToSet = Object.assign({ modalClosing: true }, extraData);
+    this.setData(dataToSet, () => {
+      wx.hideKeyboard({ fail: () => {} });
+      if (callback) callback();
+      
+      this.modalCloseTimer = setTimeout(() => {
+        this.modalCloseTimer = null;
+        this.setData({
+          modalVisible: false,
+          modalClosing: false
+        });
+      }, 160);
     });
+  },
+
+  clearModalCloseTimer() {
+    if (this.modalCloseTimer) {
+      clearTimeout(this.modalCloseTimer);
+      this.modalCloseTimer = null;
+    }
   },
 
   stopBubble() {
@@ -679,10 +711,7 @@ Page({
       icon: 'success'
     });
 
-    this.setData({
-      memoDates: updatedMemoDates,
-      modalVisible: false
-    }, () => {
+    this._closeModalWithData({ memoDates: updatedMemoDates }, () => {
       this.updateSelectedMemos();
     });
   },
@@ -717,10 +746,7 @@ Page({
               icon: 'success'
             });
 
-            this.setData({
-              memoDates: updatedMemoDates,
-              modalVisible: false
-            }, () => {
+            this._closeModalWithData({ memoDates: updatedMemoDates }, () => {
               this.updateSelectedMemos();
             });
           }

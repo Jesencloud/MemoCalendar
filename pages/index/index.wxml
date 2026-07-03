@@ -1,4 +1,5 @@
 <!--pages/index/index.wxml-->
+<page-meta page-style="overflow: {{modalVisible || modalClosing ? 'hidden' : 'visible'}}" />
 <view class="container {{lang === 'zh' ? 'lang-zh' : 'lang-en'}}">
   <view class="header">
     <view class="header-main">
@@ -93,13 +94,13 @@
   </view>
 
   <!-- Memo Edit/Add Modal -->
-  <view wx:if="{{modalVisible}}" class="modal-mask" bindtap="closeModal">
+  <view wx:if="{{modalVisible || modalClosing}}" class="modal-mask {{modalClosing ? 'modal-closing' : ''}}" catchtap="closeModal">
     <view class="modal-panel" catchtap="stopBubble">
       <view class="modal-header">
         <text class="modal-title">{{memoForm.id ? text.editMemo : text.addMemo}}</text>
         <view class="modal-header-actions">
           <view wx:if="{{memoForm.id}}" class="modal-delete-icon" bindtap="onDeleteMemo">🗑️</view>
-          <view class="modal-close" bindtap="closeModal">×</view>
+          <view class="modal-close" catchtap="closeModal">×</view>
         </view>
       </view>
       
@@ -111,6 +112,7 @@
             placeholder="{{text.inputTitlePlaceholder}}"
             value="{{memoForm.title}}"
             bindinput="onFormTitleInput"
+            adjust-position="{{false}}"
             maxlength="40"
           />
         </view>
@@ -170,6 +172,7 @@
               placeholder="{{text.inputLocationPlaceholder}}"
               value="{{memoForm.location}}"
               bindinput="onFormLocationInput"
+              adjust-position="{{false}}"
               maxlength="100"
             />
           </view>
@@ -189,26 +192,28 @@
             bindinput="onFormNotesInput"
             maxlength="200"
             fixed="{{true}}"
+            adjust-position="{{false}}"
           />
         </view>
       </scroll-view>
       
       <view class="modal-actions">
-        <button
+        <view
           class="modal-btn btn-cancel"
           hover-class="btn-cancel-hover"
-          bindtap="closeModal"
+          catchtap="closeModal"
         >
           {{text.cancel}}
-        </button>
-        <button
+        </view>
+        <view
           class="modal-btn btn-save"
           hover-class="btn-save-hover"
-          bindtap="onSaveMemo"
+          catchtap="onSaveMemo"
         >
           {{text.save}}
-        </button>
+        </view>
       </view>
     </view>
   </view>
+
 </view>

@@ -4,20 +4,18 @@ const { t } = require('../../utils/i18n.js');
 const CATEGORIES = [
   { key: 'Sport', labelCn: '运动', labelEn: 'Sport', color: '#ff9500', icon: '🏋' },
   { key: 'Travel', labelCn: '旅行', labelEn: 'Travel', color: '#30b0c7', icon: '✈️' },
-  { key: 'Entertainment', labelCn: '娱乐', labelEn: 'Entertainment', color: '#ff2d55', icon: '🎬' },
+  { key: 'Social', labelCn: '社交', labelEn: 'Social', color: '#ff2d55', icon: '🥂' },
   { key: 'Pet', labelCn: '宠物', labelEn: 'Pet', color: '#ffcc00', icon: '🐶' },
   { key: 'Beauty', labelCn: '美容', labelEn: 'Beauty', color: '#ff2d55', icon: '💆🏻‍♀️' },
   { key: 'Shopping', labelCn: '购物', labelEn: 'Shopping', color: '#af52de', icon: '🛍️' },
   { key: 'Food', labelCn: '美食', labelEn: 'Food', color: '#00c7be', icon: '🍽️' },
   { key: 'Health', labelCn: '健康', labelEn: 'Health', color: '#34c759', icon: '💊' },
   { key: 'Gaming', labelCn: '游戏', labelEn: 'Gaming', color: '#ff453a', icon: '🎮' },
-  { key: 'Life', labelCn: '生活', labelEn: 'Life', color: '#34c759', icon: '🏠' },
   { key: 'Study', labelCn: '学习', labelEn: 'Study', color: '#5856d6', icon: '📚' },
-  { key: 'Social', labelCn: '社交', labelEn: 'Social', color: '#ff2d55', icon: '🥂' },
   { key: 'Family', labelCn: '家庭', labelEn: 'Family', color: '#ff9500', icon: '🍼' },
   { key: 'Finance', labelCn: '财务', labelEn: 'Finance', color: '#30b0c7', icon: '💰' },
   { key: 'Reading', labelCn: '阅读', labelEn: 'Reading', color: '#d09a04', icon: '📖' },
-  { key: 'Hobby', labelCn: '爱好', labelEn: 'Hobby', color: '#af52de', icon: '🎯' },
+  { key: 'Hobby', labelCn: '爱好', labelEn: 'Hobby', color: '#af52de', icon: '🎳️' },
   { key: 'Important', labelCn: '重要', labelEn: 'Important', color: '#ff3b30', icon: '❗' }
 ];
 

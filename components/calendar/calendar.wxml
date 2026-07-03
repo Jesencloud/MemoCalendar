@@ -1,8 +1,15 @@
 <!-- components/calendar/calendar.wxml -->
-<view class="calendar-container">
+<view 
+  class="calendar-container"
+  bindtouchstart="onCalendarTouchStart"
+  bindtouchmove="onCalendarTouchMove"
+  bindtouchend="onCalendarTouchEnd"
+>
   <view class="calendar-header">
     <view class="nav-btn" hover-class="nav-btn-hover" hover-stay-time="100" bindtap="prevMonth">❮</view>
-    <view class="current-month" hover-class="current-month-hover" bindtap="openMonthPicker">{{monthNames[currentMonth]}} {{currentYear}}</view>
+    <view class="current-month" hover-class="{{viewMode === 'week' ? '' : 'current-month-hover'}}" bindtap="openMonthPicker">
+      {{monthNames[currentMonth]}} {{currentYear}}
+    </view>
     <view class="nav-btn" hover-class="nav-btn-hover" hover-stay-time="100" bindtap="nextMonth">❯</view>
   </view>
 
@@ -12,18 +19,21 @@
     </block>
   </view>
 
-  <view class="calendar-days-viewport">
+  <view class="calendar-days-viewport {{viewMode === 'week' ? 'week-mode' : ''}}">
     <swiper
-      class="calendar-swiper"
+      class="calendar-swiper {{viewMode === 'week' ? 'week-mode' : ''}}"
       current="{{swiperCurrent}}"
       duration="{{swiperDuration}}"
       easing-function="easeOutCubic"
       bindanimationfinish="onCalendarSwiperFinish"
       bindtouchstart="onTouchStart"
     >
-      <block wx:for="{{monthPanels}}" wx:key="key" wx:for-item="panel">
-        <swiper-item class="month-panel">
-          <view class="days-grid">
+      <block wx:for="{{swiperPanels}}" wx:key="key" wx:for-item="panel">
+        <swiper-item class="month-panel {{viewMode === 'week' ? 'week-mode' : ''}}">
+          <view 
+            class="days-grid {{viewMode === 'week' ? 'week-mode' : ''}}" 
+            style="transform: translateY({{viewMode === 'week' ? -activeRowIdx * 100 : 0}}rpx);"
+          >
             <block wx:for="{{panel.days}}" wx:key="dateKey" wx:for-item="day">
               <view
                 class="day-item {{day.fullDate === selectedDate ? 'selected' : ''}} {{day.isPast ? 'past' : ''}} {{!day.day ? 'empty' : ''}}"
@@ -50,6 +60,11 @@
     </swiper>
   </view>
 
+  <view class="fold-indicator" bindtap="toggleViewMode">
+    <view class="fold-line {{viewMode === 'week' ? 'week-mode' : ''}}"></view>
+  </view>
+
+  <!-- Month Picker Panel -->
   <view wx:if="{{showMonthPicker}}" class="month-picker-mask" bindtap="closeMonthPicker">
     <view class="month-picker-panel" catchtap="stopMonthPickerTap">
       <view class="month-picker-header">

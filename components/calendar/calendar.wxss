@@ -51,11 +51,21 @@
   width: 100%;
   height: 600rpx;
   overflow: hidden;
+  transition: height 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.calendar-days-viewport.week-mode {
+  height: 100rpx;
 }
 
 .calendar-swiper {
   width: 100%;
   height: 600rpx;
+  transition: height 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.calendar-swiper.week-mode {
+  height: 100rpx;
 }
 
 .weekday-header {
@@ -76,12 +86,22 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   grid-auto-rows: 100rpx;
-  align-content: space-between;
+  align-content: flex-start;
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.days-grid.week-mode {
+  height: 100rpx;
 }
 
 .month-panel {
   width: 100%;
   height: 600rpx;
+  transition: height 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.month-panel.week-mode {
+  height: 100rpx;
 }
 
 .day-item {
@@ -235,4 +255,27 @@
   font-weight: bold;
   background: #fdf8e6;
   border-radius: 16rpx;
+}
+
+.fold-indicator {
+  width: 100%;
+  height: 32rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 6rpx 0;
+  box-sizing: border-box;
+}
+
+.fold-line {
+  width: 60rpx;
+  height: 6rpx;
+  background-color: #e5e7eb;
+  border-radius: 99rpx;
+  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.fold-indicator:active .fold-line {
+  background-color: #d09a04;
+  width: 80rpx;
 }

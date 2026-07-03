@@ -34,14 +34,14 @@ Component({
       value: {},
       observer(newVal) {
         if (this.data.currentYear) {
-          this.setData(this.getCalendarState(this.data.currentYear, this.data.currentMonth));
+          this.setData(this.getCalendarState(this.data.currentYear, this.data.currentMonth, this.data.selectedDate, this.data.viewMode));
         }
       }
     }
   },
 
   data: {
-    monthPanels: [],
+    swiperPanels: [],
     currentMonth: 0,
     currentYear: 0,
     selectedDate: '',
@@ -51,7 +51,9 @@ Component({
     swiperCurrent: SWIPER_CENTER_INDEX,
     swiperDuration: SWIPER_DURATION_MS,
     weekdays: [],
-    monthNames: []
+    monthNames: [],
+    viewMode: 'month',
+    activeRowIdx: 0
   },
 
   lifetimes: {
@@ -64,7 +66,7 @@ Component({
       const currentYear = parsed.year;
       const currentMonth = parsed.month;
       const locale = getCalendarText(this.data.lang);
-      const calendarState = this.getCalendarState(currentYear, currentMonth);
+      const calendarState = this.getCalendarState(currentYear, currentMonth, initialDate, 'month');
 
       this.setData({
         currentYear,
@@ -74,34 +76,64 @@ Component({
         pickerYear: currentYear,
         weekdays: locale.weekdays,
         monthNames: locale.months,
+        viewMode: 'month',
         ...calendarState
       });
     }
   },
 
   methods: {
-    getCalendarState(currentYear, currentMonth) {
+    getCalendarState(currentYear, currentMonth, selectedDate, viewMode) {
       const now = new Date();
       const todayDate = this.formatDate(now.getFullYear(), now.getMonth(), now.getDate());
-      const prevMonth = this.getShiftedMonth(currentYear, currentMonth, -1);
-      const nextMonth = this.getShiftedMonth(currentYear, currentMonth, 1);
+      
+      if (viewMode === 'week') {
+        const prevWeekDate = this.getShiftedWeekDate(selectedDate, -1);
+        const nextWeekDate = this.getShiftedWeekDate(selectedDate, 1);
+        const swiperPanels = [
+          {
+            key: `week-prev-${prevWeekDate}`,
+            days: this.createWeekDays(prevWeekDate, todayDate)
+          },
+          {
+            key: `week-current-${selectedDate}`,
+            days: this.createWeekDays(selectedDate, todayDate)
+          },
+          {
+            key: `week-next-${nextWeekDate}`,
+            days: this.createWeekDays(nextWeekDate, todayDate)
+          }
+        ];
+        
+        return { swiperPanels, activeRowIdx: 0 };
+      } else {
+        const prevMonth = this.getShiftedMonth(currentYear, currentMonth, -1);
+        const nextMonth = this.getShiftedMonth(currentYear, currentMonth, 1);
 
-      const monthPanels = [
-        {
-          key: `prev-${prevMonth.year}-${prevMonth.month}`,
-          days: this.createMonthDays(prevMonth.year, prevMonth.month, todayDate)
-        },
-        {
-          key: `current-${currentYear}-${currentMonth}`,
-          days: this.createMonthDays(currentYear, currentMonth, todayDate)
-        },
-        {
-          key: `next-${nextMonth.year}-${nextMonth.month}`,
-          days: this.createMonthDays(nextMonth.year, nextMonth.month, todayDate)
+        const currentDays = this.createMonthDays(currentYear, currentMonth, todayDate);
+        const swiperPanels = [
+          {
+            key: `prev-${prevMonth.year}-${prevMonth.month}`,
+            days: this.createMonthDays(prevMonth.year, prevMonth.month, todayDate)
+          },
+          {
+            key: `current-${currentYear}-${currentMonth}`,
+            days: currentDays
+          },
+          {
+            key: `next-${nextMonth.year}-${nextMonth.month}`,
+            days: this.createMonthDays(nextMonth.year, nextMonth.month, todayDate)
+          }
+        ];
+        
+        let activeRowIdx = 0;
+        const idx = currentDays.findIndex(d => d.fullDate === selectedDate);
+        if (idx !== -1) {
+          activeRowIdx = Math.floor(idx / 7);
         }
-      ];
-
-      return { monthPanels };
+        
+        return { swiperPanels, activeRowIdx };
+      }
     },
 
     createMonthDays(year, month, todayDate) {
@@ -110,7 +142,6 @@ Component({
       
       const days = [];
       
-      // Keep every month at 6 rows so swiping never changes the calendar height.
       for (let i = 0; i < firstDay; i++) {
         days.push({
           day: '',
@@ -120,12 +151,10 @@ Component({
         });
       }
       
-      // Fill current month days
       const memoDates = this.data.memoDates || {};
       for (let i = 1; i <= daysInMonth; i++) {
         const fullDate = this.formatDate(year, month, i);
         const dayMemos = memoDates[fullDate] || [];
-        // Map memos to unique category colors (up to 3)
         const memoColors = Array.from(new Set(dayMemos.map(m => m.color || '#d09a04'))).slice(0, 3);
         const holidayInfo = CHINA_HOLIDAYS_2026[fullDate] || null;
         days.push({
@@ -139,6 +168,36 @@ Component({
         });
       }
 
+      return days;
+    },
+
+    createWeekDays(baseDateStr, todayDate) {
+      const baseDate = this.parseDate(baseDateStr);
+      if (!baseDate) return [];
+      
+      const dateObj = new Date(baseDate.year, baseDate.month, baseDate.day);
+      const dayOfWeek = dateObj.getDay(); // 0 is Sunday
+      
+      const days = [];
+      const memoDates = this.data.memoDates || {};
+      
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(baseDate.year, baseDate.month, baseDate.day - dayOfWeek + i);
+        const fullDate = this.formatDate(d.getFullYear(), d.getMonth(), d.getDate());
+        const dayMemos = memoDates[fullDate] || [];
+        const memoColors = Array.from(new Set(dayMemos.map(m => m.color || '#d09a04'))).slice(0, 3);
+        const holidayInfo = CHINA_HOLIDAYS_2026[fullDate] || null;
+        
+        days.push({
+          day: d.getDate(),
+          fullDate: fullDate,
+          dateKey: fullDate,
+          hasMemo: dayMemos.length > 0,
+          memoColors: memoColors,
+          isPast: fullDate < todayDate,
+          holidayInfo: holidayInfo
+        });
+      }
       return days;
     },
 
@@ -168,6 +227,14 @@ Component({
       };
     },
 
+    getShiftedWeekDate(dateStr, offset) {
+      const parsed = this.parseDate(dateStr);
+      if (!parsed) return dateStr;
+      
+      const d = new Date(parsed.year, parsed.month, parsed.day + offset * 7);
+      return this.formatDate(d.getFullYear(), d.getMonth(), d.getDate());
+    },
+
     goToDate(date) {
       const parsedDate = this.parseDate(date);
       if (!parsedDate) return;
@@ -178,11 +245,12 @@ Component({
         selectedDate: date,
         swiperCurrent: SWIPER_CENTER_INDEX,
         swiperDuration: 0,
-        ...this.getCalendarState(parsedDate.year, parsedDate.month)
+        ...this.getCalendarState(parsedDate.year, parsedDate.month, date, this.data.viewMode)
       }, () => this.restoreSwiperDuration());
     },
 
     openMonthPicker() {
+      if (this.data.viewMode === 'week') return;
       const { baseYear, currentYear } = this.data;
       const pickerYear = currentYear === baseYear || currentYear === baseYear + 1
         ? currentYear
@@ -217,7 +285,12 @@ Component({
 
       const offset = current > SWIPER_CENTER_INDEX ? 1 : -1;
       this.calendarSwipeAnimating = true;
-      this.changeMonth(offset, { autoSelectDate: true, resetSwiper: true });
+
+      if (this.data.viewMode === 'week') {
+        this.changeWeek(offset, { autoSelectDate: true, resetSwiper: true });
+      } else {
+        this.changeMonth(offset, { autoSelectDate: true, resetSwiper: true });
+      }
     },
 
     restoreSwiperDuration() {
@@ -225,7 +298,7 @@ Component({
       this.setData({ swiperDuration: SWIPER_DURATION_MS });
     },
 
-    slideMonth(offset) {
+    slideCalendar(offset) {
       if (this.calendarSwipeAnimating) return;
 
       this.calendarSwipeAnimating = true;
@@ -245,9 +318,7 @@ Component({
         day = new Date().getDate();
       }
 
-      // Keep the same day-of-month when switching months.
       const daysInMonth = new Date(year, month + 1, 0).getDate();
-      // If the target month is shorter, clamp to its last day.
       const targetDay = Math.min(day, daysInMonth);
       return this.formatDate(year, month, targetDay);
     },
@@ -265,7 +336,7 @@ Component({
         showMonthPicker: false,
         swiperCurrent: SWIPER_CENTER_INDEX,
         swiperDuration: 0,
-        ...this.getCalendarState(currentYear, month)
+        ...this.getCalendarState(currentYear, month, selectedDate, 'month')
       }, () => {
         this.calendarSwipeAnimating = false;
         this.restoreSwiperDuration();
@@ -285,11 +356,12 @@ Component({
       const selectedDate = options.autoSelectDate
         ? this.getAutoSelectedDate(currentYear, currentMonth)
         : this.data.selectedDate;
+      
       const nextData = {
         currentMonth,
         currentYear,
         selectedDate,
-        ...this.getCalendarState(currentYear, currentMonth)
+        ...this.getCalendarState(currentYear, currentMonth, selectedDate, 'month')
       };
 
       if (options.resetSwiper) {
@@ -305,12 +377,37 @@ Component({
       });
     },
 
+    changeWeek(offset, options = {}) {
+      const { selectedDate } = this.data;
+      const nextSelectedDate = this.getShiftedWeekDate(selectedDate, offset);
+      
+      const parsed = this.parseDate(nextSelectedDate);
+      const nextData = {
+        selectedDate: nextSelectedDate,
+        currentYear: parsed.year,
+        currentMonth: parsed.month,
+        ...this.getCalendarState(parsed.year, parsed.month, nextSelectedDate, 'week')
+      };
+
+      if (options.resetSwiper) {
+        nextData.swiperCurrent = SWIPER_CENTER_INDEX;
+        nextData.swiperDuration = 0;
+      }
+
+      this.setData(nextData, () => {
+        this.calendarSwipeAnimating = false;
+        if (options.autoSelectDate) {
+          this.triggerEvent('selectdate', { date: nextSelectedDate });
+        }
+      });
+    },
+
     prevMonth() {
-      this.slideMonth(-1);
+      this.slideCalendar(-1);
     },
 
     nextMonth() {
-      this.slideMonth(1);
+      this.slideCalendar(1);
     },
 
     selectDay(e) {
@@ -319,14 +416,83 @@ Component({
       
       wx.vibrateShort({ type: 'light', fail: () => {} });
       
-      this.setData({ selectedDate: date });
-      this.triggerEvent('selectdate', { date });
+      const parsed = this.parseDate(date);
+      const nextState = {
+        selectedDate: date,
+        currentYear: parsed.year,
+        currentMonth: parsed.month
+      };
+      
+      if (this.data.viewMode === 'week') {
+        Object.assign(nextState, this.getCalendarState(parsed.year, parsed.month, date, 'week'));
+      } else {
+        const { swiperPanels } = this.data;
+        const currentDays = swiperPanels[SWIPER_CENTER_INDEX].days;
+        const idx = currentDays.findIndex(d => d.fullDate === date);
+        if (idx !== -1) {
+          nextState.activeRowIdx = Math.floor(idx / 7);
+        }
+      }
+      
+      this.setData(nextState, () => {
+        this.triggerEvent('selectdate', { date });
+      });
     },
 
     onTouchStart() {
       if (this.data.swiperDuration !== SWIPER_DURATION_MS) {
         this.setData({ swiperDuration: SWIPER_DURATION_MS });
       }
+    },
+
+    // Gesture Handlers for Folding/Unfolding
+    onCalendarTouchStart(e) {
+      if (e.touches.length === 1) {
+        this.touchStartY = e.touches[0].clientY;
+        this.touchStartX = e.touches[0].clientX;
+        this.touchMoveY = null;
+        this.touchMoveX = null;
+      }
+    },
+
+    onCalendarTouchMove(e) {
+      if (e.touches.length === 1) {
+        this.touchMoveY = e.touches[0].clientY;
+        this.touchMoveX = e.touches[0].clientX;
+      }
+    },
+
+    onCalendarTouchEnd() {
+      if (this.touchStartY !== null && this.touchMoveY !== null) {
+        const deltaY = this.touchMoveY - this.touchStartY;
+        const deltaX = this.touchMoveX - this.touchStartX;
+        
+        if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 40) {
+          if (deltaY < 0 && this.data.viewMode !== 'week') {
+            this.toggleViewMode('week');
+          } else if (deltaY > 0 && this.data.viewMode !== 'month') {
+            this.toggleViewMode('month');
+          }
+        }
+      }
+      this.touchStartY = null;
+      this.touchMoveY = null;
+    },
+
+    toggleViewMode(targetMode) {
+      const mode = (typeof targetMode === 'string') 
+        ? targetMode 
+        : (this.data.viewMode === 'month' ? 'week' : 'month');
+        
+      wx.vibrateShort({ type: 'light', fail: () => {} });
+      
+      const { currentYear, currentMonth, selectedDate } = this.data;
+      const nextState = this.getCalendarState(currentYear, currentMonth, selectedDate, mode);
+      
+      this.setData({
+        viewMode: mode,
+        ...nextState
+      });
     }
   },
 

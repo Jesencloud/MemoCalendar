@@ -260,13 +260,12 @@ page {
 }
 
 .memo-tag-inline {
-  padding: 6rpx 14rpx;
-  border-radius: 10rpx;
-  font-size: 20rpx;
-  font-weight: 700;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 4rpx;
+  justify-content: center;
   flex-shrink: 0;
   margin-left: auto;
 }

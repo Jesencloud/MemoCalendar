@@ -63,7 +63,6 @@
                 </view>
                 <view class="memo-tag-inline" style="background-color: {{item.color}}15; color: {{item.color}}">
                   <text class="tag-icon-small">{{item.categoryIcon}}</text>
-                  <text>{{lang === 'zh' ? item.tagCn : item.tagEn}}</text>
                 </view>
                 <!-- Drag Handle -->
                 <view

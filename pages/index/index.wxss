@@ -525,6 +525,8 @@ page {
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
+  padding: 4rpx;
+  margin: -4rpx;
 }
 
 .tag-item {

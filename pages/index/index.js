@@ -773,6 +773,8 @@ Page({
   },
 
   onSaveMemo() {
+    if (this.savingMemo) return;
+
     const { memoForm, selectedDate, memoDates, lang, text } = this.data;
     
     if (!memoForm.title.trim()) {
@@ -782,6 +784,8 @@ Page({
       });
       return;
     }
+
+    this.savingMemo = true;
 
     const category = this.data.categories.find(c => c.key === memoForm.tag) || this.data.categories[0] || CATEGORIES[0];
     
@@ -827,6 +831,7 @@ Page({
 
     this._closeModalWithData({ memoDates: updatedMemoDates }, () => {
       this.updateSelectedMemos();
+      this.savingMemo = false;
     });
   },
 

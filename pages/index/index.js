@@ -15,7 +15,7 @@ const CATEGORIES = [
   { key: 'Family', labelCn: '家庭', labelEn: 'Family', color: '#00c7be', icon: '🍼' },
   { key: 'Finance', labelCn: '财务', labelEn: 'Finance', color: '#8e8e93', icon: '💰' },
   { key: 'Reading', labelCn: '阅读', labelEn: 'Reading', color: '#d09a04', icon: '📖' },
-  { key: 'Hobby', labelCn: '爱好', labelEn: 'Hobby', color: '#ff9500', icon: '🎳️' },
+  { key: 'Hobby', labelCn: '爱好', labelEn: 'Hobby', color: '#b25c24', icon: '🎳️' },
   { key: 'Important', labelCn: '重要', labelEn: 'Important', color: '#ff3b30', icon: '❗' }
 ];
 

@@ -61,7 +61,7 @@
                   <text class="location-pin">📌</text>
                   <text class="location-text">{{item.location}}</text>
                 </view>
-                <view class="memo-tag-inline" style="background-color: {{item.color}}15; color: {{item.color}}">
+                <view class="memo-tag-inline" style="color: {{item.color}}">
                   <text class="tag-icon-small">{{item.categoryIcon}}</text>
                 </view>
                 <!-- Drag Handle -->

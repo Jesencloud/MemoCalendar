@@ -132,7 +132,7 @@ page {
   width: 100%;
   overflow: hidden;
   border-radius: 20rpx;
-  background: #ef4444;
+  background: transparent;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

@@ -162,6 +162,8 @@ Page({
       console.error('Failed to load memos from storage:', e);
       return {};
     }
+  },
+
   cleanMemosUIFields(memos) {
     if (!Array.isArray(memos)) return [];
     return memos.map(item => {
@@ -171,9 +173,18 @@ Page({
     });
   },
 
+  cleanMemoDatesUIFields(memoDates) {
+    const cleanMemoDates = {};
+    Object.keys(memoDates || {}).forEach(date => {
+      const list = memoDates[date];
+      cleanMemoDates[date] = Array.isArray(list) ? this.cleanMemosUIFields(list) : list;
+    });
+    return cleanMemoDates;
+  },
+
   saveMemosToStorage(memoDates) {
     try {
-      wx.setStorageSync('memoCalendarMemos', memoDates);
+      wx.setStorageSync('memoCalendarMemos', this.cleanMemoDatesUIFields(memoDates));
     } catch (e) {
       console.error('Failed to save memos to storage:', e);
       wx.showToast({

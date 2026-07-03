@@ -96,7 +96,8 @@ Page({
     categories: CATEGORIES,
     memoForm: Object.assign({}, DEFAULT_FORM),
     draggingId: '',
-    dragTranslateY: 0
+    dragTranslateY: 0,
+    sortOrder: 'desc'
   },
 
   onLoad(options) {
@@ -318,33 +319,21 @@ Page({
   },
 
   sortByTime() {
-    const { selectedMemos, selectedDate, memoDates, lang } = this.data;
+    const { selectedMemos, selectedDate, memoDates, lang, sortOrder } = this.data;
     if (!selectedMemos || selectedMemos.length <= 1) return;
+
+    const nextOrder = (sortOrder === 'asc') ? 'desc' : 'asc';
 
     const sorted = [...selectedMemos].sort((a, b) => {
       if (a.time && b.time) {
-        return a.time.localeCompare(b.time);
+        return nextOrder === 'asc' 
+          ? a.time.localeCompare(b.time)
+          : b.time.localeCompare(a.time);
       }
       if (a.time) return -1;
       if (b.time) return 1;
       return 0;
     });
-
-    let changed = false;
-    for (let i = 0; i < selectedMemos.length; i++) {
-      if (selectedMemos[i].id !== sorted[i].id) {
-        changed = true;
-        break;
-      }
-    }
-
-    if (!changed) {
-      wx.showToast({
-        title: lang === 'zh' ? '已按时间排序' : 'Already sorted',
-        icon: 'none'
-      });
-      return;
-    }
 
     const updatedMemoDates = Object.assign({}, memoDates);
     updatedMemoDates[selectedDate] = sorted;
@@ -354,10 +343,13 @@ Page({
     
     this.setData({
       selectedMemos: sorted,
-      memoDates: updatedMemoDates
+      memoDates: updatedMemoDates,
+      sortOrder: nextOrder
     }, () => {
       wx.showToast({
-        title: lang === 'zh' ? '排序成功' : 'Sorted',
+        title: lang === 'zh' 
+          ? (nextOrder === 'asc' ? '时间正序' : '时间倒序') 
+          : (nextOrder === 'asc' ? 'Sorted Ascending' : 'Sorted Descending'),
         icon: 'success'
       });
     });
@@ -412,7 +404,8 @@ Page({
     const todayDate = this.todayDate || this.getTodayDate();
     this.setData({
       selectedDate: date,
-      showTodayButton: date !== todayDate
+      showTodayButton: date !== todayDate,
+      sortOrder: 'desc'
     }, () => {
       this.updateSelectedMemos();
     });

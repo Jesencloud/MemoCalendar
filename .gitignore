@@ -20,3 +20,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 audits.json
+
+# WeChat Developer Tools cache folders
+/721f72c3d669066a2436ac469d0c535f/
+/93cd9e34bb963bfe4e931b6cfd89d841/

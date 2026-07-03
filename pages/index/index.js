@@ -162,24 +162,18 @@ Page({
       console.error('Failed to load memos from storage:', e);
       return {};
     }
+  cleanMemosUIFields(memos) {
+    if (!Array.isArray(memos)) return [];
+    return memos.map(item => {
+      const cleanItem = Object.assign({}, item);
+      delete cleanItem.isSwiped;
+      return cleanItem;
+    });
   },
 
   saveMemosToStorage(memoDates) {
     try {
-      const cleanMemoDates = {};
-      Object.keys(memoDates).forEach(date => {
-        const list = memoDates[date];
-        if (Array.isArray(list)) {
-          cleanMemoDates[date] = list.map(item => {
-            const cleanItem = Object.assign({}, item);
-            delete cleanItem.isSwiped;
-            return cleanItem;
-          });
-        } else {
-          cleanMemoDates[date] = list;
-        }
-      });
-      wx.setStorageSync('memoCalendarMemos', cleanMemoDates);
+      wx.setStorageSync('memoCalendarMemos', memoDates);
     } catch (e) {
       console.error('Failed to save memos to storage:', e);
       wx.showToast({
@@ -350,7 +344,7 @@ Page({
     const sorted = [...selectedMemos].sort(nextOrder === 'asc' ? compareAsc : compareDesc);
 
     const updatedMemoDates = Object.assign({}, memoDates);
-    updatedMemoDates[selectedDate] = sorted;
+    updatedMemoDates[selectedDate] = this.cleanMemosUIFields(sorted);
     
     this.saveMemosToStorage(updatedMemoDates);
     wx.vibrateShort({ type: 'light', fail: () => {} });
@@ -582,7 +576,7 @@ Page({
     const { selectedMemos, selectedDate, memoDates } = this.data;
     
     const updatedMemoDates = Object.assign({}, memoDates);
-    updatedMemoDates[selectedDate] = selectedMemos;
+    updatedMemoDates[selectedDate] = this.cleanMemosUIFields(selectedMemos);
     this.saveMemosToStorage(updatedMemoDates);
     
     this.setData({

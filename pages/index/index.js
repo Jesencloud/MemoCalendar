@@ -2,23 +2,22 @@
 const { t } = require('../../utils/i18n.js');
 
 const CATEGORIES = [
-  { key: 'Work', labelCn: '工作', labelEn: 'Work', color: '#3b82f6', icon: '🚀' },
-  { key: 'Life', labelCn: '生活', labelEn: 'Life', color: '#10b981', icon: '🏠' },
-  { key: 'Entertainment', labelCn: '娱乐', labelEn: 'Entertainment', color: '#ec4899', icon: '🎬' },
+  { key: 'Sport', labelCn: '运动', labelEn: 'Sport', color: '#f59e0b', icon: '🏋' },
   { key: 'Travel', labelCn: '旅行', labelEn: 'Travel', color: '#06b6d4', icon: '✈️' },
-  { key: 'Sport', labelCn: '运动', labelEn: 'Sport', color: '#f59e0b', icon: '🎾' },
-  { key: 'Study', labelCn: '学习', labelEn: 'Study', color: '#8b5cf6', icon: '📚' },
+  { key: 'Entertainment', labelCn: '娱乐', labelEn: 'Entertainment', color: '#ec4899', icon: '🎬' },
+  { key: 'Pet', labelCn: '宠物', labelEn: 'Pet', color: '#fbbf24', icon: '🐶' },
   { key: 'Shopping', labelCn: '购物', labelEn: 'Shopping', color: '#a855f7', icon: '🛍️' },
   { key: 'Food', labelCn: '美食', labelEn: 'Food', color: '#14b8a6', icon: '🍽️' },
   { key: 'Health', labelCn: '健康', labelEn: 'Health', color: '#22c55e', icon: '💊' },
+  { key: 'Gaming', labelCn: '游戏', labelEn: 'Gaming', color: '#fb7185', icon: '🎮' },
+  { key: 'Life', labelCn: '生活', labelEn: 'Life', color: '#10b981', icon: '🏠' },
+  { key: 'Study', labelCn: '学习', labelEn: 'Study', color: '#8b5cf6', icon: '📚' },
   { key: 'Social', labelCn: '社交', labelEn: 'Social', color: '#f472b6', icon: '🤝' },
-  { key: 'Family', labelCn: '家庭', labelEn: 'Family', color: '#fb923c', icon: '👨👩👦' },
+  { key: 'Family', labelCn: '家庭', labelEn: 'Family', color: '#fb923c', icon: '🍼' },
   { key: 'Finance', labelCn: '财务', labelEn: 'Finance', color: '#22d3ee', icon: '💰' },
   { key: 'Reading', labelCn: '阅读', labelEn: 'Reading', color: '#facc15', icon: '📖' },
-  { key: 'Gaming', labelCn: '游戏', labelEn: 'Gaming', color: '#fb7185', icon: '🎮' },
-  { key: 'Pet', labelCn: '宠物', labelEn: 'Pet', color: '#fbbf24', icon: '🐾' },
   { key: 'Hobby', labelCn: '爱好', labelEn: 'Hobby', color: '#a78bfa', icon: '🎯' },
-  { key: 'Important', labelCn: '重要', labelEn: 'Important', color: '#ef4444', icon: '⚠️' }
+  { key: 'Important', labelCn: '重要', labelEn: 'Important', color: '#ef4444', icon: '❗' }
 ];
 
 const PALETTE = [

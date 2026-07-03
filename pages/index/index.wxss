@@ -189,7 +189,7 @@ page {
   border-radius: 16rpx;
   box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.04);
   
-  /* Initial offset & transparency for slide-in parallax */
+  /* Initial offset & transparency for slide parallax */
   transform: translateX(120rpx);
   opacity: 0;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
@@ -201,29 +201,18 @@ page {
 
 .swipe-btn.btn-done {
   background: #52a373; /* Premium Sage Green */
+  transition-delay: 0s;
 }
 
 .swipe-btn.btn-delete {
   background: #d65454; /* Premium Brick Red */
-}
-
-/* Staggered entrance when revealed */
-.memo-card-wrapper.swiped .btn-done {
-  transform: translateX(0);
-  opacity: 1;
-  transition-delay: 0s;
-}
-
-.memo-card-wrapper.swiped .btn-delete {
-  transform: translateX(0);
-  opacity: 1;
   transition-delay: 0.04s; /* 40ms fluid stagger */
 }
 
-/* Swift, unified retraction when closing */
-.memo-card-wrapper:not(.swiped) .swipe-btn {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
-  transition-delay: 0s !important;
+/* Entrance when revealed */
+.memo-card-wrapper.swiped .swipe-btn {
+  transform: translateX(0);
+  opacity: 1;
 }
 
 .memo-card-completed .memo-card-main {

@@ -53,7 +53,8 @@ Component({
     weekdays: [],
     monthNames: [],
     viewMode: 'month',
-    activeRowIdx: 0
+    activeRowIdx: 0,
+    rowCount: 6
   },
 
   lifetimes: {
@@ -87,6 +88,13 @@ Component({
       const now = new Date();
       const todayDate = this.formatDate(now.getFullYear(), now.getMonth(), now.getDate());
       
+      let rowCount = 1;
+      if (viewMode === 'month') {
+        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        rowCount = Math.ceil((firstDay + daysInMonth) / 7);
+      }
+
       if (viewMode === 'week') {
         const prevWeekDate = this.getShiftedWeekDate(selectedDate, -1);
         const nextWeekDate = this.getShiftedWeekDate(selectedDate, 1);
@@ -105,7 +113,7 @@ Component({
           }
         ];
         
-        return { swiperPanels, activeRowIdx: 0 };
+        return { swiperPanels, activeRowIdx: 0, rowCount: 1 };
       } else {
         const prevMonth = this.getShiftedMonth(currentYear, currentMonth, -1);
         const nextMonth = this.getShiftedMonth(currentYear, currentMonth, 1);
@@ -132,7 +140,7 @@ Component({
           activeRowIdx = Math.floor(idx / 7);
         }
         
-        return { swiperPanels, activeRowIdx };
+        return { swiperPanels, activeRowIdx, rowCount };
       }
     },
 

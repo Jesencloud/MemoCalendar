@@ -49,23 +49,13 @@
 
 .calendar-days-viewport {
   width: 100%;
-  height: 600rpx;
   overflow: hidden;
   transition: height 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.calendar-days-viewport.week-mode {
-  height: 100rpx;
-}
-
 .calendar-swiper {
   width: 100%;
-  height: 600rpx;
   transition: height 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.calendar-swiper.week-mode {
-  height: 100rpx;
 }
 
 .weekday-header {
@@ -82,7 +72,7 @@
 }
 
 .days-grid {
-  height: 600rpx;
+  height: 100%;
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   grid-auto-rows: 100rpx;
@@ -90,18 +80,9 @@
   transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.days-grid.week-mode {
-  height: 100rpx;
-}
-
 .month-panel {
   width: 100%;
-  height: 600rpx;
-  transition: height 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.month-panel.week-mode {
-  height: 100rpx;
+  height: 100%;
 }
 
 .day-item {

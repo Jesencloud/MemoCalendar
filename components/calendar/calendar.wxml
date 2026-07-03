@@ -19,9 +19,13 @@
     </block>
   </view>
 
-  <view class="calendar-days-viewport {{viewMode === 'week' ? 'week-mode' : ''}}">
+  <view 
+    class="calendar-days-viewport {{viewMode === 'week' ? 'week-mode' : ''}}" 
+    style="height: {{viewMode === 'week' ? 100 : rowCount * 100}}rpx;"
+  >
     <swiper
       class="calendar-swiper {{viewMode === 'week' ? 'week-mode' : ''}}"
+      style="height: {{viewMode === 'week' ? 100 : rowCount * 100}}rpx;"
       current="{{swiperCurrent}}"
       duration="{{swiperDuration}}"
       easing-function="easeOutCubic"

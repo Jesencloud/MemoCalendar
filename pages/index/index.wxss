@@ -534,6 +534,7 @@ page {
   border: 2rpx solid transparent;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10rpx;
   font-size: 26rpx;
   font-weight: 500;
@@ -551,7 +552,7 @@ page {
 }
 
 .tag-text {
-  flex: 1;
+  max-width: 130rpx;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -560,6 +561,10 @@ page {
 .custom-tag-item {
   position: relative;
   padding-right: 48rpx;
+}
+
+.custom-tag-item .tag-text {
+  max-width: 100rpx;
 }
 
 .tag-delete-btn {

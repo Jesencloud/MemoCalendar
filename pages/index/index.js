@@ -327,7 +327,8 @@ Page({
     const { selectedDate, memoDates } = this.data;
     const list = memoDates[selectedDate] || [];
     // Deep clone each memo item to isolate runtime UI state from cache
-    const clonedList = list.map(item => Object.assign({}, item));
+    // Explicitly seed isSwiped: false to prevent WeChat's diff engine from caching swipe open state
+    const clonedList = list.map(item => Object.assign({ isSwiped: false }, item));
     this.setData({
       selectedMemos: clonedList
     });

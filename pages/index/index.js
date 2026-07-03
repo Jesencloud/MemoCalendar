@@ -2,42 +2,39 @@
 const { t } = require('../../utils/i18n.js');
 
 const CATEGORIES = [
-  { key: 'Sport', labelCn: '运动', labelEn: 'Sport', color: '#f59e0b', icon: '🏋' },
-  { key: 'Travel', labelCn: '旅行', labelEn: 'Travel', color: '#06b6d4', icon: '✈️' },
-  { key: 'Entertainment', labelCn: '娱乐', labelEn: 'Entertainment', color: '#ec4899', icon: '🎬' },
-  { key: 'Pet', labelCn: '宠物', labelEn: 'Pet', color: '#fbbf24', icon: '🐶' },
-  { key: 'Shopping', labelCn: '购物', labelEn: 'Shopping', color: '#a855f7', icon: '🛍️' },
-  { key: 'Food', labelCn: '美食', labelEn: 'Food', color: '#14b8a6', icon: '🍽️' },
-  { key: 'Health', labelCn: '健康', labelEn: 'Health', color: '#22c55e', icon: '💊' },
-  { key: 'Gaming', labelCn: '游戏', labelEn: 'Gaming', color: '#fb7185', icon: '🎮' },
-  { key: 'Life', labelCn: '生活', labelEn: 'Life', color: '#10b981', icon: '🏠' },
-  { key: 'Study', labelCn: '学习', labelEn: 'Study', color: '#8b5cf6', icon: '📚' },
-  { key: 'Social', labelCn: '社交', labelEn: 'Social', color: '#f472b6', icon: '🤝' },
-  { key: 'Family', labelCn: '家庭', labelEn: 'Family', color: '#fb923c', icon: '🍼' },
-  { key: 'Finance', labelCn: '财务', labelEn: 'Finance', color: '#22d3ee', icon: '💰' },
-  { key: 'Reading', labelCn: '阅读', labelEn: 'Reading', color: '#facc15', icon: '📖' },
-  { key: 'Hobby', labelCn: '爱好', labelEn: 'Hobby', color: '#a78bfa', icon: '🎯' },
-  { key: 'Important', labelCn: '重要', labelEn: 'Important', color: '#ef4444', icon: '❗' }
+  { key: 'Sport', labelCn: '运动', labelEn: 'Sport', color: '#ff9500', icon: '🏋' },
+  { key: 'Travel', labelCn: '旅行', labelEn: 'Travel', color: '#30b0c7', icon: '✈️' },
+  { key: 'Entertainment', labelCn: '娱乐', labelEn: 'Entertainment', color: '#ff2d55', icon: '🎬' },
+  { key: 'Pet', labelCn: '宠物', labelEn: 'Pet', color: '#ffcc00', icon: '🐶' },
+  { key: 'Beauty', labelCn: '美容', labelEn: 'Beauty', color: '#ff2d55', icon: '💆🏻‍♀️' },
+  { key: 'Shopping', labelCn: '购物', labelEn: 'Shopping', color: '#af52de', icon: '🛍️' },
+  { key: 'Food', labelCn: '美食', labelEn: 'Food', color: '#00c7be', icon: '🍽️' },
+  { key: 'Health', labelCn: '健康', labelEn: 'Health', color: '#34c759', icon: '💊' },
+  { key: 'Gaming', labelCn: '游戏', labelEn: 'Gaming', color: '#ff453a', icon: '🎮' },
+  { key: 'Life', labelCn: '生活', labelEn: 'Life', color: '#34c759', icon: '🏠' },
+  { key: 'Study', labelCn: '学习', labelEn: 'Study', color: '#5856d6', icon: '📚' },
+  { key: 'Social', labelCn: '社交', labelEn: 'Social', color: '#ff2d55', icon: '🤝' },
+  { key: 'Family', labelCn: '家庭', labelEn: 'Family', color: '#ff9500', icon: '🍼' },
+  { key: 'Finance', labelCn: '财务', labelEn: 'Finance', color: '#30b0c7', icon: '💰' },
+  { key: 'Reading', labelCn: '阅读', labelEn: 'Reading', color: '#d09a04', icon: '📖' },
+  { key: 'Hobby', labelCn: '爱好', labelEn: 'Hobby', color: '#af52de', icon: '🎯' },
+  { key: 'Important', labelCn: '重要', labelEn: 'Important', color: '#ff3b30', icon: '❗' }
 ];
 
 const PALETTE = [
-  '#ec4899', // Pink
-  '#f43f5e', // Rose
-  '#d946ef', // Fuchsia
-  '#a855f7', // Purple
-  '#8b5cf6', // Violet
-  '#6366f1', // Indigo
-  '#3b82f6', // Blue
-  '#0ea5e9', // Sky Blue
-  '#06b6d4', // Cyan
-  '#14b8a6', // Teal
-  '#10b981', // Emerald
-  '#22c55e', // Green
-  '#84cc16', // Lime
-  '#eab308', // Yellow
-  '#f97316', // Orange
-  '#ef4444', // Red
-  '#6b7280'  // Gray
+  '#ff3b30', // Apple Red
+  '#ff9500', // Apple Orange
+  '#ffcc00', // Apple Yellow
+  '#34c759', // Apple Green
+  '#00c7be', // Apple Mint
+  '#30b0c7', // Apple Teal
+  '#32ade6', // Apple Cyan
+  '#007aff', // Apple Blue
+  '#5856d6', // Apple Indigo
+  '#af52de', // Apple Purple
+  '#ff2d55', // Apple Pink
+  '#a2845e', // Apple Brown
+  '#8e8e93'  // Apple Gray
 ];
 
 const DEFAULT_FORM = {
@@ -46,7 +43,7 @@ const DEFAULT_FORM = {
   time: '',
   location: '',
   tag: 'Life',
-  color: '#10b981',
+  color: '#34c759',
   notes: ''
 };
 

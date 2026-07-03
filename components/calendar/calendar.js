@@ -126,7 +126,7 @@ Component({
         const fullDate = this.formatDate(year, month, i);
         const dayMemos = memoDates[fullDate] || [];
         // Map memos to unique category colors (up to 3)
-        const memoColors = Array.from(new Set(dayMemos.map(m => m.color || '#3b82f6'))).slice(0, 3);
+        const memoColors = Array.from(new Set(dayMemos.map(m => m.color || '#d09a04'))).slice(0, 3);
         const holidayInfo = CHINA_HOLIDAYS_2026[fullDate] || null;
         days.push({
           day: i,

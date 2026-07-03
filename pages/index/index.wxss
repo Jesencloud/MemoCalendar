@@ -437,8 +437,6 @@ page {
   overflow-y: auto;
   margin-bottom: 40rpx;
   -webkit-overflow-scrolling: touch; /* Momentum scrolling on iOS */
-  transform: translateZ(0); /* Enable hardware acceleration */
-  will-change: transform;
 }
 
 .form-item {
@@ -619,7 +617,6 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
   transition: background-color 0.2s ease, filter 0.2s ease;
 }
 

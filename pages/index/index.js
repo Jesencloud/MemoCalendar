@@ -40,8 +40,8 @@ const DEFAULT_FORM = {
   title: '',
   time: '',
   location: '',
-  tag: 'Life',
-  color: '#34c759',
+  tag: 'Sport',
+  color: '#ff9500',
   notes: ''
 };
 
@@ -166,7 +166,20 @@ Page({
 
   saveMemosToStorage(memoDates) {
     try {
-      wx.setStorageSync('memoCalendarMemos', memoDates);
+      const cleanMemoDates = {};
+      Object.keys(memoDates).forEach(date => {
+        const list = memoDates[date];
+        if (Array.isArray(list)) {
+          cleanMemoDates[date] = list.map(item => {
+            const cleanItem = Object.assign({}, item);
+            delete cleanItem.isSwiped;
+            return cleanItem;
+          });
+        } else {
+          cleanMemoDates[date] = list;
+        }
+      });
+      wx.setStorageSync('memoCalendarMemos', cleanMemoDates);
     } catch (e) {
       console.error('Failed to save memos to storage:', e);
       wx.showToast({
@@ -283,11 +296,11 @@ Page({
             // Reload categories
             this.loadCategories();
 
-            // If the deleted category was currently selected, reset it to Life
+            // If the deleted category was currently selected, reset it to Sport
             if (this.data.memoForm.tag === key) {
               this.setData({
-                'memoForm.tag': 'Life',
-                'memoForm.color': '#10b981'
+                'memoForm.tag': 'Sport',
+                'memoForm.color': '#ff9500'
               });
             }
 
@@ -491,6 +504,7 @@ Page({
     
     this.dragStartY = touch.clientY;
     this.dragIndex = index;
+    this.lastDragSetDataTime = 0;
     
     wx.vibrateShort({ type: 'light', fail: () => {} });
     
@@ -510,10 +524,6 @@ Page({
     if (!this.data.draggingId || !this.cardRects) return;
     const touch = e.touches[0];
     const deltaY = touch.clientY - this.dragStartY;
-    
-    this.setData({
-      dragTranslateY: deltaY
-    });
     
     // Current dragging card center position
     const currentRect = this.cardRects[this.dragIndex];
@@ -549,8 +559,18 @@ Page({
         selectedMemos: list,
         dragTranslateY: touch.clientY - this.dragStartY
       });
+      this.lastDragSetDataTime = Date.now();
       
       wx.vibrateShort({ type: 'light', fail: () => {} });
+    } else {
+      // Throttle pure translation updates to ~30fps (approx. every 32ms)
+      const now = Date.now();
+      if (now - this.lastDragSetDataTime > 32) {
+        this.setData({
+          dragTranslateY: deltaY
+        });
+        this.lastDragSetDataTime = now;
+      }
     }
   },
 
@@ -560,13 +580,7 @@ Page({
     const { selectedMemos, selectedDate, memoDates } = this.data;
     
     const updatedMemoDates = Object.assign({}, memoDates);
-    const savedList = selectedMemos.map(item => {
-      const cleanItem = Object.assign({}, item);
-      delete cleanItem.isSwiped;
-      return cleanItem;
-    });
-    
-    updatedMemoDates[selectedDate] = savedList;
+    updatedMemoDates[selectedDate] = selectedMemos;
     this.saveMemosToStorage(updatedMemoDates);
     
     this.setData({
@@ -677,9 +691,7 @@ Page({
     }
   },
 
-  stopBubble() {
-    // Suppress tap event propagation
-  },
+
 
   // Form Inputs
   onFormTitleInput(e) {
@@ -729,7 +741,7 @@ Page({
       return;
     }
 
-    const category = this.data.categories.find(c => c.key === memoForm.tag) || CATEGORIES[1];
+    const category = this.data.categories.find(c => c.key === memoForm.tag) || this.data.categories[0] || CATEGORIES[0];
     
     const memoItem = {
       id: memoForm.id || `memo-${Date.now()}-${Math.floor(Math.random() * 1000)}`,

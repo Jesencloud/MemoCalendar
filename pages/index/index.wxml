@@ -96,7 +96,7 @@
 
   <!-- Memo Edit/Add Modal -->
   <view wx:if="{{modalVisible || modalClosing}}" class="modal-mask {{modalClosing ? 'modal-closing' : ''}}">
-    <view class="modal-panel" catchtap="stopBubble">
+    <view class="modal-panel">
       <view class="modal-header">
         <text class="modal-title">{{memoForm.id ? text.editMemo : text.addMemo}}</text>
         <view class="modal-header-actions">

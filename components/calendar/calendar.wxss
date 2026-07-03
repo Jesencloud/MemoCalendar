@@ -67,7 +67,7 @@
   flex: 1;
   text-align: center;
   font-size: 24rpx;
-  color: #666;
+  color: #4b5563;
   font-weight: bold;
 }
 
@@ -256,7 +256,7 @@
   transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.fold-indicator:active .fold-line {
+.fold-indicator-hover .fold-line {
   background-color: #d09a04;
   width: 80rpx;
 }

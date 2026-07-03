@@ -29,7 +29,7 @@ page {
 .subtitle {
   display: block;
   font-size: 24rpx;
-  color: #8e8c94;
+  color: #6b7280;
   margin-top: 10rpx;
 }
 
@@ -345,7 +345,7 @@ page {
 }
 
 .no-events-text {
-  color: #9ca3af;
+  color: #6b7280;
   font-size: 26rpx;
   text-align: center;
   line-height: 1.6;
@@ -377,7 +377,7 @@ page {
 .fab-icon {
   color: #fff;
   font-size: 60rpx;
-  font-weight: 300;
+  font-weight: 500;
   line-height: 1;
   margin-top: -6rpx;
 }

@@ -162,19 +162,7 @@ Component({
       
       const memoDates = this.data.memoDates || {};
       for (let i = 1; i <= daysInMonth; i++) {
-        const fullDate = this.formatDate(year, month, i);
-        const dayMemos = memoDates[fullDate] || [];
-        const memoColors = Array.from(new Set(dayMemos.map(m => m.color || '#d09a04'))).slice(0, 3);
-        const holidayInfo = CHINA_HOLIDAYS_2026[fullDate] || null;
-        days.push({
-          day: i,
-          fullDate: fullDate,
-          dateKey: fullDate,
-          hasMemo: dayMemos.length > 0,
-          memoColors: memoColors,
-          isPast: fullDate < todayDate,
-          holidayInfo: holidayInfo
-        });
+        days.push(this.createDayItem(new Date(year, month, i), todayDate, memoDates));
       }
 
       return days;
@@ -192,22 +180,25 @@ Component({
       
       for (let i = 0; i < 7; i++) {
         const d = new Date(baseDate.year, baseDate.month, baseDate.day - dayOfWeek + i);
-        const fullDate = this.formatDate(d.getFullYear(), d.getMonth(), d.getDate());
-        const dayMemos = memoDates[fullDate] || [];
-        const memoColors = Array.from(new Set(dayMemos.map(m => m.color || '#d09a04'))).slice(0, 3);
-        const holidayInfo = CHINA_HOLIDAYS_2026[fullDate] || null;
-        
-        days.push({
-          day: d.getDate(),
-          fullDate: fullDate,
-          dateKey: fullDate,
-          hasMemo: dayMemos.length > 0,
-          memoColors: memoColors,
-          isPast: fullDate < todayDate,
-          holidayInfo: holidayInfo
-        });
+        days.push(this.createDayItem(d, todayDate, memoDates));
       }
       return days;
+    },
+
+    createDayItem(date, todayDate, memoDates) {
+      const fullDate = this.formatDate(date.getFullYear(), date.getMonth(), date.getDate());
+      const dayMemos = memoDates[fullDate] || [];
+      const memoColors = Array.from(new Set(dayMemos.map(m => m.color || '#d09a04'))).slice(0, 3);
+
+      return {
+        day: date.getDate(),
+        fullDate,
+        dateKey: fullDate,
+        hasMemo: dayMemos.length > 0,
+        memoColors,
+        isPast: fullDate < todayDate,
+        holidayInfo: CHINA_HOLIDAYS_2026[fullDate] || null
+      };
     },
 
     formatDate(year, month, day) {
@@ -256,6 +247,10 @@ Component({
       
       const d = new Date(parsed.year, parsed.month, parsed.day + offset * 7);
       return this.formatDate(d.getFullYear(), d.getMonth(), d.getDate());
+    },
+
+    vibrate() {
+      wx.vibrateShort({ type: 'light', fail: () => {} });
     },
 
     goToDate(date) {
@@ -440,7 +435,7 @@ Component({
       const { date } = e.currentTarget.dataset;
       if (!date) return;
       
-      wx.vibrateShort({ type: 'light', fail: () => {} });
+      this.vibrate();
       
       const parsed = this.parseDate(date);
       if (!parsed) return;
@@ -512,7 +507,7 @@ Component({
         ? targetMode 
         : (this.data.viewMode === 'month' ? 'week' : 'month');
         
-      wx.vibrateShort({ type: 'light', fail: () => {} });
+      this.vibrate();
       
       const { currentYear, currentMonth, selectedDate } = this.data;
       const nextState = this.getCalendarState(currentYear, currentMonth, selectedDate, mode);

@@ -232,7 +232,7 @@
   </view>
 
   <!-- Custom Category Modal -->
-  <view class="modal-mask custom-category-mask" wx:if="{{customCategoryModalVisible}}" catchtouchmove="stopBubble" style="z-index: 130;">
+  <view class="modal-mask custom-category-mask" wx:if="{{customCategoryModalVisible}}" catchtouchmove="stopBubble">
     <view class="modal-panel custom-category-panel">
       <view class="modal-header">
         <text class="modal-title">{{text.newCustomCategory}}</text>
@@ -272,7 +272,7 @@
   </view>
 
   <!-- Custom Confirmation Dialog -->
-  <view class="modal-mask custom-confirm-mask" wx:if="{{confirmDialog.visible}}" catchtouchmove="stopBubble" style="z-index: 140;">
+  <view class="modal-mask custom-confirm-mask" wx:if="{{confirmDialog.visible}}" catchtouchmove="stopBubble">
     <view class="modal-panel custom-confirm-panel">
       <view class="modal-header">
         <text class="modal-title">{{confirmDialog.title}}</text>
@@ -303,14 +303,14 @@
   </view>
 
   <!-- Data Backup & Restore Modal -->
-  <view class="modal-mask custom-confirm-mask" wx:if="{{backupModalVisible}}" catchtouchmove="stopBubble" style="z-index: 135;">
+  <view class="modal-mask custom-confirm-mask backup-mask" wx:if="{{backupModalVisible}}" catchtouchmove="stopBubble">
     <view class="modal-panel backup-panel">
       <view class="modal-header">
         <text class="modal-title">{{text.dataBackupTitle}}</text>
         <view class="modal-close" catchtap="onCloseBackupModal">×</view>
       </view>
 
-      <scroll-view scroll-y class="modal-form" style="max-height: 70vh; padding-bottom: 20rpx;">
+      <scroll-view scroll-y class="modal-form backup-form">
         <!-- Export Section -->
         <view class="backup-section">
           <text class="backup-sec-title">📤 {{text.exportData}}</text>

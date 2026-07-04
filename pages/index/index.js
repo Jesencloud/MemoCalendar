@@ -1,5 +1,6 @@
 // pages/index/index.js
 const { t } = require('../../utils/i18n.js');
+const { parseBackupData, mergeImportedData } = require('../../utils/backup.js');
 
 const CATEGORIES = [
   { key: 'Sport', labelCn: '运动', labelEn: 'Sport', color: '#ff9500', icon: '🏋' },
@@ -44,6 +45,11 @@ const DEFAULT_FORM = {
   color: '#ff9500',
   notes: '',
   completed: false
+};
+
+const STORAGE_KEYS = {
+  MEMOS: 'memoCalendarMemos',
+  CUSTOM_CATEGORIES: 'memoCustomCategories'
 };
 
 function getText(lang) {
@@ -186,10 +192,7 @@ Page({
     }, () => {
       this.updateSelectedMemos();
       if (invalidDateFromOptions) {
-        wx.showToast({
-          title: this.data.text.invalidDate,
-          icon: 'none'
-        });
+        this.showToast(this.data.text.invalidDate);
       }
     });
 
@@ -234,7 +237,7 @@ Page({
 
   loadMemosFromStorage() {
     try {
-      const memos = wx.getStorageSync('memoCalendarMemos');
+      const memos = wx.getStorageSync(STORAGE_KEYS.MEMOS);
       return memos || {};
     } catch (e) {
       console.error('Failed to load memos from storage:', e);
@@ -260,10 +263,6 @@ Page({
     return cleanMemoDates;
   },
 
-  isPlainObject(value) {
-    return Object.prototype.toString.call(value) === '[object Object]';
-  },
-
   getFormattedDateTime() {
     const now = new Date();
     const year = now.getFullYear();
@@ -285,95 +284,9 @@ Page({
     return `memo-${this.getFormattedDateTime()}-${random}`;
   },
 
-  normalizeImportedCategories(categories) {
-    if (categories === undefined || categories === null) return [];
-    if (!Array.isArray(categories)) return null;
-
-    const normalized = [];
-    const seenKeys = {};
-    categories.forEach(item => {
-      if (!this.isPlainObject(item)) return;
-
-      const key = typeof item.key === 'string' ? item.key.trim() : '';
-      const labelCn = typeof item.labelCn === 'string' ? item.labelCn.trim() : '';
-      const labelEn = typeof item.labelEn === 'string' ? item.labelEn.trim() : '';
-      if (!/^custom-[\w-]{1,64}$/.test(key) || !labelCn || !labelEn || seenKeys[key]) return;
-
-      const color = /^#[0-9a-fA-F]{6}$/.test(item.color) ? item.color : PALETTE[normalized.length % PALETTE.length];
-      normalized.push({
-        key,
-        labelCn: labelCn.slice(0, 10),
-        labelEn: labelEn.slice(0, 10),
-        color,
-        icon: typeof item.icon === 'string' && item.icon ? item.icon : '🏷️',
-        isCustom: true
-      });
-      seenKeys[key] = true;
-    });
-
-    return normalized;
-  },
-
-  normalizeImportedMemoDates(memos, categories) {
-    if (!this.isPlainObject(memos)) return null;
-
-    const categoryMap = {};
-    [...CATEGORIES, ...categories].forEach(category => {
-      categoryMap[category.key] = category;
-    });
-
-    const normalized = {};
-    const dates = Object.keys(memos);
-    for (let i = 0; i < dates.length; i += 1) {
-      const date = dates[i];
-      const dayMemos = memos[date];
-      if (!this.isValidDateString(date) || !Array.isArray(dayMemos)) return null;
-
-      const normalizedDayMemos = [];
-      for (let j = 0; j < dayMemos.length; j += 1) {
-        const memo = this.normalizeImportedMemo(dayMemos[j], categoryMap);
-        if (!memo) return null;
-        normalizedDayMemos.push(memo);
-      }
-
-      if (normalizedDayMemos.length > 0) {
-        normalized[date] = normalizedDayMemos;
-      }
-    }
-
-    return normalized;
-  },
-
-  normalizeImportedMemo(item, categoryMap) {
-    if (!this.isPlainObject(item)) return null;
-
-    const id = typeof item.id === 'string' ? item.id.trim() : '';
-    const title = typeof item.title === 'string' ? item.title.trim() : '';
-    if (!id || !title) return null;
-
-    const importedTag = typeof item.tag === 'string' && item.tag ? item.tag : 'Sport';
-    const category = categoryMap[importedTag] || CATEGORIES[0];
-    const tag = categoryMap[importedTag] ? importedTag : category.key;
-    const color = /^#[0-9a-fA-F]{6}$/.test(item.color) ? item.color : category.color;
-
-    return {
-      id,
-      title: title.slice(0, 40),
-      time: typeof item.time === 'string' ? item.time : '',
-      location: typeof item.location === 'string' ? item.location.trim().slice(0, 100) : '',
-      tag,
-      color,
-      notes: typeof item.notes === 'string' ? item.notes.trim().slice(0, 200) : '',
-      tagCn: typeof category.labelCn === 'string' ? category.labelCn : '',
-      tagEn: typeof category.labelEn === 'string' ? category.labelEn : '',
-      categoryIcon: typeof category.icon === 'string' ? category.icon : '',
-      completed: item.completed === true
-    };
-  },
-
   saveMemosToStorage(memoDates) {
     try {
-      wx.setStorageSync('memoCalendarMemos', this.cleanMemoDatesUIFields(memoDates));
+      wx.setStorageSync(STORAGE_KEYS.MEMOS, this.cleanMemoDatesUIFields(memoDates));
       return true;
     } catch (e) {
       console.error('Failed to save memos to storage:', e);
@@ -382,16 +295,21 @@ Page({
     }
   },
 
+  showToast(title, icon = 'none') {
+    wx.showToast({ title, icon });
+  },
+
+  vibrate(type = 'light') {
+    wx.vibrateShort({ type, fail: () => {} });
+  },
+
   showStorageFailureToast() {
-    wx.showToast({
-      title: this.data.text.storageFailed,
-      icon: 'none'
-    });
+    this.showToast(this.data.text.storageFailed);
   },
 
   loadCategories() {
     try {
-      const custom = wx.getStorageSync('memoCustomCategories') || [];
+      const custom = wx.getStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES) || [];
       this.setData({
         categories: [...CATEGORIES, ...custom]
       });
@@ -404,7 +322,7 @@ Page({
   },
 
   onAddCustomTag() {
-    wx.vibrateShort({ type: 'light', fail: () => {} });
+    this.vibrate();
     this.setData({
       customCategoryModalVisible: true,
       customCategoryName: ''
@@ -416,7 +334,7 @@ Page({
   },
 
   onCloseCustomCategoryModal() {
-    wx.vibrateShort({ type: 'light', fail: () => {} });
+    this.vibrate();
     this.setData({
       customCategoryModalVisible: false,
       customCategoryName: ''
@@ -428,18 +346,12 @@ Page({
     const content = this.data.customCategoryName ? this.data.customCategoryName.trim() : '';
 
     if (!content) {
-      wx.showToast({
-        title: text.categoryNameEmpty,
-        icon: 'none'
-      });
+      this.showToast(text.categoryNameEmpty);
       return;
     }
 
     if (content.length > 10) {
-      wx.showToast({
-        title: text.categoryNameTooLong,
-        icon: 'none'
-      });
+      this.showToast(text.categoryNameTooLong);
       return;
     }
 
@@ -456,16 +368,13 @@ Page({
         customCategoryModalVisible: false,
         customCategoryName: ''
       });
-      wx.showToast({
-        title: text.categoryExistsSelected,
-        icon: 'none'
-      });
+      this.showToast(text.categoryExistsSelected);
       return;
     }
 
     let custom = [];
     try {
-      custom = wx.getStorageSync('memoCustomCategories') || [];
+      custom = wx.getStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES) || [];
     } catch (e) {
       console.error('Failed to read custom categories:', e);
       this.showStorageFailureToast();
@@ -484,7 +393,7 @@ Page({
 
     custom.push(newCategory);
     try {
-      wx.setStorageSync('memoCustomCategories', custom);
+      wx.setStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES, custom);
     } catch (e) {
       console.error('Failed to save custom category:', e);
       this.showStorageFailureToast();
@@ -500,27 +409,24 @@ Page({
       customCategoryName: ''
     });
 
-    wx.vibrateShort({ type: 'medium', fail: () => {} });
-    wx.showToast({
-      title: text.created,
-      icon: 'success'
-    });
+    this.vibrate('medium');
+    this.showToast(text.created, 'success');
   },
 
   onDeleteCustomTag(e) {
     const { key, name } = e.currentTarget.dataset;
     const { text } = this.data;
 
-    wx.vibrateShort({ type: 'medium', fail: () => {} });
+    this.vibrate('medium');
     this.showConfirm({
       title: text.deleteCategoryTitle,
       content: `${text.deleteCategoryPrefix}${name}${text.deleteCategorySuffix}`,
       confirmColor: '#ef4444',
       confirm: () => {
         try {
-          const custom = wx.getStorageSync('memoCustomCategories') || [];
+          const custom = wx.getStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES) || [];
           const updated = custom.filter(c => c.key !== key);
-          wx.setStorageSync('memoCustomCategories', updated);
+          wx.setStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES, updated);
 
           // Reload categories
           this.loadCategories();
@@ -533,11 +439,8 @@ Page({
             });
           }
 
-          wx.vibrateShort({ type: 'light', fail: () => {} });
-          wx.showToast({
-            title: text.deleted,
-            icon: 'success'
-          });
+          this.vibrate();
+          this.showToast(text.deleted, 'success');
         } catch (err) {
           console.error('Failed to delete custom category:', err);
           this.showStorageFailureToast();
@@ -582,7 +485,7 @@ Page({
 
     if (!this.saveMemosToStorage(updatedMemoDates)) return;
 
-    wx.vibrateShort({ type: 'light', fail: () => {} });
+    this.vibrate();
     
     this.setData({
       selectedMemos: sorted,
@@ -590,16 +493,13 @@ Page({
       swipedMemoId: '',
       sortOrder: nextOrder
     }, () => {
-      wx.showToast({
-        title: nextOrder === 'asc' ? text.sortAsc : text.sortDesc,
-        icon: 'success'
-      });
+      this.showToast(nextOrder === 'asc' ? text.sortAsc : text.sortDesc, 'success');
     });
   },
 
   toggleLang() {
     const nextLang = this.data.lang === 'zh' ? 'en' : 'zh';
-    wx.vibrateShort({ type: 'light', fail: () => {} });
+    this.vibrate();
     this.setData({
       lang: nextLang,
       text: getText(nextLang)
@@ -649,7 +549,7 @@ Page({
     const todayDate = this.getTodayDate();
     const calendar = this.calendarCtx;
     if (calendar && calendar.goToDate) {
-      wx.vibrateShort({ type: 'light', fail: () => {} });
+      this.vibrate();
       calendar.goToDate(todayDate);
     }
 
@@ -658,10 +558,7 @@ Page({
 
   selectDate(date) {
     if (!this.isValidDateString(date)) {
-      wx.showToast({
-        title: this.data.text.invalidDate,
-        icon: 'none'
-      });
+      this.showToast(this.data.text.invalidDate);
       return;
     }
 
@@ -679,7 +576,7 @@ Page({
   // Modal Actions
   onAddMemoTap() {
     this.clearModalCloseTimer();
-    wx.vibrateShort({ type: 'light', fail: () => {} });
+    this.vibrate();
     const initialForm = Object.assign({}, DEFAULT_FORM, { id: '' });
     this.originalForm = JSON.stringify(initialForm);
     this.setData({
@@ -704,7 +601,7 @@ Page({
     const memo = dayMemos.find(m => m.id === id);
     if (!memo) return;
 
-    wx.vibrateShort({ type: 'light', fail: () => {} });
+    this.vibrate();
     this.clearModalCloseTimer();
     this.originalForm = JSON.stringify(memo);
     this.setData({
@@ -743,7 +640,7 @@ Page({
     this.dragIndex = index;
     this.lastDragSetDataTime = 0;
     
-    wx.vibrateShort({ type: 'light', fail: () => {} });
+    this.vibrate();
     
     this.setData({
       draggingId: id,
@@ -799,7 +696,7 @@ Page({
       });
       this.lastDragSetDataTime = Date.now();
       
-      wx.vibrateShort({ type: 'light', fail: () => {} });
+      this.vibrate();
     } else {
       // Throttle pure translation updates to ~30fps (approx. every 32ms)
       const now = Date.now();
@@ -843,14 +740,14 @@ Page({
     this.setData(nextData);
     
     this.cardRects = null;
-    wx.vibrateShort({ type: 'medium', fail: () => {} });
+    this.vibrate('medium');
   },
 
   onSwipeDoneTap(e) {
     const { id } = e.currentTarget.dataset;
     const { selectedDate, memoDates } = this.data;
     
-    wx.vibrateShort({ type: 'light', fail: () => {} });
+    this.vibrate();
     
     const updatedMemoDates = Object.assign({}, memoDates);
     const dayMemos = (updatedMemoDates[selectedDate] || []).map(item => {
@@ -905,13 +802,10 @@ Page({
         if (!this.saveMemosToStorage(updatedMemoDates)) return;
 
         if (options.vibrateOnSuccess) {
-          wx.vibrateShort({ type: 'medium', fail: () => {} });
+          this.vibrate('medium');
         }
 
-        wx.showToast({
-          title: text.deleted,
-          icon: 'success'
-        });
+        this.showToast(text.deleted, 'success');
 
         const dataToSet = {
           memoDates: updatedMemoDates,
@@ -940,7 +834,7 @@ Page({
   onSwipeDeleteTap(e) {
     const { id } = e.currentTarget.dataset;
 
-    wx.vibrateShort({ type: 'medium', fail: () => {} });
+    this.vibrate('medium');
     this.deleteMemoById(id, {
       clearSwipeOnCancel: true
     });
@@ -1025,7 +919,7 @@ Page({
     const category = this.data.categories.find(c => c.key === key);
     if (!category) return;
 
-    wx.vibrateShort({ type: 'light', fail: () => {} });
+    this.vibrate();
     this.setData({
       'memoForm.tag': key,
       'memoForm.color': category.color
@@ -1038,10 +932,7 @@ Page({
     const { memoForm, selectedDate, memoDates, text } = this.data;
     
     if (!memoForm.title.trim()) {
-      wx.showToast({
-        title: text.titleRequired,
-        icon: 'none'
-      });
+      this.showToast(text.titleRequired);
       return;
     }
 
@@ -1086,11 +977,8 @@ Page({
       return;
     }
 
-    wx.vibrateShort({ type: 'medium', fail: () => {} });
-    wx.showToast({
-      title: text.saved,
-      icon: 'success'
-    });
+    this.vibrate('medium');
+    this.showToast(text.saved, 'success');
 
     this._closeModalWithData({ memoDates: updatedMemoDates }, () => {
       this.updateSelectedMemos();
@@ -1128,11 +1016,11 @@ Page({
     });
   },
 
-  onConfirmDialogConfirm() {
+  closeConfirmDialog(callbackName) {
     this.setData({
       'confirmDialog.visible': false
     }, () => {
-      const callback = this.confirmCallback;
+      const callback = this[callbackName];
       this.confirmCallback = null;
       this.cancelCallback = null;
 
@@ -1145,21 +1033,12 @@ Page({
     });
   },
 
-  onConfirmDialogCancel() {
-    this.setData({
-      'confirmDialog.visible': false
-    }, () => {
-      const callback = this.cancelCallback;
-      this.confirmCallback = null;
-      this.cancelCallback = null;
+  onConfirmDialogConfirm() {
+    this.closeConfirmDialog('confirmCallback');
+  },
 
-      try {
-        if (callback) callback();
-      } finally {
-        this.confirmCallback = null;
-        this.cancelCallback = null;
-      }
-    });
+  onConfirmDialogCancel() {
+    this.closeConfirmDialog('cancelCallback');
   },
 
   onOpenBackupModal() {
@@ -1181,8 +1060,8 @@ Page({
     let memos = {};
     let categories = [];
     try {
-      memos = wx.getStorageSync('memoCalendarMemos') || {};
-      categories = wx.getStorageSync('memoCustomCategories') || [];
+      memos = wx.getStorageSync(STORAGE_KEYS.MEMOS) || {};
+      categories = wx.getStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES) || [];
     } catch (e) {
       console.error('Failed to read storage for export:', e);
       this.showStorageFailureToast();
@@ -1201,16 +1080,10 @@ Page({
     wx.setClipboardData({
       data: jsonStr,
       success: () => {
-        wx.showToast({
-          title: txt.copySuccess,
-          icon: 'success'
-        });
+        this.showToast(txt.copySuccess, 'success');
       },
       fail: () => {
-        wx.showToast({
-          title: txt.clipboardWriteFailed,
-          icon: 'none'
-        });
+        this.showToast(txt.clipboardWriteFailed);
       }
     });
   },
@@ -1221,20 +1094,14 @@ Page({
       success: (res) => {
         const text = res.data ? res.data.trim() : '';
         if (!text) {
-          wx.showToast({
-            title: txt.clipboardEmpty,
-            icon: 'none'
-          });
+          this.showToast(txt.clipboardEmpty);
           return;
         }
         // One-click clipboard import always merges for safety
         this.processImportData(text, false);
       },
       fail: () => {
-        wx.showToast({
-          title: txt.clipboardReadFailed,
-          icon: 'none'
-        });
+        this.showToast(txt.clipboardReadFailed);
       }
     });
   },
@@ -1246,10 +1113,7 @@ Page({
   onTriggerMergeImport() {
     const text = this.data.importInputText ? this.data.importInputText.trim() : '';
     if (!text) {
-      wx.showToast({
-        title: this.data.text.clipboardEmpty,
-        icon: 'none'
-      });
+      this.showToast(this.data.text.clipboardEmpty);
       return;
     }
     this.processImportData(text, false);
@@ -1258,10 +1122,7 @@ Page({
   onTriggerOverwriteImport() {
     const text = this.data.importInputText ? this.data.importInputText.trim() : '';
     if (!text) {
-      wx.showToast({
-        title: this.data.text.clipboardEmpty,
-        icon: 'none'
-      });
+      this.showToast(this.data.text.clipboardEmpty);
       return;
     }
 
@@ -1277,96 +1138,38 @@ Page({
 
   processImportData(text, isOverwrite = false) {
     const { text: txt } = this.data;
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      wx.showToast({
-        title: txt.invalidBackupFormat,
-        icon: 'none'
-      });
+    const importedData = parseBackupData(text, {
+      defaultCategories: CATEGORIES,
+      palette: PALETTE,
+      isValidDateString: this.isValidDateString.bind(this)
+    });
+    if (!importedData) {
+      this.showToast(txt.invalidBackupFormat);
       return;
     }
 
-    if (!this.isPlainObject(data) || data.app !== 'MemoCalendar') {
-      wx.showToast({
-        title: txt.invalidBackupFormat,
-        icon: 'none'
-      });
-      return;
-    }
+    let finalData = importedData;
 
-    const importedCategories = this.normalizeImportedCategories(data.categories);
-    if (!importedCategories) {
-      wx.showToast({
-        title: txt.invalidBackupFormat,
-        icon: 'none'
-      });
-      return;
-    }
-
-    const importedMemos = this.normalizeImportedMemoDates(data.memos, importedCategories);
-    if (!importedMemos) {
-      wx.showToast({
-        title: txt.invalidBackupFormat,
-        icon: 'none'
-      });
-      return;
-    }
-
-    let finalMemos = {};
-    let finalCategories = [];
-
-    if (isOverwrite) {
-      finalMemos = importedMemos;
-      finalCategories = importedCategories;
-    } else {
-      // Merge
+    if (!isOverwrite) {
       let localMemos = {};
       let localCategories = [];
       try {
-        localMemos = wx.getStorageSync('memoCalendarMemos') || {};
-        localCategories = wx.getStorageSync('memoCustomCategories') || [];
+        localMemos = wx.getStorageSync(STORAGE_KEYS.MEMOS) || {};
+        localCategories = wx.getStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES) || [];
       } catch (e) {
         console.error('Failed to read storage for merge:', e);
         this.showStorageFailureToast();
         return;
       }
 
-      finalMemos = this.cleanMemoDatesUIFields(localMemos);
-      for (const date in importedMemos) {
-        if (!Array.isArray(finalMemos[date])) {
-          finalMemos[date] = importedMemos[date];
-        } else {
-          const localDayMemos = [...finalMemos[date]];
-          const importedDayMemos = importedMemos[date];
-
-          importedDayMemos.forEach(importedItem => {
-            const index = localDayMemos.findIndex(m => m.id === importedItem.id);
-            if (index !== -1) {
-              localDayMemos[index] = importedItem;
-            } else {
-              localDayMemos.push(importedItem);
-            }
-          });
-          finalMemos[date] = localDayMemos;
-        }
-      }
-
-      finalCategories = this.normalizeImportedCategories(localCategories) || [];
-      importedCategories.forEach(importedCat => {
-        if (importedCat.key && importedCat.key.startsWith('custom-')) {
-          const exists = finalCategories.some(c => c.key === importedCat.key);
-          if (!exists) {
-            finalCategories.push(importedCat);
-          }
-        }
+      finalData = mergeImportedData(importedData, localMemos, localCategories, {
+        palette: PALETTE
       });
     }
 
     try {
-      wx.setStorageSync('memoCalendarMemos', finalMemos);
-      wx.setStorageSync('memoCustomCategories', finalCategories);
+      wx.setStorageSync(STORAGE_KEYS.MEMOS, finalData.memos);
+      wx.setStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES, finalData.categories);
     } catch (e) {
       console.error('Failed to save imported data:', e);
       this.showStorageFailureToast();
@@ -1375,15 +1178,12 @@ Page({
 
     this.loadCategories();
     this.setData({
-      memoDates: finalMemos,
+      memoDates: finalData.memos,
       backupModalVisible: false,
       importInputText: ''
     }, () => {
       this.updateSelectedMemos();
-      wx.showToast({
-        title: txt.importSuccess,
-        icon: 'success'
-      });
+      this.showToast(txt.importSuccess, 'success');
     });
   }
 });

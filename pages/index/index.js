@@ -276,6 +276,19 @@ Page({
     return `custom-${year}${month}${day}-${hours}${minutes}${seconds}${ms}`;
   },
 
+  generateMemoId() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const ms = String(now.getMilliseconds()).padStart(3, '0');
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `memo-${year}${month}${day}-${hours}${minutes}${seconds}${ms}-${random}`;
+  },
+
   normalizeImportedCategories(categories) {
     if (categories === undefined || categories === null) return [];
     if (!Array.isArray(categories)) return null;
@@ -1041,7 +1054,7 @@ Page({
     const category = this.data.categories.find(c => c.key === memoForm.tag) || this.data.categories[0] || CATEGORIES[0];
     
     const memoItem = {
-      id: memoForm.id || `memo-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: memoForm.id || this.generateMemoId(),
       title: memoForm.title.trim(),
       time: memoForm.time,
       location: memoForm.location.trim(),

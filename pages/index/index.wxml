@@ -22,7 +22,7 @@
      id="calendar"
      lang="{{lang}}"
      selectedDate="{{selectedDate}}"
-     memoDates="{{memoDates}}"
+     memoDateMeta="{{memoDateMeta}}"
      bind:selectdate="onDateSelect"
    />
 

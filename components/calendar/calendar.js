@@ -29,7 +29,7 @@ Component({
         }
       }
     },
-    memoDates: {
+    memoDateMeta: {
       type: Object,
       value: {},
       observer(newVal) {
@@ -160,9 +160,9 @@ Component({
         });
       }
       
-      const memoDates = this.data.memoDates || {};
+      const memoDateMeta = this.data.memoDateMeta || {};
       for (let i = 1; i <= daysInMonth; i++) {
-        days.push(this.createDayItem(new Date(year, month, i), todayDate, memoDates));
+        days.push(this.createDayItem(new Date(year, month, i), todayDate, memoDateMeta));
       }
 
       return days;
@@ -176,26 +176,25 @@ Component({
       const dayOfWeek = dateObj.getDay(); // 0 is Sunday
       
       const days = [];
-      const memoDates = this.data.memoDates || {};
+      const memoDateMeta = this.data.memoDateMeta || {};
       
       for (let i = 0; i < 7; i++) {
         const d = new Date(baseDate.year, baseDate.month, baseDate.day - dayOfWeek + i);
-        days.push(this.createDayItem(d, todayDate, memoDates));
+        days.push(this.createDayItem(d, todayDate, memoDateMeta));
       }
       return days;
     },
 
-    createDayItem(date, todayDate, memoDates) {
+    createDayItem(date, todayDate, memoDateMeta) {
       const fullDate = this.formatDate(date.getFullYear(), date.getMonth(), date.getDate());
-      const dayMemos = memoDates[fullDate] || [];
-      const memoColors = Array.from(new Set(dayMemos.map(m => m.color || '#d09a04'))).slice(0, 3);
+      const meta = memoDateMeta[fullDate] || {};
 
       return {
         day: date.getDate(),
         fullDate,
         dateKey: fullDate,
-        hasMemo: dayMemos.length > 0,
-        memoColors,
+        hasMemo: meta.hasMemo === true,
+        memoColors: Array.isArray(meta.memoColors) ? meta.memoColors : [],
         isPast: fullDate < todayDate,
         holidayInfo: CHINA_HOLIDAYS_2026[fullDate] || null
       };

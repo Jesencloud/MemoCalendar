@@ -135,6 +135,7 @@ Page({
     selectedDate: '',
     selectedMemos: [],
     memoDates: {}, // Structure: { 'YYYY-MM-DD': [ { id, title, time, location, tag, color, notes, tagCn, tagEn, categoryIcon } ] }
+    memoDateMeta: {},
     showTodayButton: false,
     lang: 'zh',
     text: getText('zh'),
@@ -188,7 +189,8 @@ Page({
       text: getText(lang),
       selectedDate,
       showTodayButton: selectedDate !== todayDate,
-      memoDates
+      memoDates,
+      memoDateMeta: this.createMemoDateMeta(memoDates)
     }, () => {
       this.updateSelectedMemos();
       if (invalidDateFromOptions) {
@@ -263,6 +265,50 @@ Page({
     return cleanMemoDates;
   },
 
+  cleanMemoDateUIFields(memoDates, date) {
+    const cleanMemoDates = Object.assign({}, memoDates);
+    if (Object.prototype.hasOwnProperty.call(cleanMemoDates, date) && Array.isArray(cleanMemoDates[date])) {
+      cleanMemoDates[date] = this.cleanMemosUIFields(cleanMemoDates[date]);
+    }
+    return cleanMemoDates;
+  },
+
+  createMemoDateMeta(memoDates) {
+    const memoDateMeta = {};
+    Object.keys(memoDates || {}).forEach(date => {
+      const meta = this.createMemoDateMetaItem(memoDates[date]);
+      if (meta.hasMemo) {
+        memoDateMeta[date] = meta;
+      }
+    });
+    return memoDateMeta;
+  },
+
+  createMemoDateMetaItem(dayMemos) {
+    if (!Array.isArray(dayMemos) || dayMemos.length === 0) {
+      return {
+        hasMemo: false,
+        memoColors: []
+      };
+    }
+
+    return {
+      hasMemo: true,
+      memoColors: Array.from(new Set(dayMemos.map(m => m.color || '#d09a04'))).slice(0, 3)
+    };
+  },
+
+  updateMemoDateMeta(memoDateMeta, date, dayMemos) {
+    const nextMeta = Object.assign({}, memoDateMeta);
+    const meta = this.createMemoDateMetaItem(dayMemos);
+    if (meta.hasMemo) {
+      nextMeta[date] = meta;
+    } else {
+      delete nextMeta[date];
+    }
+    return nextMeta;
+  },
+
   getFormattedDateTime() {
     const now = new Date();
     const year = now.getFullYear();
@@ -284,9 +330,12 @@ Page({
     return `memo-${this.getFormattedDateTime()}-${random}`;
   },
 
-  saveMemosToStorage(memoDates) {
+  saveMemosToStorage(memoDates, changedDate = '') {
     try {
-      wx.setStorageSync(STORAGE_KEYS.MEMOS, this.cleanMemoDatesUIFields(memoDates));
+      const cleanMemoDates = changedDate
+        ? this.cleanMemoDateUIFields(memoDates, changedDate)
+        : this.cleanMemoDatesUIFields(memoDates);
+      wx.setStorageSync(STORAGE_KEYS.MEMOS, cleanMemoDates);
       return true;
     } catch (e) {
       console.error('Failed to save memos to storage:', e);
@@ -483,13 +532,14 @@ Page({
     const updatedMemoDates = Object.assign({}, memoDates);
     updatedMemoDates[selectedDate] = this.cleanMemosUIFields(sorted);
 
-    if (!this.saveMemosToStorage(updatedMemoDates)) return;
+    if (!this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
 
     this.vibrate();
     
     this.setData({
       selectedMemos: sorted,
       memoDates: updatedMemoDates,
+      memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, sorted),
       swipedMemoId: '',
       sortOrder: nextOrder
     }, () => {
@@ -717,7 +767,7 @@ Page({
     const updatedMemoDates = Object.assign({}, memoDates);
     updatedMemoDates[selectedDate] = this.cleanMemosUIFields(selectedMemos);
 
-    const saveSucceeded = this.saveMemosToStorage(updatedMemoDates);
+    const saveSucceeded = this.saveMemosToStorage(updatedMemoDates, selectedDate);
     if (!saveSucceeded) {
       this.setData({
         draggingId: '',
@@ -734,6 +784,7 @@ Page({
       draggingId: '',
       dragTranslateY: 0,
       memoDates: updatedMemoDates,
+      memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, selectedMemos),
       sortOrder: 'desc'
     };
 
@@ -760,10 +811,11 @@ Page({
     
     updatedMemoDates[selectedDate] = this.cleanMemosUIFields(dayMemos);
 
-    if (!this.saveMemosToStorage(updatedMemoDates)) return;
+    if (!this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
 
     this.setData({
-      memoDates: updatedMemoDates
+      memoDates: updatedMemoDates,
+      memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, updatedMemoDates[selectedDate])
     }, () => {
       this.updateSelectedMemos();
     });
@@ -799,7 +851,7 @@ Page({
       confirm: () => {
         const updatedMemoDates = this.removeMemoFromDate(memoDates, selectedDate, id);
         if (!updatedMemoDates) return;
-        if (!this.saveMemosToStorage(updatedMemoDates)) return;
+        if (!this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
 
         if (options.vibrateOnSuccess) {
           this.vibrate('medium');
@@ -809,6 +861,7 @@ Page({
 
         const dataToSet = {
           memoDates: updatedMemoDates,
+          memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, updatedMemoDates[selectedDate]),
           swipedMemoId: ''
         };
 
@@ -972,7 +1025,7 @@ Page({
 
     updatedMemoDates[selectedDate] = dayMemos;
 
-    if (!this.saveMemosToStorage(updatedMemoDates)) {
+    if (!this.saveMemosToStorage(updatedMemoDates, selectedDate)) {
       this.savingMemo = false;
       return;
     }
@@ -980,7 +1033,10 @@ Page({
     this.vibrate('medium');
     this.showToast(text.saved, 'success');
 
-    this._closeModalWithData({ memoDates: updatedMemoDates }, () => {
+    this._closeModalWithData({
+      memoDates: updatedMemoDates,
+      memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, dayMemos)
+    }, () => {
       this.updateSelectedMemos();
       this.savingMemo = false;
     });
@@ -1179,6 +1235,7 @@ Page({
     this.loadCategories();
     this.setData({
       memoDates: finalData.memos,
+      memoDateMeta: this.createMemoDateMeta(finalData.memos),
       backupModalVisible: false,
       importInputText: ''
     }, () => {

@@ -39,7 +39,7 @@ const translations = {
     created: '创建成功',
     deleted: '已删除',
     storageFailed: '存储失败',
-    inputTitlePlaceholder: '准备做什么？(必填，40字以内)',
+    inputTitlePlaceholder: '输入日程标题 (必填，40字以内)',
     inputTimePlaceholder: '选择具体时间 (选填)',
     inputLocationPlaceholder: '行程地点 (选填，100字以内)',
     inputNotesPlaceholder: '添加详细备注... (选填，200字以内)',

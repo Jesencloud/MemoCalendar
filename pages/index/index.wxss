@@ -307,9 +307,14 @@ page {
 }
 
 .memo-tag-inline {
-  font-size: 28rpx;
+  font-size: 26rpx;
+  font-weight: 500;
   flex-shrink: 0;
   margin-left: auto;
+  max-width: 180rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .memo-card-notes {

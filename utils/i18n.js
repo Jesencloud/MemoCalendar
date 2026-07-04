@@ -90,9 +90,9 @@ const translations = {
   },
   en: {
     title: 'Memo Calendar',
-    subtitle: 'Track schedules & plan life 📅',
+    subtitle: 'Track memos & plan life 📅',
     navTitle: 'Memo Calendar',
-    shareTitle: 'Memo Calendar - Track schedules & plan life',
+    shareTitle: 'Memo Calendar - Track memos & plan life',
     today: 'Today',
     events: '\'s Memos',
     noEvents: 'No memos for today. Tap the "+" button in the bottom right to add one!',
@@ -155,10 +155,10 @@ const translations = {
     backupBtn: 'Data',
     dataBackupTitle: 'Data Backup & Restore',
     exportData: 'Export Data',
-    exportDesc: 'Export all schedules and custom categories to the clipboard. You can save them in your notes or chat history.',
+    exportDesc: 'Export all memos and custom categories to the clipboard. You can save them in your notes or chat history.',
     copyBackupData: 'Copy Backup Data',
     importData: 'Import Data',
-    importDesc: 'Restore schedules from a JSON backup.',
+    importDesc: 'Restore memos from a JSON backup.',
     importFromClipboard: 'One-click Import from Clipboard',
     manualPasteLabel: 'Paste backup data manually',
     pastePlaceholder: 'Paste backup JSON string here...',
@@ -171,7 +171,7 @@ const translations = {
     invalidBackupFormat: 'Invalid backup data format',
     importSuccess: 'Data imported successfully',
     confirmOverwriteTitle: 'Confirm Overwrite',
-    confirmOverwriteDesc: 'Overwriting will permanently delete all existing local schedules. This cannot be undone! Continue?'
+    confirmOverwriteDesc: 'Overwriting will permanently delete all existing local memos. This cannot be undone! Continue?'
   }
 };
 

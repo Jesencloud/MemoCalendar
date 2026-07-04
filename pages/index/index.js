@@ -1001,7 +1001,9 @@ Page({
     }, () => {
       if (this.confirmCallback) {
         this.confirmCallback();
+        this.confirmCallback = null;
       }
+      this.cancelCallback = null;
     });
   },
 
@@ -1011,7 +1013,9 @@ Page({
     }, () => {
       if (this.cancelCallback) {
         this.cancelCallback();
+        this.cancelCallback = null;
       }
+      this.confirmCallback = null;
     });
   }
 });

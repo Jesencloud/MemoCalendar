@@ -70,7 +70,7 @@ const translations = {
     backupBtn: '数据',
     dataBackupTitle: '数据备份与还原',
     exportData: '导出数据',
-    exportDesc: '将所有日程和自定义分类打包复制到剪贴板，您可以在备忘录或聊天记录中保存它。',
+    exportDesc: '将所有日程和自定义分类打包复制到剪贴板，您可以在备忘录或聊天记录中保存备份内容。',
     copyBackupData: '复制备份数据',
     importData: '导入数据',
     importDesc: '从备份的 JSON 数据中恢复日程。',

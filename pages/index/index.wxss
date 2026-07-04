@@ -722,3 +722,30 @@ page {
   align-items: center;
   padding: 10rpx 0;
 }
+
+/* Center alignment for custom category modal */
+.custom-category-mask {
+  align-items: center;
+  padding: 0 50rpx;
+  box-sizing: border-box;
+}
+
+.custom-category-mask .custom-category-panel {
+  width: 100%;
+  max-width: 600rpx;
+  border-radius: 32rpx; /* Rounded corners on all sides */
+  padding: 40rpx;
+  margin-bottom: 240rpx; /* Offset upwards significantly to clear keyboard safely */
+  animation: modalZoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bounce-zoom animation */
+}
+
+@keyframes modalZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

@@ -229,8 +229,8 @@
   </view>
 
   <!-- Custom Category Modal -->
-  <view class="modal-mask" wx:if="{{customCategoryModalVisible}}" catchtouchmove="stopBubble" style="z-index: 130;">
-    <view class="modal-panel">
+  <view class="modal-mask custom-category-mask" wx:if="{{customCategoryModalVisible}}" catchtouchmove="stopBubble" style="z-index: 130;">
+    <view class="modal-panel custom-category-panel">
       <view class="modal-header">
         <text class="modal-title">{{lang === 'zh' ? '新建自定义分类' : 'New Custom Category'}}</text>
       </view>

@@ -1,6 +1,11 @@
 // pages/index/index.js
 const { t } = require('../../utils/i18n.js');
-const { parseBackupData, mergeImportedData } = require('../../utils/backup.js');
+const {
+  parseBackupData,
+  mergeImportedData,
+  cleanMemosUIFields,
+  cleanMemoDatesUIFields
+} = require('../../utils/backup.js');
 
 const CATEGORIES = [
   { key: 'Sport', labelCn: '运动', labelEn: 'Sport', color: '#ff9500', icon: '🏋' },
@@ -150,6 +155,7 @@ Page({
     importInputText: '',
     importingData: false,
     exportingData: false,
+    backupBusy: false,
     confirmDialog: {
       visible: false,
       title: '',
@@ -332,28 +338,10 @@ Page({
     }
   },
 
-  cleanMemosUIFields(memos) {
-    if (!Array.isArray(memos)) return [];
-    return memos.map(item => {
-      const cleanItem = Object.assign({}, item);
-      delete cleanItem.isSwiped;
-      return cleanItem;
-    });
-  },
-
-  cleanMemoDatesUIFields(memoDates) {
-    const cleanMemoDates = {};
-    Object.keys(memoDates || {}).forEach(date => {
-      const list = memoDates[date];
-      cleanMemoDates[date] = Array.isArray(list) ? this.cleanMemosUIFields(list) : list;
-    });
-    return cleanMemoDates;
-  },
-
   cleanMemoDateUIFields(memoDates, date) {
     const cleanMemoDates = Object.assign({}, memoDates);
     if (Object.prototype.hasOwnProperty.call(cleanMemoDates, date) && Array.isArray(cleanMemoDates[date])) {
-      cleanMemoDates[date] = this.cleanMemosUIFields(cleanMemoDates[date]);
+      cleanMemoDates[date] = cleanMemosUIFields(cleanMemoDates[date]);
     }
     return cleanMemoDates;
   },
@@ -419,7 +407,7 @@ Page({
     try {
       const cleanMemoDates = changedDate
         ? this.cleanMemoDateUIFields(memoDates, changedDate)
-        : this.cleanMemoDatesUIFields(memoDates);
+        : cleanMemoDatesUIFields(memoDates);
       await this.setStorage(STORAGE_KEYS.MEMOS, cleanMemoDates);
       return true;
     } catch (e) {
@@ -441,16 +429,24 @@ Page({
     this.showToast(this.data.text.storageFailed);
   },
 
-  startImportingData() {
-    if (this.importingData) return false;
-    this.importingData = true;
-    this.setData({ importingData: true });
+  setBusyState(key, value) {
+    this[key] = value;
+    const data = { [key]: value };
+    if (key === 'importingData' || key === 'exportingData') {
+      data.backupBusy = (key === 'importingData' ? value : this.importingData) ||
+        (key === 'exportingData' ? value : this.exportingData);
+    }
+    this.setData(data);
+  },
+
+  startBusyState(key) {
+    if (this[key]) return false;
+    this.setBusyState(key, true);
     return true;
   },
 
-  finishImportingData() {
-    this.importingData = false;
-    this.setData({ importingData: false });
+  finishBusyState(key) {
+    this.setBusyState(key, false);
   },
 
   async loadCategories() {
@@ -522,8 +518,7 @@ Page({
       return;
     }
 
-    this.savingCategory = true;
-    this.setData({ savingCategory: true });
+    if (!this.startBusyState('savingCategory')) return;
 
     try {
       let custom = [];
@@ -566,8 +561,7 @@ Page({
       this.vibrate('medium');
       this.showToast(text.created, 'success');
     } finally {
-      this.savingCategory = false;
-      this.setData({ savingCategory: false });
+      this.finishBusyState('savingCategory');
     }
   },
 
@@ -611,7 +605,7 @@ Page({
     const { selectedDate, memoDates } = this.data;
     const list = memoDates[selectedDate] || [];
     this.setData({
-      selectedMemos: this.cleanMemosUIFields(list),
+      selectedMemos: cleanMemosUIFields(list),
       swipedMemoId: ''
     });
   },
@@ -639,7 +633,7 @@ Page({
     const sorted = [...selectedMemos].sort(nextOrder === 'asc' ? compareAsc : compareDesc);
 
     const updatedMemoDates = Object.assign({}, memoDates);
-    updatedMemoDates[selectedDate] = this.cleanMemosUIFields(sorted);
+    updatedMemoDates[selectedDate] = cleanMemosUIFields(sorted);
 
     if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
 
@@ -880,7 +874,7 @@ Page({
     const { selectedMemos, selectedDate, memoDates } = this.data;
     
     const updatedMemoDates = Object.assign({}, memoDates);
-    updatedMemoDates[selectedDate] = this.cleanMemosUIFields(selectedMemos);
+    updatedMemoDates[selectedDate] = cleanMemosUIFields(selectedMemos);
 
     const saveSucceeded = await this.saveMemosToStorage(updatedMemoDates, selectedDate);
     if (!saveSucceeded) {
@@ -926,7 +920,7 @@ Page({
       return cleanItem;
     });
     
-    updatedMemoDates[selectedDate] = this.cleanMemosUIFields(dayMemos);
+    updatedMemoDates[selectedDate] = cleanMemosUIFields(dayMemos);
 
     if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
 
@@ -1106,8 +1100,7 @@ Page({
       return;
     }
 
-    this.savingMemo = true;
-    this.setData({ savingMemo: true });
+    if (!this.startBusyState('savingMemo')) return;
 
     const category = this.data.categories.find(c => c.key === memoForm.tag) || this.data.categories[0] || CATEGORIES[0];
     
@@ -1144,8 +1137,7 @@ Page({
     updatedMemoDates[selectedDate] = dayMemos;
 
     if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) {
-      this.savingMemo = false;
-      this.setData({ savingMemo: false });
+      this.finishBusyState('savingMemo');
       return;
     }
 
@@ -1157,8 +1149,7 @@ Page({
       memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, dayMemos)
     }, () => {
       this.updateSelectedMemos();
-      this.savingMemo = false;
-      this.setData({ savingMemo: false });
+      this.finishBusyState('savingMemo');
     });
   },
 
@@ -1241,22 +1232,18 @@ Page({
   },
 
   async onExportData() {
-    if (this.exportingData) return;
-
-    this.exportingData = true;
-    this.setData({ exportingData: true });
+    if (!this.startBusyState('exportingData')) return;
 
     try {
       const { text: txt } = this.data;
-      const memos = await this.getStorage(STORAGE_KEYS.MEMOS, {});
-      const categories = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
+      const snapshot = await this.getBackupStorageSnapshot();
 
       const backupData = {
         version: 1,
         app: 'MemoCalendar',
         exportAt: new Date().toISOString(),
-        memos,
-        categories
+        memos: snapshot.memos,
+        categories: snapshot.categories
       };
 
       const jsonStr = JSON.stringify(backupData, null, 2);
@@ -1271,13 +1258,12 @@ Page({
       console.error('Failed to read storage for export:', e);
       this.showStorageFailureToast();
     } finally {
-      this.exportingData = false;
-      this.setData({ exportingData: false });
+      this.finishBusyState('exportingData');
     }
   },
 
   onImportFromClipboard() {
-    if (!this.startImportingData()) return;
+    if (!this.startBusyState('importingData')) return;
 
     const { text: txt } = this.data;
     wx.getClipboardData({
@@ -1285,7 +1271,7 @@ Page({
         const text = res.data ? res.data.trim() : '';
         if (!text) {
           this.showToast(txt.clipboardEmpty);
-          this.finishImportingData();
+          this.finishBusyState('importingData');
           return;
         }
         // One-click clipboard import always merges for safety
@@ -1293,7 +1279,7 @@ Page({
       },
       fail: () => {
         this.showToast(txt.clipboardReadFailed);
-        this.finishImportingData();
+        this.finishBusyState('importingData');
       }
     });
   },
@@ -1333,7 +1319,7 @@ Page({
   },
 
   async processImportData(text, isOverwrite = false, lockAcquired = false) {
-    if (!lockAcquired && !this.startImportingData()) return;
+    if (!lockAcquired && !this.startBusyState('importingData')) return;
 
     const { text: txt } = this.data;
     try {
@@ -1378,7 +1364,7 @@ Page({
       console.error('Failed to import data:', e);
       this.showStorageFailureToast();
     } finally {
-      this.finishImportingData();
+      this.finishBusyState('importingData');
     }
   }
 });

@@ -188,6 +188,8 @@ function mergeImportedData(importedData, localMemos = {}, localCategories = [], 
 module.exports = {
   parseBackupData,
   mergeImportedData,
+  cleanMemosUIFields,
+  cleanMemoDatesUIFields,
   normalizeImportedCategories,
   normalizeImportedMemoDates,
   normalizeImportedMemo

@@ -228,4 +228,44 @@
     </view>
   </view>
 
+  <!-- Custom Category Modal -->
+  <view class="modal-mask" wx:if="{{customCategoryModalVisible}}" catchtouchmove="stopBubble" style="z-index: 130;">
+    <view class="modal-panel">
+      <view class="modal-header">
+        <text class="modal-title">{{lang === 'zh' ? '新建自定义分类' : 'New Custom Category'}}</text>
+      </view>
+      
+      <scroll-view scroll-y class="modal-form" style="padding-bottom: 20rpx;">
+        <view class="form-item">
+          <input
+            class="input-title"
+            placeholder="{{lang === 'zh' ? '输入分类名称 (10字以内)' : 'Category name (max 10 chars)'}}"
+            value="{{customCategoryName}}"
+            bindinput="onCustomCategoryNameInput"
+            maxlength="10"
+            cursor-spacing="20"
+            focus="{{customCategoryModalVisible}}"
+          />
+        </view>
+      </scroll-view>
+      
+      <view class="modal-actions">
+        <view
+          class="modal-btn btn-cancel"
+          hover-class="btn-cancel-hover"
+          catchtap="onCloseCustomCategoryModal"
+        >
+          {{text.cancel}}
+        </view>
+        <view
+          class="modal-btn btn-save"
+          hover-class="btn-save-hover"
+          catchtap="onSaveCustomCategory"
+        >
+          {{lang === 'zh' ? '确定' : 'Confirm'}}
+        </view>
+      </view>
+    </view>
+  </view>
+
 </view>

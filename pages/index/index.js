@@ -88,6 +88,8 @@ Page({
     text: getText('zh'),
     modalVisible: false,
     modalClosing: false,
+    customCategoryModalVisible: false,
+    customCategoryName: '',
     categories: CATEGORIES,
     memoForm: Object.assign({}, DEFAULT_FORM),
     draggingId: '',
@@ -218,76 +220,91 @@ Page({
   },
 
   onAddCustomTag() {
-    const { lang } = this.data;
     wx.vibrateShort({ type: 'light', fail: () => {} });
-    wx.showModal({
-      title: lang === 'zh' ? '新建自定义分类' : 'New Custom Category',
-      placeholderText: lang === 'zh' ? '输入分类名称 (10字以内)' : 'Category name (max 10 chars)',
-      editable: true,
-      success: (res) => {
-        if (res.confirm) {
-          const content = res.content ? res.content.trim() : '';
-          if (!content) {
-            wx.showToast({
-              title: lang === 'zh' ? '分类名称不能为空' : 'Name cannot be empty',
-              icon: 'none'
-            });
-            return;
-          }
+    this.setData({
+      customCategoryModalVisible: true,
+      customCategoryName: ''
+    });
+  },
 
-          if (content.length > 10) {
-            wx.showToast({
-              title: lang === 'zh' ? '长度超出10个字' : 'Too long (max 10 chars)',
-              icon: 'none'
-            });
-            return;
-          }
+  onCustomCategoryNameInput(e) {
+    this.data.customCategoryName = e.detail.value;
+  },
 
-          // Check duplicate
-          const existing = this.data.categories.find(
-            c => c.labelCn.toLowerCase() === content.toLowerCase() ||
-                 c.labelEn.toLowerCase() === content.toLowerCase()
-          );
+  onCloseCustomCategoryModal() {
+    wx.vibrateShort({ type: 'light', fail: () => {} });
+    this.setData({
+      customCategoryModalVisible: false,
+      customCategoryName: ''
+    });
+  },
 
-          if (existing) {
-            this.setData({
-              'memoForm.tag': existing.key,
-              'memoForm.color': existing.color
-            });
-            wx.showToast({
-              title: lang === 'zh' ? '分类已存在，已为你自动选中' : 'Category exists, selected',
-              icon: 'none'
-            });
-            return;
-          }
+  onSaveCustomCategory() {
+    const { lang } = this.data;
+    const content = this.data.customCategoryName ? this.data.customCategoryName.trim() : '';
+    
+    if (!content) {
+      wx.showToast({
+        title: lang === 'zh' ? '分类名称不能为空' : 'Name cannot be empty',
+        icon: 'none'
+      });
+      return;
+    }
 
-          const custom = wx.getStorageSync('memoCustomCategories') || [];
-          const selectedColor = PALETTE[custom.length % PALETTE.length];
-          const newCategory = {
-            key: `custom-${Date.now()}`,
-            labelCn: content,
-            labelEn: content,
-            color: selectedColor,
-            icon: '🏷️',
-            isCustom: true
-          };
+    if (content.length > 10) {
+      wx.showToast({
+        title: lang === 'zh' ? '长度超出10个字' : 'Too long (max 10 chars)',
+        icon: 'none'
+      });
+      return;
+    }
 
-          custom.push(newCategory);
-          wx.setStorageSync('memoCustomCategories', custom);
-          this.loadCategories();
+    // Check duplicate
+    const existing = this.data.categories.find(
+      c => c.labelCn.toLowerCase() === content.toLowerCase() ||
+           c.labelEn.toLowerCase() === content.toLowerCase()
+    );
 
-          this.setData({
-            'memoForm.tag': newCategory.key,
-            'memoForm.color': newCategory.color
-          });
+    if (existing) {
+      this.setData({
+        'memoForm.tag': existing.key,
+        'memoForm.color': existing.color,
+        customCategoryModalVisible: false,
+        customCategoryName: ''
+      });
+      wx.showToast({
+        title: lang === 'zh' ? '分类已存在，已为你自动选中' : 'Category exists, selected',
+        icon: 'none'
+      });
+      return;
+    }
 
-          wx.vibrateShort({ type: 'medium', fail: () => {} });
-          wx.showToast({
-            title: lang === 'zh' ? '创建成功' : 'Created',
-            icon: 'success'
-          });
-        }
-      }
+    const custom = wx.getStorageSync('memoCustomCategories') || [];
+    const selectedColor = PALETTE[custom.length % PALETTE.length];
+    const newCategory = {
+      key: `custom-${Date.now()}`,
+      labelCn: content,
+      labelEn: content,
+      color: selectedColor,
+      icon: '🏷️',
+      isCustom: true
+    };
+
+    custom.push(newCategory);
+    wx.setStorageSync('memoCustomCategories', custom);
+    this.loadCategories();
+
+    this.setData({
+      'memoForm.tag': newCategory.key,
+      'memoForm.color': newCategory.color,
+      customCategoryModalVisible: false,
+      customCategoryName: ''
+    });
+
+    wx.vibrateShort({ type: 'medium', fail: () => {} });
+    wx.showToast({
+      title: lang === 'zh' ? '创建成功' : 'Created',
+      icon: 'success'
     });
   },
 

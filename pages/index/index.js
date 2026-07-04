@@ -6,48 +6,25 @@ const {
   cleanMemosUIFields,
   cleanMemoDatesUIFields
 } = require('../../utils/backup.js');
-
-const CATEGORIES = [
-  { key: 'Sport', labelCn: '运动', labelEn: 'Sport', color: '#ff9500', icon: '🏋' },
-  { key: 'Travel', labelCn: '旅行', labelEn: 'Travel', color: '#32ade6', icon: '✈️' },
-  { key: 'Social', labelCn: '社交', labelEn: 'Social', color: '#ff2d55', icon: '🥂' },
-  { key: 'Pet', labelCn: '宠物', labelEn: 'Pet', color: '#a2845e', icon: '🐶' },
-  { key: 'Beauty', labelCn: '美容', labelEn: 'Beauty', color: '#af52de', icon: '💆🏻‍♀️' },
-  { key: 'Shopping', labelCn: '购物', labelEn: 'Shopping', color: '#007aff', icon: '🛍️' },
-  { key: 'Food', labelCn: '美食', labelEn: 'Food', color: '#ffcc00', icon: '🍽️' },
-  { key: 'Health', labelCn: '健康', labelEn: 'Health', color: '#34c759', icon: '💊' },
-  { key: 'Gaming', labelCn: '游戏', labelEn: 'Gaming', color: '#5856d6', icon: '🎮' },
-  { key: 'Study', labelCn: '学习', labelEn: 'Study', color: '#30b0c7', icon: '📚' },
-  { key: 'Family', labelCn: '家庭', labelEn: 'Family', color: '#00c7be', icon: '🍼' },
-  { key: 'Finance', labelCn: '财务', labelEn: 'Finance', color: '#8e8e93', icon: '💰' },
-  { key: 'Reading', labelCn: '阅读', labelEn: 'Reading', color: '#d09a04', icon: '📖' },
-  { key: 'Hobby', labelCn: '爱好', labelEn: 'Hobby', color: '#b25c24', icon: '🎳️' },
-  { key: 'Important', labelCn: '重要', labelEn: 'Important', color: '#ff3b30', icon: '❗' }
-];
-
-const PALETTE = [
-  '#ff3b30', // Apple Red
-  '#ff9500', // Apple Orange
-  '#ffcc00', // Apple Yellow
-  '#34c759', // Apple Green
-  '#00c7be', // Apple Mint
-  '#30b0c7', // Apple Teal
-  '#32ade6', // Apple Cyan
-  '#007aff', // Apple Blue
-  '#5856d6', // Apple Indigo
-  '#af52de', // Apple Purple
-  '#ff2d55', // Apple Pink
-  '#a2845e', // Apple Brown
-  '#8e8e93'  // Apple Gray
-];
+const {
+  DEFAULT_CATEGORIES,
+  DEFAULT_CATEGORY,
+  CATEGORY_PALETTE,
+  mergeCategories,
+  findCategoryByKey,
+  findCategoryByName,
+  resolveCategory,
+  getNextCategoryColor,
+  createCustomCategory
+} = require('../../utils/categories.js');
 
 const DEFAULT_FORM = {
   id: '',
   title: '',
   time: '',
   location: '',
-  tag: 'Sport',
-  color: '#ff9500',
+  tag: DEFAULT_CATEGORY.key,
+  color: DEFAULT_CATEGORY.color,
   notes: '',
   completed: false
 };
@@ -163,7 +140,7 @@ Page({
       cancelText: '',
       confirmColor: ''
     },
-    categories: CATEGORIES,
+    categories: DEFAULT_CATEGORIES,
     memoForm: Object.assign({}, DEFAULT_FORM),
     memoNotesLength: 0,
     swipedMemoId: '',
@@ -447,12 +424,12 @@ Page({
     try {
       const custom = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
       this.setData({
-        categories: [...CATEGORIES, ...custom]
+        categories: mergeCategories(custom)
       });
     } catch (e) {
       console.error('Failed to load custom categories:', e);
       this.setData({
-        categories: CATEGORIES
+        categories: DEFAULT_CATEGORIES
       });
     }
   },
@@ -495,11 +472,7 @@ Page({
       return;
     }
 
-    // Check duplicate
-    const existing = this.data.categories.find(
-      c => c.labelCn.toLowerCase() === content.toLowerCase() ||
-           c.labelEn.toLowerCase() === content.toLowerCase()
-    );
+    const existing = findCategoryByName(this.data.categories, content);
 
     if (existing) {
       this.setData({
@@ -524,15 +497,11 @@ Page({
         return;
       }
 
-      const selectedColor = PALETTE[custom.length % PALETTE.length];
-      const newCategory = {
-        key: this.generateCategoryKey(),
-        labelCn: content,
-        labelEn: content,
-        color: selectedColor,
-        icon: '🏷️',
-        isCustom: true
-      };
+      const newCategory = createCustomCategory(
+        this.generateCategoryKey(),
+        content,
+        getNextCategoryColor(custom)
+      );
 
       custom.push(newCategory);
       try {
@@ -577,11 +546,11 @@ Page({
           // Reload categories
           await this.loadCategories();
 
-          // If the deleted category was currently selected, reset it to Sport
+          // If the deleted category was currently selected, reset it to the default category.
           if (this.data.memoForm.tag === key) {
             this.setData({
-              'memoForm.tag': 'Sport',
-              'memoForm.color': '#ff9500'
+              'memoForm.tag': DEFAULT_CATEGORY.key,
+              'memoForm.color': DEFAULT_CATEGORY.color
             });
           }
 
@@ -1074,7 +1043,7 @@ Page({
 
   onSelectTag(e) {
     const { key } = e.currentTarget.dataset;
-    const category = this.data.categories.find(c => c.key === key);
+    const category = findCategoryByKey(this.data.categories, key);
     if (!category) return;
 
     this.vibrate();
@@ -1096,7 +1065,7 @@ Page({
 
     if (!this.startBusyState('savingMemo')) return;
 
-    const category = this.data.categories.find(c => c.key === memoForm.tag) || this.data.categories[0] || CATEGORIES[0];
+    const category = resolveCategory(this.data.categories, memoForm.tag);
     
     const memoItem = {
       id: memoForm.id || this.generateMemoId(),
@@ -1318,8 +1287,8 @@ Page({
     const { text: txt } = this.data;
     try {
       const importedData = parseBackupData(text, {
-        defaultCategories: CATEGORIES,
-        palette: PALETTE,
+        defaultCategories: DEFAULT_CATEGORIES,
+        palette: CATEGORY_PALETTE,
         isValidDateString: this.isValidDateString.bind(this)
       });
       if (!importedData) {
@@ -1339,7 +1308,7 @@ Page({
       const finalData = isOverwrite
         ? importedData
         : mergeImportedData(importedData, previousData.memos, previousData.categories, {
-          palette: PALETTE
+          palette: CATEGORY_PALETTE
         });
 
       if (!await this.saveImportedDataSafely(finalData, previousData)) return;

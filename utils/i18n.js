@@ -4,7 +4,7 @@
 
 const translations = {
   zh: {
-    title: '备忘日历',
+    title: '备忘录日历',
     subtitle: '记录日程，规划生活 📅',
     navTitle: '备忘录日历',
     shareTitle: '备忘录日历 - 记录日程规划生活',

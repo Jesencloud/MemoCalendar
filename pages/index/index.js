@@ -264,6 +264,18 @@ Page({
     return Object.prototype.toString.call(value) === '[object Object]';
   },
 
+  generateCategoryKey() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const ms = String(now.getMilliseconds()).padStart(3, '0');
+    return `custom-${year}${month}${day}-${hours}${minutes}${seconds}${ms}`;
+  },
+
   normalizeImportedCategories(categories) {
     if (categories === undefined || categories === null) return [];
     if (!Array.isArray(categories)) return null;
@@ -453,7 +465,7 @@ Page({
 
     const selectedColor = PALETTE[custom.length % PALETTE.length];
     const newCategory = {
-      key: `custom-${Date.now()}`,
+      key: this.generateCategoryKey(),
       labelCn: content,
       labelEn: content,
       color: selectedColor,

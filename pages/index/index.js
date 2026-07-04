@@ -1176,7 +1176,7 @@ Page({
       categories
     };
 
-    const jsonStr = JSON.stringify(backupData);
+    const jsonStr = JSON.stringify(backupData, null, 2);
     wx.setClipboardData({
       data: jsonStr,
       success: () => {

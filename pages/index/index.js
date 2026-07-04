@@ -144,8 +144,12 @@ Page({
     modalClosing: false,
     customCategoryModalVisible: false,
     customCategoryName: '',
+    savingMemo: false,
+    savingCategory: false,
     backupModalVisible: false,
     importInputText: '',
+    importingData: false,
+    exportingData: false,
     confirmDialog: {
       visible: false,
       title: '',
@@ -278,6 +282,56 @@ Page({
     });
   },
 
+  setClipboardData(data) {
+    return new Promise((resolve, reject) => {
+      wx.setClipboardData({
+        data,
+        success: resolve,
+        fail: reject
+      });
+    });
+  },
+
+  async getBackupStorageSnapshot() {
+    const [memos, categories] = await Promise.all([
+      this.getStorage(STORAGE_KEYS.MEMOS, {}),
+      this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, [])
+    ]);
+    return {
+      memos: memos || {},
+      categories: Array.isArray(categories) ? categories : []
+    };
+  },
+
+  async rollbackBackupStorage(snapshot) {
+    const errors = [];
+    await Promise.all([
+      this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, snapshot.categories).catch(err => {
+        errors.push(err);
+      }),
+      this.setStorage(STORAGE_KEYS.MEMOS, snapshot.memos).catch(err => {
+        errors.push(err);
+      })
+    ]);
+
+    if (errors.length > 0) {
+      console.error('Failed to rollback imported data:', errors);
+    }
+  },
+
+  async saveImportedDataSafely(finalData, previousData) {
+    try {
+      await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, finalData.categories);
+      await this.setStorage(STORAGE_KEYS.MEMOS, finalData.memos);
+      return true;
+    } catch (e) {
+      console.error('Failed to save imported data:', e);
+      await this.rollbackBackupStorage(previousData);
+      this.showStorageFailureToast();
+      return false;
+    }
+  },
+
   cleanMemosUIFields(memos) {
     if (!Array.isArray(memos)) return [];
     return memos.map(item => {
@@ -387,6 +441,18 @@ Page({
     this.showToast(this.data.text.storageFailed);
   },
 
+  startImportingData() {
+    if (this.importingData) return false;
+    this.importingData = true;
+    this.setData({ importingData: true });
+    return true;
+  },
+
+  finishImportingData() {
+    this.importingData = false;
+    this.setData({ importingData: false });
+  },
+
   async loadCategories() {
     try {
       const custom = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
@@ -414,6 +480,8 @@ Page({
   },
 
   onCloseCustomCategoryModal() {
+    if (this.savingCategory) return;
+
     this.vibrate();
     this.setData({
       customCategoryModalVisible: false,
@@ -422,6 +490,8 @@ Page({
   },
 
   async onSaveCustomCategory() {
+    if (this.savingCategory) return;
+
     const { text } = this.data;
     const content = this.data.customCategoryName ? this.data.customCategoryName.trim() : '';
 
@@ -452,45 +522,53 @@ Page({
       return;
     }
 
-    let custom = [];
+    this.savingCategory = true;
+    this.setData({ savingCategory: true });
+
     try {
-      custom = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
-    } catch (e) {
-      console.error('Failed to read custom categories:', e);
-      this.showStorageFailureToast();
-      return;
+      let custom = [];
+      try {
+        custom = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
+      } catch (e) {
+        console.error('Failed to read custom categories:', e);
+        this.showStorageFailureToast();
+        return;
+      }
+
+      const selectedColor = PALETTE[custom.length % PALETTE.length];
+      const newCategory = {
+        key: this.generateCategoryKey(),
+        labelCn: content,
+        labelEn: content,
+        color: selectedColor,
+        icon: '🏷️',
+        isCustom: true
+      };
+
+      custom.push(newCategory);
+      try {
+        await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, custom);
+      } catch (e) {
+        console.error('Failed to save custom category:', e);
+        this.showStorageFailureToast();
+        return;
+      }
+
+      await this.loadCategories();
+
+      this.setData({
+        'memoForm.tag': newCategory.key,
+        'memoForm.color': newCategory.color,
+        customCategoryModalVisible: false,
+        customCategoryName: ''
+      });
+
+      this.vibrate('medium');
+      this.showToast(text.created, 'success');
+    } finally {
+      this.savingCategory = false;
+      this.setData({ savingCategory: false });
     }
-
-    const selectedColor = PALETTE[custom.length % PALETTE.length];
-    const newCategory = {
-      key: this.generateCategoryKey(),
-      labelCn: content,
-      labelEn: content,
-      color: selectedColor,
-      icon: '🏷️',
-      isCustom: true
-    };
-
-    custom.push(newCategory);
-    try {
-      await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, custom);
-    } catch (e) {
-      console.error('Failed to save custom category:', e);
-      this.showStorageFailureToast();
-      return;
-    }
-
-    this.loadCategories();
-
-    this.setData({
-      'memoForm.tag': newCategory.key,
-      'memoForm.color': newCategory.color,
-      customCategoryModalVisible: false,
-      customCategoryName: ''
-    });
-
-    this.vibrate('medium');
-    this.showToast(text.created, 'success');
   },
 
   onDeleteCustomTag(e) {
@@ -1029,6 +1107,7 @@ Page({
     }
 
     this.savingMemo = true;
+    this.setData({ savingMemo: true });
 
     const category = this.data.categories.find(c => c.key === memoForm.tag) || this.data.categories[0] || CATEGORIES[0];
     
@@ -1066,6 +1145,7 @@ Page({
 
     if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) {
       this.savingMemo = false;
+      this.setData({ savingMemo: false });
       return;
     }
 
@@ -1078,6 +1158,7 @@ Page({
     }, () => {
       this.updateSelectedMemos();
       this.savingMemo = false;
+      this.setData({ savingMemo: false });
     });
   },
 
@@ -1151,6 +1232,8 @@ Page({
   },
 
   onCloseBackupModal() {
+    if (this.importingData) return;
+
     this.setData({
       backupModalVisible: false,
       importInputText: ''
@@ -1158,52 +1241,59 @@ Page({
   },
 
   async onExportData() {
-    const { text: txt } = this.data;
-    let memos = {};
-    let categories = [];
+    if (this.exportingData) return;
+
+    this.exportingData = true;
+    this.setData({ exportingData: true });
+
     try {
-      memos = await this.getStorage(STORAGE_KEYS.MEMOS, {});
-      categories = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
+      const { text: txt } = this.data;
+      const memos = await this.getStorage(STORAGE_KEYS.MEMOS, {});
+      const categories = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
+
+      const backupData = {
+        version: 1,
+        app: 'MemoCalendar',
+        exportAt: new Date().toISOString(),
+        memos,
+        categories
+      };
+
+      const jsonStr = JSON.stringify(backupData, null, 2);
+      try {
+        await this.setClipboardData(jsonStr);
+        this.showToast(txt.copySuccess, 'success');
+      } catch (e) {
+        console.error('Failed to write export data to clipboard:', e);
+        this.showToast(txt.clipboardWriteFailed);
+      }
     } catch (e) {
       console.error('Failed to read storage for export:', e);
       this.showStorageFailureToast();
-      return;
+    } finally {
+      this.exportingData = false;
+      this.setData({ exportingData: false });
     }
-
-    const backupData = {
-      version: 1,
-      app: 'MemoCalendar',
-      exportAt: new Date().toISOString(),
-      memos,
-      categories
-    };
-
-    const jsonStr = JSON.stringify(backupData, null, 2);
-    wx.setClipboardData({
-      data: jsonStr,
-      success: () => {
-        this.showToast(txt.copySuccess, 'success');
-      },
-      fail: () => {
-        this.showToast(txt.clipboardWriteFailed);
-      }
-    });
   },
 
   onImportFromClipboard() {
+    if (!this.startImportingData()) return;
+
     const { text: txt } = this.data;
     wx.getClipboardData({
       success: (res) => {
         const text = res.data ? res.data.trim() : '';
         if (!text) {
           this.showToast(txt.clipboardEmpty);
+          this.finishImportingData();
           return;
         }
         // One-click clipboard import always merges for safety
-        this.processImportData(text, false);
+        this.processImportData(text, false, true);
       },
       fail: () => {
         this.showToast(txt.clipboardReadFailed);
+        this.finishImportingData();
       }
     });
   },
@@ -1213,6 +1303,8 @@ Page({
   },
 
   onTriggerMergeImport() {
+    if (this.importingData) return;
+
     const text = this.data.importInputText ? this.data.importInputText.trim() : '';
     if (!text) {
       this.showToast(this.data.text.clipboardEmpty);
@@ -1222,6 +1314,8 @@ Page({
   },
 
   onTriggerOverwriteImport() {
+    if (this.importingData) return;
+
     const text = this.data.importInputText ? this.data.importInputText.trim() : '';
     if (!text) {
       this.showToast(this.data.text.clipboardEmpty);
@@ -1238,55 +1332,53 @@ Page({
     });
   },
 
-  async processImportData(text, isOverwrite = false) {
+  async processImportData(text, isOverwrite = false, lockAcquired = false) {
+    if (!lockAcquired && !this.startImportingData()) return;
+
     const { text: txt } = this.data;
-    const importedData = parseBackupData(text, {
-      defaultCategories: CATEGORIES,
-      palette: PALETTE,
-      isValidDateString: this.isValidDateString.bind(this)
-    });
-    if (!importedData) {
-      this.showToast(txt.invalidBackupFormat);
-      return;
-    }
+    try {
+      const importedData = parseBackupData(text, {
+        defaultCategories: CATEGORIES,
+        palette: PALETTE,
+        isValidDateString: this.isValidDateString.bind(this)
+      });
+      if (!importedData) {
+        this.showToast(txt.invalidBackupFormat);
+        return;
+      }
 
-    let finalData = importedData;
-
-    if (!isOverwrite) {
-      let localMemos = {};
-      let localCategories = [];
+      let previousData;
       try {
-        localMemos = await this.getStorage(STORAGE_KEYS.MEMOS, {});
-        localCategories = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
+        previousData = await this.getBackupStorageSnapshot();
       } catch (e) {
-        console.error('Failed to read storage for merge:', e);
+        console.error('Failed to read storage before import:', e);
         this.showStorageFailureToast();
         return;
       }
 
-      finalData = mergeImportedData(importedData, localMemos, localCategories, {
-        palette: PALETTE
+      const finalData = isOverwrite
+        ? importedData
+        : mergeImportedData(importedData, previousData.memos, previousData.categories, {
+          palette: PALETTE
+        });
+
+      if (!await this.saveImportedDataSafely(finalData, previousData)) return;
+
+      await this.loadCategories();
+      this.setData({
+        memoDates: finalData.memos,
+        memoDateMeta: this.createMemoDateMeta(finalData.memos),
+        backupModalVisible: false,
+        importInputText: ''
+      }, () => {
+        this.updateSelectedMemos();
+        this.showToast(txt.importSuccess, 'success');
       });
-    }
-
-    try {
-      await this.setStorage(STORAGE_KEYS.MEMOS, finalData.memos);
-      await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, finalData.categories);
     } catch (e) {
-      console.error('Failed to save imported data:', e);
+      console.error('Failed to import data:', e);
       this.showStorageFailureToast();
-      return;
+    } finally {
+      this.finishImportingData();
     }
-
-    await this.loadCategories();
-    this.setData({
-      memoDates: finalData.memos,
-      memoDateMeta: this.createMemoDateMeta(finalData.memos),
-      backupModalVisible: false,
-      importInputText: ''
-    }, () => {
-      this.updateSelectedMemos();
-      this.showToast(txt.importSuccess, 'success');
-    });
   }
 });

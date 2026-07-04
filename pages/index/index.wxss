@@ -708,6 +708,11 @@ page {
   filter: brightness(0.95);
 }
 
+.is-disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 .form-item-switch {
   display: flex;
   justify-content: space-between;

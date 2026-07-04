@@ -221,8 +221,8 @@
           {{text.cancel}}
         </view>
         <view
-          class="modal-btn btn-save"
-          hover-class="btn-save-hover"
+          class="modal-btn btn-save {{savingMemo ? 'is-disabled' : ''}}"
+          hover-class="{{savingMemo ? 'none' : 'btn-save-hover'}}"
           catchtap="onSaveMemo"
         >
           {{text.save}}
@@ -261,8 +261,8 @@
           {{text.cancel}}
         </view>
         <view
-          class="modal-btn btn-save"
-          hover-class="btn-save-hover"
+          class="modal-btn btn-save {{savingCategory ? 'is-disabled' : ''}}"
+          hover-class="{{savingCategory ? 'none' : 'btn-save-hover'}}"
           catchtap="onSaveCustomCategory"
         >
           {{text.confirm}}
@@ -315,7 +315,13 @@
         <view class="backup-section">
           <text class="backup-sec-title">📤 {{text.exportData}}</text>
           <text class="backup-sec-desc">{{text.exportDesc}}</text>
-          <button class="backup-btn-action" hover-class="btn-hover" bindtap="onExportData">
+          <button
+            class="backup-btn-action {{exportingData ? 'is-disabled' : ''}}"
+            hover-class="{{exportingData || importingData ? 'none' : 'btn-hover'}}"
+            disabled="{{exportingData || importingData}}"
+            loading="{{exportingData}}"
+            bindtap="onExportData"
+          >
             {{text.copyBackupData}}
           </button>
         </view>
@@ -328,7 +334,13 @@
           <text class="backup-sec-title">📥 {{text.importData}}</text>
           <text class="backup-sec-desc">{{text.importDesc}}</text>
 
-          <button class="backup-btn-action btn-secondary" hover-class="btn-hover" bindtap="onImportFromClipboard">
+          <button
+            class="backup-btn-action btn-secondary {{importingData ? 'is-disabled' : ''}}"
+            hover-class="{{exportingData || importingData ? 'none' : 'btn-hover'}}"
+            disabled="{{exportingData || importingData}}"
+            loading="{{importingData}}"
+            bindtap="onImportFromClipboard"
+          >
             📋 {{text.importFromClipboard}}
           </button>
 
@@ -339,14 +351,27 @@
             value="{{importInputText}}"
             bindinput="onImportTextInput"
             maxlength="-1"
+            disabled="{{exportingData || importingData}}"
             disable-default-padding="{{true}}"
           />
 
           <view class="backup-import-actions">
-            <button class="import-btn merge-btn" hover-class="btn-hover" bindtap="onTriggerMergeImport">
+            <button
+              class="import-btn merge-btn {{importingData ? 'is-disabled' : ''}}"
+              hover-class="{{exportingData || importingData ? 'none' : 'btn-hover'}}"
+              disabled="{{exportingData || importingData}}"
+              loading="{{importingData}}"
+              bindtap="onTriggerMergeImport"
+            >
               {{text.mergeImport}}
             </button>
-            <button class="import-btn overwrite-btn" hover-class="btn-hover" bindtap="onTriggerOverwriteImport">
+            <button
+              class="import-btn overwrite-btn {{importingData ? 'is-disabled' : ''}}"
+              hover-class="{{exportingData || importingData ? 'none' : 'btn-hover'}}"
+              disabled="{{exportingData || importingData}}"
+              loading="{{importingData}}"
+              bindtap="onTriggerOverwriteImport"
+            >
               {{text.overwriteImport}}
             </button>
           </view>

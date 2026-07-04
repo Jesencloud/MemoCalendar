@@ -807,6 +807,10 @@ page {
   border: none;
 }
 
+.btn-hover {
+  opacity: 0.86;
+}
+
 .backup-btn-action.btn-secondary {
   background: #f3f4f6 !important;
   color: #4b5563 !important;

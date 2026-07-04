@@ -110,6 +110,7 @@ function getText(lang) {
     'copySuccess',
     'clipboardEmpty',
     'clipboardReadFailed',
+    'clipboardWriteFailed',
     'invalidBackupFormat',
     'importSuccess',
     'confirmOverwriteTitle',
@@ -257,6 +258,96 @@ Page({
       cleanMemoDates[date] = Array.isArray(list) ? this.cleanMemosUIFields(list) : list;
     });
     return cleanMemoDates;
+  },
+
+  isPlainObject(value) {
+    return Object.prototype.toString.call(value) === '[object Object]';
+  },
+
+  normalizeImportedCategories(categories) {
+    if (categories === undefined || categories === null) return [];
+    if (!Array.isArray(categories)) return null;
+
+    const normalized = [];
+    const seenKeys = {};
+    categories.forEach(item => {
+      if (!this.isPlainObject(item)) return;
+
+      const key = typeof item.key === 'string' ? item.key.trim() : '';
+      const labelCn = typeof item.labelCn === 'string' ? item.labelCn.trim() : '';
+      const labelEn = typeof item.labelEn === 'string' ? item.labelEn.trim() : '';
+      if (!/^custom-[\w-]{1,64}$/.test(key) || !labelCn || !labelEn || seenKeys[key]) return;
+
+      const color = /^#[0-9a-fA-F]{6}$/.test(item.color) ? item.color : PALETTE[normalized.length % PALETTE.length];
+      normalized.push({
+        key,
+        labelCn: labelCn.slice(0, 10),
+        labelEn: labelEn.slice(0, 10),
+        color,
+        icon: typeof item.icon === 'string' && item.icon ? item.icon : '🏷️',
+        isCustom: true
+      });
+      seenKeys[key] = true;
+    });
+
+    return normalized;
+  },
+
+  normalizeImportedMemoDates(memos, categories) {
+    if (!this.isPlainObject(memos)) return null;
+
+    const categoryMap = {};
+    [...CATEGORIES, ...categories].forEach(category => {
+      categoryMap[category.key] = category;
+    });
+
+    const normalized = {};
+    const dates = Object.keys(memos);
+    for (let i = 0; i < dates.length; i += 1) {
+      const date = dates[i];
+      const dayMemos = memos[date];
+      if (!this.isValidDateString(date) || !Array.isArray(dayMemos)) return null;
+
+      const normalizedDayMemos = [];
+      for (let j = 0; j < dayMemos.length; j += 1) {
+        const memo = this.normalizeImportedMemo(dayMemos[j], categoryMap);
+        if (!memo) return null;
+        normalizedDayMemos.push(memo);
+      }
+
+      if (normalizedDayMemos.length > 0) {
+        normalized[date] = normalizedDayMemos;
+      }
+    }
+
+    return normalized;
+  },
+
+  normalizeImportedMemo(item, categoryMap) {
+    if (!this.isPlainObject(item)) return null;
+
+    const id = typeof item.id === 'string' ? item.id.trim() : '';
+    const title = typeof item.title === 'string' ? item.title.trim() : '';
+    if (!id || !title) return null;
+
+    const importedTag = typeof item.tag === 'string' && item.tag ? item.tag : 'Sport';
+    const category = categoryMap[importedTag] || CATEGORIES[0];
+    const tag = categoryMap[importedTag] ? importedTag : category.key;
+    const color = /^#[0-9a-fA-F]{6}$/.test(item.color) ? item.color : category.color;
+
+    return {
+      id,
+      title: title.slice(0, 40),
+      time: typeof item.time === 'string' ? item.time : '',
+      location: typeof item.location === 'string' ? item.location.trim().slice(0, 100) : '',
+      tag,
+      color,
+      notes: typeof item.notes === 'string' ? item.notes.trim().slice(0, 200) : '',
+      tagCn: typeof category.labelCn === 'string' ? category.labelCn : '',
+      tagEn: typeof category.labelEn === 'string' ? category.labelEn : '',
+      categoryIcon: typeof category.icon === 'string' ? category.icon : '',
+      completed: item.completed === true
+    };
   },
 
   saveMemosToStorage(memoDates) {
@@ -1093,6 +1184,12 @@ Page({
           title: txt.copySuccess,
           icon: 'success'
         });
+      },
+      fail: () => {
+        wx.showToast({
+          title: txt.clipboardWriteFailed,
+          icon: 'none'
+        });
       }
     });
   },
@@ -1170,7 +1267,7 @@ Page({
       return;
     }
 
-    if (!data || data.app !== 'MemoCalendar' || !data.memos) {
+    if (!this.isPlainObject(data) || data.app !== 'MemoCalendar') {
       wx.showToast({
         title: txt.invalidBackupFormat,
         icon: 'none'
@@ -1178,8 +1275,23 @@ Page({
       return;
     }
 
-    const importedMemos = data.memos;
-    const importedCategories = data.categories || [];
+    const importedCategories = this.normalizeImportedCategories(data.categories);
+    if (!importedCategories) {
+      wx.showToast({
+        title: txt.invalidBackupFormat,
+        icon: 'none'
+      });
+      return;
+    }
+
+    const importedMemos = this.normalizeImportedMemoDates(data.memos, importedCategories);
+    if (!importedMemos) {
+      wx.showToast({
+        title: txt.invalidBackupFormat,
+        icon: 'none'
+      });
+      return;
+    }
 
     let finalMemos = {};
     let finalCategories = [];
@@ -1200,9 +1312,9 @@ Page({
         return;
       }
 
-      finalMemos = Object.assign({}, localMemos);
+      finalMemos = this.cleanMemoDatesUIFields(localMemos);
       for (const date in importedMemos) {
-        if (!finalMemos[date]) {
+        if (!Array.isArray(finalMemos[date])) {
           finalMemos[date] = importedMemos[date];
         } else {
           const localDayMemos = [...finalMemos[date]];
@@ -1220,7 +1332,7 @@ Page({
         }
       }
 
-      finalCategories = [...localCategories];
+      finalCategories = this.normalizeImportedCategories(localCategories) || [];
       importedCategories.forEach(importedCat => {
         if (importedCat.key && importedCat.key.startsWith('custom-')) {
           const exists = finalCategories.some(c => c.key === importedCat.key);

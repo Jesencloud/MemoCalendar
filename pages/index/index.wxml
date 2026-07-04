@@ -1,5 +1,5 @@
 <!--pages/index/index.wxml-->
-<page-meta page-style="overflow: {{modalVisible || modalClosing || confirmDialog.visible ? 'hidden' : 'visible'}}" />
+<page-meta page-style="overflow: {{modalVisible || modalClosing || confirmDialog.visible || backupModalVisible ? 'hidden' : 'visible'}}" />
 <view class="container {{lang === 'zh' ? 'lang-zh' : 'lang-en'}}">
   <view class="header">
     <view class="header-main">
@@ -7,8 +7,13 @@
         <text class="title">{{text.title}}</text>
         <text class="subtitle">{{text.subtitle}}</text>
       </view>
-      <view class="lang-toggle" hover-class="lang-toggle-hover" hover-stay-time="100" bindtap="toggleLang">
-        <text>{{text.langToggle}}</text>
+      <view class="header-actions">
+        <view class="lang-toggle" hover-class="lang-toggle-hover" hover-stay-time="100" bindtap="onOpenBackupModal" style="margin-right: 15rpx;">
+          <text>⚙️ {{text.backupBtn}}</text>
+        </view>
+        <view class="lang-toggle" hover-class="lang-toggle-hover" hover-stay-time="100" bindtap="toggleLang">
+          <text>{{text.langToggle}}</text>
+        </view>
       </view>
     </view>
   </view>
@@ -294,6 +299,59 @@
           {{confirmDialog.confirmText}}
         </view>
       </view>
+    </view>
+  </view>
+
+  <!-- Data Backup & Restore Modal -->
+  <view class="modal-mask custom-confirm-mask" wx:if="{{backupModalVisible}}" catchtouchmove="stopBubble" style="z-index: 135;">
+    <view class="modal-panel backup-panel">
+      <view class="modal-header">
+        <text class="modal-title">{{text.dataBackupTitle}}</text>
+        <view class="modal-close" catchtap="onCloseBackupModal">×</view>
+      </view>
+      
+      <scroll-view scroll-y class="modal-form" style="max-height: 70vh; padding-bottom: 20rpx;">
+        <!-- Export Section -->
+        <view class="backup-section">
+          <text class="backup-sec-title">📤 {{text.exportData}}</text>
+          <text class="backup-sec-desc">{{text.exportDesc}}</text>
+          <button class="backup-btn-action" hover-class="btn-hover" bindtap="onExportData">
+            {{text.copyBackupData}}
+          </button>
+        </view>
+        
+        <!-- Divider -->
+        <view class="backup-divider"></view>
+        
+        <!-- Import Section -->
+        <view class="backup-section">
+          <text class="backup-sec-title">📥 {{text.importData}}</text>
+          <text class="backup-sec-desc">{{text.importDesc}}</text>
+          
+          <button class="backup-btn-action btn-secondary" hover-class="btn-hover" bindtap="onImportFromClipboard">
+            📋 {{text.importFromClipboard}}
+          </button>
+          
+          <view class="backup-manual-label">{{text.manualPasteLabel}}:</view>
+          <textarea
+            class="backup-textarea"
+            placeholder="{{text.pastePlaceholder}}"
+            value="{{importInputText}}"
+            bindinput="onImportTextInput"
+            maxlength="-1"
+            disable-default-padding="{{true}}"
+          />
+          
+          <view class="backup-import-actions">
+            <button class="import-btn merge-btn" hover-class="btn-hover" bindtap="onTriggerMergeImport">
+              {{text.mergeImport}}
+            </button>
+            <button class="import-btn overwrite-btn" hover-class="btn-hover" bindtap="onTriggerOverwriteImport">
+              {{text.overwriteImport}}
+            </button>
+          </view>
+        </view>
+      </scroll-view>
     </view>
   </view>
 

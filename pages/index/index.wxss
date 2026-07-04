@@ -759,3 +759,111 @@ page {
   color: #4b5563;
   line-height: 1.6;
 }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+/* Backup & Restore Panel styling */
+.backup-panel {
+  width: 100%;
+  max-width: 620rpx;
+  border-radius: 32rpx;
+  padding: 40rpx;
+  box-sizing: border-box;
+}
+
+.backup-section {
+  display: flex;
+  flex-direction: column;
+  padding: 10rpx 0;
+}
+
+.backup-sec-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 12rpx;
+}
+
+.backup-sec-desc {
+  font-size: 24rpx;
+  color: #6b7280;
+  line-height: 1.5;
+  margin-bottom: 24rpx;
+}
+
+.backup-btn-action {
+  width: 100% !important;
+  background: #d09a04 !important; /* Apple Notes Gold */
+  color: #fff !important;
+  font-size: 28rpx;
+  font-weight: 500;
+  border-radius: 16rpx;
+  padding: 18rpx 0;
+  margin: 0 !important;
+  box-shadow: 0 4rpx 12rpx rgba(208, 154, 4, 0.2);
+  border: none;
+}
+
+.backup-btn-action.btn-secondary {
+  background: #f3f4f6 !important;
+  color: #4b5563 !important;
+  box-shadow: none;
+  border: 2rpx solid #e5e7eb;
+}
+
+.backup-divider {
+  height: 2rpx;
+  background: #f3f4f6;
+  margin: 30rpx 0;
+}
+
+.backup-manual-label {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #4b5563;
+  margin: 24rpx 0 12rpx;
+}
+
+.backup-textarea {
+  width: 100%;
+  height: 180rpx;
+  background: #f9fafb;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+  font-size: 24rpx;
+  color: #374151;
+  font-family: monospace;
+  margin-bottom: 24rpx;
+}
+
+.backup-import-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.backup-import-actions .import-btn {
+  flex: 1;
+  font-size: 26rpx;
+  font-weight: 500;
+  border-radius: 16rpx;
+  padding: 16rpx 0;
+  margin: 0 !important;
+  border: none;
+}
+
+.backup-import-actions .merge-btn {
+  background: #10b981 !important; /* Elegant Green */
+  color: #fff !important;
+  box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.2);
+}
+
+.backup-import-actions .overwrite-btn {
+  background: #ef4444 !important; /* Alert Red */
+  color: #fff !important;
+  box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.2);
+}

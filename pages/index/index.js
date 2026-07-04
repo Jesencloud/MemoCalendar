@@ -94,7 +94,26 @@ function getText(lang) {
     'markCompleted',
     'time',
     'location',
-    'notes'
+    'notes',
+    'backupBtn',
+    'dataBackupTitle',
+    'exportData',
+    'exportDesc',
+    'copyBackupData',
+    'importData',
+    'importDesc',
+    'importFromClipboard',
+    'manualPasteLabel',
+    'pastePlaceholder',
+    'mergeImport',
+    'overwriteImport',
+    'copySuccess',
+    'clipboardEmpty',
+    'clipboardReadFailed',
+    'invalidBackupFormat',
+    'importSuccess',
+    'confirmOverwriteTitle',
+    'confirmOverwriteDesc'
   ];
   return keys.reduce((text, key) => {
     text[key] = t(key, lang);
@@ -116,6 +135,8 @@ Page({
     modalClosing: false,
     customCategoryModalVisible: false,
     customCategoryName: '',
+    backupModalVisible: false,
+    importInputText: '',
     confirmDialog: {
       visible: false,
       title: '',
@@ -1026,6 +1047,210 @@ Page({
         this.confirmCallback = null;
         this.cancelCallback = null;
       }
+    });
+  },
+
+  onOpenBackupModal() {
+    this.setData({
+      backupModalVisible: true,
+      importInputText: ''
+    });
+  },
+
+  onCloseBackupModal() {
+    this.setData({
+      backupModalVisible: false,
+      importInputText: ''
+    });
+  },
+
+  onExportData() {
+    const { text: txt } = this.data;
+    let memos = {};
+    let categories = [];
+    try {
+      memos = wx.getStorageSync('memoCalendarMemos') || {};
+      categories = wx.getStorageSync('memoCustomCategories') || [];
+    } catch (e) {
+      console.error('Failed to read storage for export:', e);
+      this.showStorageFailureToast();
+      return;
+    }
+
+    const backupData = {
+      version: 1,
+      app: 'MemoCalendar',
+      exportAt: new Date().toISOString(),
+      memos,
+      categories
+    };
+
+    const jsonStr = JSON.stringify(backupData);
+    wx.setClipboardData({
+      data: jsonStr,
+      success: () => {
+        wx.showToast({
+          title: txt.copySuccess,
+          icon: 'success'
+        });
+      }
+    });
+  },
+
+  onImportFromClipboard() {
+    const { text: txt } = this.data;
+    wx.getClipboardData({
+      success: (res) => {
+        const text = res.data ? res.data.trim() : '';
+        if (!text) {
+          wx.showToast({
+            title: txt.clipboardEmpty,
+            icon: 'none'
+          });
+          return;
+        }
+        // One-click clipboard import always merges for safety
+        this.processImportData(text, false);
+      },
+      fail: () => {
+        wx.showToast({
+          title: txt.clipboardReadFailed,
+          icon: 'none'
+        });
+      }
+    });
+  },
+
+  onImportTextInput(e) {
+    this.data.importInputText = e.detail.value;
+  },
+
+  onTriggerMergeImport() {
+    const text = this.data.importInputText ? this.data.importInputText.trim() : '';
+    if (!text) {
+      wx.showToast({
+        title: this.data.text.clipboardEmpty,
+        icon: 'none'
+      });
+      return;
+    }
+    this.processImportData(text, false);
+  },
+
+  onTriggerOverwriteImport() {
+    const text = this.data.importInputText ? this.data.importInputText.trim() : '';
+    if (!text) {
+      wx.showToast({
+        title: this.data.text.clipboardEmpty,
+        icon: 'none'
+      });
+      return;
+    }
+
+    this.showConfirm({
+      title: this.data.text.confirmOverwriteTitle,
+      content: this.data.text.confirmOverwriteDesc,
+      confirmColor: '#ef4444',
+      confirm: () => {
+        this.processImportData(text, true);
+      }
+    });
+  },
+
+  processImportData(text, isOverwrite = false) {
+    const { text: txt } = this.data;
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      wx.showToast({
+        title: txt.invalidBackupFormat,
+        icon: 'none'
+      });
+      return;
+    }
+
+    if (!data || data.app !== 'MemoCalendar' || !data.memos) {
+      wx.showToast({
+        title: txt.invalidBackupFormat,
+        icon: 'none'
+      });
+      return;
+    }
+
+    const importedMemos = data.memos;
+    const importedCategories = data.categories || [];
+
+    let finalMemos = {};
+    let finalCategories = [];
+
+    if (isOverwrite) {
+      finalMemos = importedMemos;
+      finalCategories = importedCategories;
+    } else {
+      // Merge
+      let localMemos = {};
+      let localCategories = [];
+      try {
+        localMemos = wx.getStorageSync('memoCalendarMemos') || {};
+        localCategories = wx.getStorageSync('memoCustomCategories') || [];
+      } catch (e) {
+        console.error('Failed to read storage for merge:', e);
+        this.showStorageFailureToast();
+        return;
+      }
+
+      finalMemos = Object.assign({}, localMemos);
+      for (const date in importedMemos) {
+        if (!finalMemos[date]) {
+          finalMemos[date] = importedMemos[date];
+        } else {
+          const localDayMemos = [...finalMemos[date]];
+          const importedDayMemos = importedMemos[date];
+
+          importedDayMemos.forEach(importedItem => {
+            const index = localDayMemos.findIndex(m => m.id === importedItem.id);
+            if (index !== -1) {
+              localDayMemos[index] = importedItem;
+            } else {
+              localDayMemos.push(importedItem);
+            }
+          });
+          finalMemos[date] = localDayMemos;
+        }
+      }
+
+      finalCategories = [...localCategories];
+      importedCategories.forEach(importedCat => {
+        if (importedCat.key && importedCat.key.startsWith('custom-')) {
+          const exists = finalCategories.some(c => c.key === importedCat.key);
+          if (!exists) {
+            finalCategories.push(importedCat);
+          }
+        }
+      });
+    }
+
+    try {
+      wx.setStorageSync('memoCalendarMemos', finalMemos);
+      wx.setStorageSync('memoCustomCategories', finalCategories);
+    } catch (e) {
+      console.error('Failed to save imported data:', e);
+      this.showStorageFailureToast();
+      return;
+    }
+
+    this.loadCategories();
+    this.setData({
+      memoDates: finalMemos,
+      backupModalVisible: false,
+      importInputText: ''
+    }, () => {
+      this.updateSelectedMemos();
+      wx.showToast({
+        title: txt.importSuccess,
+        icon: 'success'
+      });
     });
   }
 });

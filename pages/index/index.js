@@ -155,7 +155,6 @@ Page({
     importInputText: '',
     importingData: false,
     exportingData: false,
-    backupBusy: false,
     confirmDialog: {
       visible: false,
       title: '',
@@ -431,12 +430,7 @@ Page({
 
   setBusyState(key, value) {
     this[key] = value;
-    const data = { [key]: value };
-    if (key === 'importingData' || key === 'exportingData') {
-      data.backupBusy = (key === 'importingData' ? value : this.importingData) ||
-        (key === 'exportingData' ? value : this.exportingData);
-    }
-    this.setData(data);
+    this.setData({ [key]: value });
   },
 
   startBusyState(key) {

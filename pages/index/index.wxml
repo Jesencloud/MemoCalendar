@@ -316,9 +316,9 @@
           <text class="backup-sec-title">📤 {{text.exportData}}</text>
           <text class="backup-sec-desc">{{text.exportDesc}}</text>
           <button
-            class="backup-btn-action {{backupBusy ? 'is-disabled' : ''}}"
-            hover-class="{{backupBusy ? 'none' : 'btn-hover'}}"
-            disabled="{{backupBusy}}"
+            class="backup-btn-action {{exportingData || importingData ? 'is-disabled' : ''}}"
+            hover-class="{{exportingData || importingData ? 'none' : 'btn-hover'}}"
+            disabled="{{exportingData || importingData}}"
             loading="{{exportingData}}"
             bindtap="onExportData"
           >
@@ -335,9 +335,9 @@
           <text class="backup-sec-desc">{{text.importDesc}}</text>
 
           <button
-            class="backup-btn-action btn-secondary {{backupBusy ? 'is-disabled' : ''}}"
-            hover-class="{{backupBusy ? 'none' : 'btn-hover'}}"
-            disabled="{{backupBusy}}"
+            class="backup-btn-action btn-secondary {{exportingData || importingData ? 'is-disabled' : ''}}"
+            hover-class="{{exportingData || importingData ? 'none' : 'btn-hover'}}"
+            disabled="{{exportingData || importingData}}"
             loading="{{importingData}}"
             bindtap="onImportFromClipboard"
           >
@@ -351,24 +351,24 @@
             value="{{importInputText}}"
             bindinput="onImportTextInput"
             maxlength="-1"
-            disabled="{{backupBusy}}"
+            disabled="{{exportingData || importingData}}"
             disable-default-padding="{{true}}"
           />
 
           <view class="backup-import-actions">
             <button
-              class="import-btn merge-btn {{backupBusy ? 'is-disabled' : ''}}"
-              hover-class="{{backupBusy ? 'none' : 'btn-hover'}}"
-              disabled="{{backupBusy}}"
+              class="import-btn merge-btn {{exportingData || importingData ? 'is-disabled' : ''}}"
+              hover-class="{{exportingData || importingData ? 'none' : 'btn-hover'}}"
+              disabled="{{exportingData || importingData}}"
               loading="{{importingData}}"
               bindtap="onTriggerMergeImport"
             >
               {{text.mergeImport}}
             </button>
             <button
-              class="import-btn overwrite-btn {{backupBusy ? 'is-disabled' : ''}}"
-              hover-class="{{backupBusy ? 'none' : 'btn-hover'}}"
-              disabled="{{backupBusy}}"
+              class="import-btn overwrite-btn {{exportingData || importingData ? 'is-disabled' : ''}}"
+              hover-class="{{exportingData || importingData ? 'none' : 'btn-hover'}}"
+              disabled="{{exportingData || importingData}}"
               loading="{{importingData}}"
               bindtap="onTriggerOverwriteImport"
             >

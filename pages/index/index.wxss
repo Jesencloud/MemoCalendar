@@ -138,6 +138,7 @@ page {
 
 .memo-card-wrapper.dragging {
   transition: none !important;
+  z-index: 99;
 }
 
 .memo-card-wrapper.dragging .memo-card {
@@ -155,6 +156,10 @@ page {
   z-index: 2;
   background: #fff;
   border-radius: 20rpx;
+  border-left: 8rpx solid var(--memo-color, #d09a04);
+  border-top: 2rpx solid var(--memo-border-color, rgba(208, 154, 4, 0.25));
+  border-right: 2rpx solid var(--memo-border-color, rgba(208, 154, 4, 0.25));
+  border-bottom: 2rpx solid var(--memo-border-color, rgba(208, 154, 4, 0.25));
   box-shadow: 0 6rpx 18rpx rgba(0, 0, 0, 0.02);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
@@ -305,6 +310,7 @@ page {
 .memo-tag-inline {
   font-size: 26rpx;
   font-weight: 500;
+  color: var(--memo-color, #d09a04);
   flex-shrink: 0;
   margin-left: auto;
   max-width: 180rpx;
@@ -691,6 +697,11 @@ page {
   background: #d09a04; /* Apple Notes Gold */
   color: #fff;
   box-shadow: 0 6rpx 20rpx rgba(208, 154, 4, 0.25);
+}
+
+.custom-confirm-panel .btn-save {
+  background: var(--confirm-color, #ef4444);
+  box-shadow: 0 6rpx 20rpx var(--confirm-shadow-color, rgba(239, 68, 68, 0.25));
 }
 
 .btn-save-hover {

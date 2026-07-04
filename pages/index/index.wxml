@@ -49,14 +49,14 @@
           data-index="{{index}}"
           bindtouchstart="onSwipeTouchStart"
           bindtouchend="onSwipeTouchEnd"
-          style="transform: translateY({{item.id === draggingId ? dragTranslateY : 0}}px); z-index: {{item.id === draggingId ? 99 : 1}};"
+          style="transform: translateY({{item.id === draggingId ? dragTranslateY : 0}}px);"
         >
           <view
             class="memo-card {{item.completed ? 'memo-card-completed' : ''}}"
             hover-class="{{item.id === swipedMemoId || draggingId ? 'none' : 'memo-card-hover'}}"
             data-id="{{item.id}}"
             bindtap="onEditMemoTap"
-            style="border-left: 8rpx solid {{item.completed ? '#d1d5db' : (item.color || '#d09a04')}}; border-top: 2rpx solid {{item.completed ? '#e5e7eb' : (item.color || '#d09a04')}}40; border-right: 2rpx solid {{item.completed ? '#e5e7eb' : (item.color || '#d09a04')}}40; border-bottom: 2rpx solid {{item.completed ? '#e5e7eb' : (item.color || '#d09a04')}}40;"
+            style="--memo-color: {{item.completed ? '#d1d5db' : (item.color || '#d09a04')}}; --memo-border-color: {{item.completed ? '#e5e7eb' : (item.color || '#d09a04') + '40'}};"
           >
             <view class="memo-card-main">
               <view class="memo-row-inline">
@@ -65,7 +65,7 @@
                 <view class="memo-location-inline" wx:if="{{item.location}}">
                   <text class="location-text">{{item.location}}</text>
                 </view>
-                <text class="memo-tag-inline" style="color: {{item.completed ? '#d1d5db' : item.color}}">{{item.categoryIcon === '🏷️' ? '#' + (lang === 'zh' ? item.tagCn : item.tagEn) : item.categoryIcon}}</text>
+                <text class="memo-tag-inline">{{item.categoryIcon === '🏷️' ? '#' + (lang === 'zh' ? item.tagCn : item.tagEn) : item.categoryIcon}}</text>
                 <view
                   class="drag-handle"
                   catchtouchstart="onDragStart"
@@ -293,7 +293,7 @@
         <view
           class="modal-btn btn-save"
           hover-class="btn-save-hover"
-          style="background: {{confirmDialog.confirmColor}}; box-shadow: 0 6rpx 20rpx {{confirmDialog.confirmColor}}40;"
+          style="--confirm-color: {{confirmDialog.confirmColor}}; --confirm-shadow-color: {{confirmDialog.confirmColor}}40;"
           catchtap="onConfirmDialogConfirm"
         >
           {{confirmDialog.confirmText}}

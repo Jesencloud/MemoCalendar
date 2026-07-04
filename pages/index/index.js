@@ -51,6 +51,7 @@ const STORAGE_KEYS = {
   MEMOS: 'memoCalendarMemos',
   CUSTOM_CATEGORIES: 'memoCustomCategories'
 };
+const DRAG_TRANSLATE_THROTTLE_MS = 48;
 
 function getText(lang) {
   const keys = [
@@ -162,7 +163,7 @@ Page({
     sortOrder: 'desc'
   },
 
-  onLoad(options) {
+  async onLoad(options) {
     let lang = this.data.lang;
     if (options && options.lang && (options.lang === 'zh' || options.lang === 'en')) {
       lang = options.lang;
@@ -182,7 +183,7 @@ Page({
     }
 
     // Load memos from local storage
-    const memoDates = this.loadMemosFromStorage();
+    const memoDates = await this.loadMemosFromStorage();
 
     this.setData({
       lang,
@@ -201,10 +202,10 @@ Page({
     this.updateNavigationTitle(lang);
   },
 
-  onReady() {
+  async onReady() {
     this.calendarCtx = this.selectComponent('#calendar');
     // Load custom categories after initial page paint completes
-    this.loadCategories();
+    await this.loadCategories();
   },
 
   onShow() {
@@ -237,14 +238,44 @@ Page({
     };
   },
 
-  loadMemosFromStorage() {
+  async loadMemosFromStorage() {
     try {
-      const memos = wx.getStorageSync(STORAGE_KEYS.MEMOS);
+      const memos = await this.getStorage(STORAGE_KEYS.MEMOS, {});
       return memos || {};
     } catch (e) {
       console.error('Failed to load memos from storage:', e);
       return {};
     }
+  },
+
+  getStorage(key, fallbackValue) {
+    return new Promise((resolve, reject) => {
+      wx.getStorage({
+        key,
+        success: res => {
+          resolve(res.data === undefined ? fallbackValue : res.data);
+        },
+        fail: err => {
+          const errMsg = err && err.errMsg ? err.errMsg : '';
+          if (errMsg.indexOf('data not found') !== -1) {
+            resolve(fallbackValue);
+            return;
+          }
+          reject(err);
+        }
+      });
+    });
+  },
+
+  setStorage(key, data) {
+    return new Promise((resolve, reject) => {
+      wx.setStorage({
+        key,
+        data,
+        success: () => resolve(true),
+        fail: reject
+      });
+    });
   },
 
   cleanMemosUIFields(memos) {
@@ -330,12 +361,12 @@ Page({
     return `memo-${this.getFormattedDateTime()}-${random}`;
   },
 
-  saveMemosToStorage(memoDates, changedDate = '') {
+  async saveMemosToStorage(memoDates, changedDate = '') {
     try {
       const cleanMemoDates = changedDate
         ? this.cleanMemoDateUIFields(memoDates, changedDate)
         : this.cleanMemoDatesUIFields(memoDates);
-      wx.setStorageSync(STORAGE_KEYS.MEMOS, cleanMemoDates);
+      await this.setStorage(STORAGE_KEYS.MEMOS, cleanMemoDates);
       return true;
     } catch (e) {
       console.error('Failed to save memos to storage:', e);
@@ -356,9 +387,9 @@ Page({
     this.showToast(this.data.text.storageFailed);
   },
 
-  loadCategories() {
+  async loadCategories() {
     try {
-      const custom = wx.getStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES) || [];
+      const custom = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
       this.setData({
         categories: [...CATEGORIES, ...custom]
       });
@@ -390,7 +421,7 @@ Page({
     });
   },
 
-  onSaveCustomCategory() {
+  async onSaveCustomCategory() {
     const { text } = this.data;
     const content = this.data.customCategoryName ? this.data.customCategoryName.trim() : '';
 
@@ -423,7 +454,7 @@ Page({
 
     let custom = [];
     try {
-      custom = wx.getStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES) || [];
+      custom = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
     } catch (e) {
       console.error('Failed to read custom categories:', e);
       this.showStorageFailureToast();
@@ -442,7 +473,7 @@ Page({
 
     custom.push(newCategory);
     try {
-      wx.setStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES, custom);
+      await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, custom);
     } catch (e) {
       console.error('Failed to save custom category:', e);
       this.showStorageFailureToast();
@@ -471,14 +502,14 @@ Page({
       title: text.deleteCategoryTitle,
       content: `${text.deleteCategoryPrefix}${name}${text.deleteCategorySuffix}`,
       confirmColor: '#ef4444',
-      confirm: () => {
+      confirm: async () => {
         try {
-          const custom = wx.getStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES) || [];
+          const custom = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
           const updated = custom.filter(c => c.key !== key);
-          wx.setStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES, updated);
+          await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, updated);
 
           // Reload categories
-          this.loadCategories();
+          await this.loadCategories();
 
           // If the deleted category was currently selected, reset it to Sport
           if (this.data.memoForm.tag === key) {
@@ -507,7 +538,7 @@ Page({
     });
   },
 
-  sortByTime() {
+  async sortByTime() {
     const { selectedMemos, selectedDate, memoDates, text, sortOrder } = this.data;
     if (!selectedMemos || selectedMemos.length <= 1) return;
 
@@ -532,7 +563,7 @@ Page({
     const updatedMemoDates = Object.assign({}, memoDates);
     updatedMemoDates[selectedDate] = this.cleanMemosUIFields(sorted);
 
-    if (!this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
+    if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
 
     this.vibrate();
     
@@ -689,6 +720,7 @@ Page({
     this.dragStartY = touch.clientY;
     this.dragIndex = index;
     this.lastDragSetDataTime = 0;
+    this.lastDragTranslateY = 0;
     
     this.vibrate();
     
@@ -745,21 +777,26 @@ Page({
         dragTranslateY: touch.clientY - this.dragStartY
       });
       this.lastDragSetDataTime = Date.now();
+      this.lastDragTranslateY = touch.clientY - this.dragStartY;
       
       this.vibrate();
     } else {
-      // Throttle pure translation updates to ~30fps (approx. every 32ms)
+      // Throttle pure translation updates to reduce bridge traffic during drag.
       const now = Date.now();
-      if (now - this.lastDragSetDataTime > 32) {
+      if (
+        now - this.lastDragSetDataTime > DRAG_TRANSLATE_THROTTLE_MS &&
+        Math.abs(deltaY - this.lastDragTranslateY) >= 2
+      ) {
         this.setData({
           dragTranslateY: deltaY
         });
         this.lastDragSetDataTime = now;
+        this.lastDragTranslateY = deltaY;
       }
     }
   },
 
-  onDragEnd() {
+  async onDragEnd() {
     if (!this.data.draggingId) return;
     
     const { selectedMemos, selectedDate, memoDates } = this.data;
@@ -767,7 +804,7 @@ Page({
     const updatedMemoDates = Object.assign({}, memoDates);
     updatedMemoDates[selectedDate] = this.cleanMemosUIFields(selectedMemos);
 
-    const saveSucceeded = this.saveMemosToStorage(updatedMemoDates, selectedDate);
+    const saveSucceeded = await this.saveMemosToStorage(updatedMemoDates, selectedDate);
     if (!saveSucceeded) {
       this.setData({
         draggingId: '',
@@ -777,6 +814,7 @@ Page({
         this.updateSelectedMemos();
       });
       this.cardRects = null;
+      this.lastDragTranslateY = 0;
       return;
     }
 
@@ -791,10 +829,11 @@ Page({
     this.setData(nextData);
     
     this.cardRects = null;
+    this.lastDragTranslateY = 0;
     this.vibrate('medium');
   },
 
-  onSwipeDoneTap(e) {
+  async onSwipeDoneTap(e) {
     const { id } = e.currentTarget.dataset;
     const { selectedDate, memoDates } = this.data;
     
@@ -811,7 +850,7 @@ Page({
     
     updatedMemoDates[selectedDate] = this.cleanMemosUIFields(dayMemos);
 
-    if (!this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
+    if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
 
     this.setData({
       memoDates: updatedMemoDates,
@@ -848,10 +887,10 @@ Page({
       confirmText: text.delete,
       cancelText: text.cancel,
       confirmColor: '#ef4444',
-      confirm: () => {
+      confirm: async () => {
         const updatedMemoDates = this.removeMemoFromDate(memoDates, selectedDate, id);
         if (!updatedMemoDates) return;
-        if (!this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
+        if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
 
         if (options.vibrateOnSuccess) {
           this.vibrate('medium');
@@ -979,7 +1018,7 @@ Page({
     });
   },
 
-  onSaveMemo() {
+  async onSaveMemo() {
     if (this.savingMemo) return;
 
     const { memoForm, selectedDate, memoDates, text } = this.data;
@@ -1025,7 +1064,7 @@ Page({
 
     updatedMemoDates[selectedDate] = dayMemos;
 
-    if (!this.saveMemosToStorage(updatedMemoDates, selectedDate)) {
+    if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) {
       this.savingMemo = false;
       return;
     }
@@ -1081,7 +1120,14 @@ Page({
       this.cancelCallback = null;
 
       try {
-        if (callback) callback();
+        if (callback) {
+          const result = callback();
+          if (result && typeof result.catch === 'function') {
+            result.catch(err => {
+              console.error('Confirm callback failed:', err);
+            });
+          }
+        }
       } finally {
         this.confirmCallback = null;
         this.cancelCallback = null;
@@ -1111,13 +1157,13 @@ Page({
     });
   },
 
-  onExportData() {
+  async onExportData() {
     const { text: txt } = this.data;
     let memos = {};
     let categories = [];
     try {
-      memos = wx.getStorageSync(STORAGE_KEYS.MEMOS) || {};
-      categories = wx.getStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES) || [];
+      memos = await this.getStorage(STORAGE_KEYS.MEMOS, {});
+      categories = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
     } catch (e) {
       console.error('Failed to read storage for export:', e);
       this.showStorageFailureToast();
@@ -1192,7 +1238,7 @@ Page({
     });
   },
 
-  processImportData(text, isOverwrite = false) {
+  async processImportData(text, isOverwrite = false) {
     const { text: txt } = this.data;
     const importedData = parseBackupData(text, {
       defaultCategories: CATEGORIES,
@@ -1210,8 +1256,8 @@ Page({
       let localMemos = {};
       let localCategories = [];
       try {
-        localMemos = wx.getStorageSync(STORAGE_KEYS.MEMOS) || {};
-        localCategories = wx.getStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES) || [];
+        localMemos = await this.getStorage(STORAGE_KEYS.MEMOS, {});
+        localCategories = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
       } catch (e) {
         console.error('Failed to read storage for merge:', e);
         this.showStorageFailureToast();
@@ -1224,15 +1270,15 @@ Page({
     }
 
     try {
-      wx.setStorageSync(STORAGE_KEYS.MEMOS, finalData.memos);
-      wx.setStorageSync(STORAGE_KEYS.CUSTOM_CATEGORIES, finalData.categories);
+      await this.setStorage(STORAGE_KEYS.MEMOS, finalData.memos);
+      await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, finalData.categories);
     } catch (e) {
       console.error('Failed to save imported data:', e);
       this.showStorageFailureToast();
       return;
     }
 
-    this.loadCategories();
+    await this.loadCategories();
     this.setData({
       memoDates: finalData.memos,
       memoDateMeta: this.createMemoDateMeta(finalData.memos),

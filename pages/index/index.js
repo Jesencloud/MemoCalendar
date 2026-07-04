@@ -388,7 +388,7 @@ Page({
           const custom = wx.getStorageSync('memoCustomCategories') || [];
           const updated = custom.filter(c => c.key !== key);
           wx.setStorageSync('memoCustomCategories', updated);
-          
+
           // Reload categories
           this.loadCategories();
 
@@ -982,7 +982,7 @@ Page({
   showConfirm(options) {
     this.confirmCallback = options.confirm || null;
     this.cancelCallback = options.cancel || null;
-    
+
     this.setData({
       confirmDialog: {
         visible: true,
@@ -999,11 +999,16 @@ Page({
     this.setData({
       'confirmDialog.visible': false
     }, () => {
-      if (this.confirmCallback) {
-        this.confirmCallback();
-        this.confirmCallback = null;
-      }
+      const callback = this.confirmCallback;
+      this.confirmCallback = null;
       this.cancelCallback = null;
+
+      try {
+        if (callback) callback();
+      } finally {
+        this.confirmCallback = null;
+        this.cancelCallback = null;
+      }
     });
   },
 
@@ -1011,11 +1016,16 @@ Page({
     this.setData({
       'confirmDialog.visible': false
     }, () => {
-      if (this.cancelCallback) {
-        this.cancelCallback();
+      const callback = this.cancelCallback;
+      this.confirmCallback = null;
+      this.cancelCallback = null;
+
+      try {
+        if (callback) callback();
+      } finally {
+        this.confirmCallback = null;
         this.cancelCallback = null;
       }
-      this.confirmCallback = null;
     });
   }
 });

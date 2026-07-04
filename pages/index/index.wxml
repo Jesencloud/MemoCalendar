@@ -1,5 +1,5 @@
 <!--pages/index/index.wxml-->
-<page-meta page-style="overflow: {{modalVisible || modalClosing ? 'hidden' : 'visible'}}" />
+<page-meta page-style="overflow: {{modalVisible || modalClosing || confirmDialog.visible ? 'hidden' : 'visible'}}" />
 <view class="container {{lang === 'zh' ? 'lang-zh' : 'lang-en'}}">
   <view class="header">
     <view class="header-main">
@@ -272,11 +272,11 @@
       <view class="modal-header">
         <text class="modal-title">{{confirmDialog.title}}</text>
       </view>
-      
+
       <view class="modal-body custom-confirm-body">
         <text class="confirm-content-text">{{confirmDialog.content}}</text>
       </view>
-      
+
       <view class="modal-actions">
         <view
           class="modal-btn btn-cancel"

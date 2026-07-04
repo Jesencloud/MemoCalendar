@@ -39,7 +39,7 @@
     <view wx:if="{{selectedMemos.length > 0}}" class="memo-list">
       <block wx:for="{{selectedMemos}}" wx:key="id">
         <view
-          class="memo-card-wrapper {{item.isSwiped ? 'swiped' : ''}} {{item.id === draggingId ? 'dragging' : ''}}"
+          class="memo-card-wrapper {{item.id === swipedMemoId ? 'swiped' : ''}} {{item.id === draggingId ? 'dragging' : ''}}"
           data-id="{{item.id}}"
           data-index="{{index}}"
           bindtouchstart="onSwipeTouchStart"
@@ -48,7 +48,7 @@
         >
           <view
             class="memo-card {{item.completed ? 'memo-card-completed' : ''}}"
-            hover-class="{{item.isSwiped || draggingId ? 'none' : 'memo-card-hover'}}"
+            hover-class="{{item.id === swipedMemoId || draggingId ? 'none' : 'memo-card-hover'}}"
             data-id="{{item.id}}"
             bindtap="onEditMemoTap"
             style="border-left: 8rpx solid {{item.completed ? '#d1d5db' : (item.color || '#d09a04')}}; border-top: 2rpx solid {{item.completed ? '#e5e7eb' : (item.color || '#d09a04')}}40; border-right: 2rpx solid {{item.completed ? '#e5e7eb' : (item.color || '#d09a04')}}40; border-bottom: 2rpx solid {{item.completed ? '#e5e7eb' : (item.color || '#d09a04')}}40;"
@@ -61,7 +61,6 @@
                   <text class="location-text">{{item.location}}</text>
                 </view>
                 <text class="memo-tag-inline" style="color: {{item.completed ? '#d1d5db' : item.color}}">{{item.categoryIcon === '🏷️' ? '#' + (lang === 'zh' ? item.tagCn : item.tagEn) : item.categoryIcon}}</text>
-                <!-- Drag Handle -->
                 <view
                   class="drag-handle"
                   catchtouchstart="onDragStart"
@@ -78,10 +77,10 @@
           
           <view class="swipe-actions">
             <view class="swipe-btn btn-done" catchtap="onSwipeDoneTap" data-id="{{item.id}}">
-              <text>{{item.completed ? (lang === 'zh' ? '待办' : 'Todo') : (lang === 'zh' ? '完成' : 'Done')}}</text>
+              <text>{{item.completed ? text.todo : text.done}}</text>
             </view>
             <view class="swipe-btn btn-delete" catchtap="onSwipeDeleteTap" data-id="{{item.id}}">
-              <text>{{lang === 'zh' ? '删除' : 'Delete'}}</text>
+              <text>{{text.delete}}</text>
             </view>
           </view>
         </view>
@@ -125,7 +124,7 @@
 
         <!-- Completed Switch -->
         <view class="form-item form-item-switch" wx:if="{{memoForm.id}}">
-          <text class="form-label">{{lang === 'zh' ? '标记已完成' : 'Mark Completed'}}</text>
+          <text class="form-label">{{text.markCompleted}}</text>
           <switch checked="{{memoForm.completed}}" bindchange="onFormCompletedChange" color="#d09a04" />
         </view>
         
@@ -158,14 +157,14 @@
               bindtap="onAddCustomTag"
             >
               <text class="tag-icon">＋</text>
-              <text class="tag-text">{{lang === 'zh' ? '自定义' : 'Custom'}}</text>
+              <text class="tag-text">{{text.customCategory}}</text>
             </view>
           </view>
         </view>
         
         <!-- Time Picker -->
         <view class="form-item">
-          <text class="form-label">{{lang === 'zh' ? '时间' : 'Time'}}</text>
+          <text class="form-label">{{text.time}}</text>
           <picker mode="time" value="{{memoForm.time}}" bindchange="onFormTimeChange">
             <view class="picker-value {{memoForm.time ? '' : 'placeholder'}}">
               <text class="field-emoji">⏰</text>
@@ -176,7 +175,7 @@
         
         <!-- Location Input -->
         <view class="form-item">
-          <text class="form-label">{{lang === 'zh' ? '地点' : 'Location'}}</text>
+          <text class="form-label">{{text.location}}</text>
           <view class="input-container">
             <text class="field-emoji">📌</text>
             <input
@@ -191,11 +190,10 @@
         </view>
         
         <!-- Notes Input -->
-        <!-- Notes Input -->
         <view class="form-item">
           <view class="form-label-row">
-            <text class="form-label">{{lang === 'zh' ? '详细备注' : 'Notes'}}</text>
-            <text class="word-counter">{{memoForm.notes ? memoForm.notes.length : 0}}/200</text>
+            <text class="form-label">{{text.notes}}</text>
+            <text class="word-counter">{{memoNotesLength}}/200</text>
           </view>
           <textarea
             class="textarea-field"
@@ -232,14 +230,14 @@
   <view class="modal-mask custom-category-mask" wx:if="{{customCategoryModalVisible}}" catchtouchmove="stopBubble" style="z-index: 130;">
     <view class="modal-panel custom-category-panel">
       <view class="modal-header">
-        <text class="modal-title">{{lang === 'zh' ? '新建自定义分类' : 'New Custom Category'}}</text>
+        <text class="modal-title">{{text.newCustomCategory}}</text>
       </view>
 
       <scroll-view scroll-y class="modal-form" style="padding-bottom: 20rpx;">
         <view class="form-item">
           <input
             class="input-title"
-            placeholder="{{lang === 'zh' ? '输入分类名称 (10字以内)' : 'Category name (max 10 chars)'}}"
+            placeholder="{{text.customCategoryPlaceholder}}"
             value="{{customCategoryName}}"
             bindinput="onCustomCategoryNameInput"
             maxlength="10"
@@ -262,7 +260,7 @@
           hover-class="btn-save-hover"
           catchtap="onSaveCustomCategory"
         >
-          {{lang === 'zh' ? '确定' : 'Confirm'}}
+          {{text.confirm}}
         </view>
       </view>
     </view>

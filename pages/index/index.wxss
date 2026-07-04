@@ -231,10 +231,6 @@ page {
   opacity: 0.6;
 }
 
-.memo-card-completed .notes-section {
-  opacity: 0.6;
-}
-
 .memo-card-hover {
   transform: translateY(-2rpx);
   box-shadow: 0 10rpx 25rpx rgba(0, 0, 0, 0.05);
@@ -315,21 +311,6 @@ page {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.memo-card-notes {
-  margin-top: 20rpx;
-  padding: 16rpx 20rpx;
-  background: #f9fafb;
-  border-radius: 12rpx;
-  border-left: 4rpx solid #e5e7eb;
-}
-
-.notes-text {
-  font-size: 26rpx;
-  color: #4b5563;
-  line-height: 1.5;
-  word-break: break-all;
 }
 
 /* No Memos Placeholder */

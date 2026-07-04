@@ -61,8 +61,9 @@ Component({
     attached() {
       const now = new Date();
       const defaultDate = this.formatDate(now.getFullYear(), now.getMonth(), now.getDate());
-      const initialDate = this.properties.selectedDate || defaultDate;
-      const parsed = this.parseDate(initialDate) || { year: now.getFullYear(), month: now.getMonth(), day: now.getDate() };
+      const parsedInitialDate = this.parseDate(this.properties.selectedDate);
+      const initialDate = parsedInitialDate ? this.properties.selectedDate : defaultDate;
+      const parsed = parsedInitialDate || { year: now.getFullYear(), month: now.getMonth(), day: now.getDate() };
       
       const currentYear = parsed.year;
       const currentMonth = parsed.month;
@@ -217,13 +218,27 @@ Component({
     },
 
     parseDate(date) {
+      if (typeof date !== 'string') return null;
+
       const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
       if (!match) return null;
 
+      const year = Number(match[1]);
+      const month = Number(match[2]) - 1;
+      const day = Number(match[3]);
+      const parsed = new Date(year, month, day);
+      if (
+        parsed.getFullYear() !== year ||
+        parsed.getMonth() !== month ||
+        parsed.getDate() !== day
+      ) {
+        return null;
+      }
+
       return {
-        year: Number(match[1]),
-        month: Number(match[2]) - 1,
-        day: Number(match[3])
+        year,
+        month,
+        day
       };
     },
 
@@ -259,14 +274,12 @@ Component({
 
     openMonthPicker() {
       if (this.data.viewMode === 'week') return;
-      const { baseYear, currentYear } = this.data;
-      const pickerYear = currentYear === baseYear || currentYear === baseYear + 1
-        ? currentYear
-        : baseYear;
+      const { currentYear } = this.data;
 
       this.setData({
+        baseYear: currentYear,
         showMonthPicker: true,
-        pickerYear
+        pickerYear: currentYear
       });
     },
 
@@ -390,6 +403,11 @@ Component({
       const nextSelectedDate = this.getShiftedWeekDate(selectedDate, offset);
       
       const parsed = this.parseDate(nextSelectedDate);
+      if (!parsed) {
+        this.calendarSwipeAnimating = false;
+        return;
+      }
+
       const nextData = {
         selectedDate: nextSelectedDate,
         currentYear: parsed.year,
@@ -425,6 +443,8 @@ Component({
       wx.vibrateShort({ type: 'light', fail: () => {} });
       
       const parsed = this.parseDate(date);
+      if (!parsed) return;
+
       const nextState = {
         selectedDate: date,
         currentYear: parsed.year,

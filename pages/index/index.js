@@ -50,6 +50,7 @@ function getText(lang) {
   const keys = [
     'title',
     'subtitle',
+    'shareTitle',
     'today',
     'events',
     'noEvents',
@@ -57,18 +58,43 @@ function getText(lang) {
     'addMemo',
     'editMemo',
     'delete',
+    'done',
+    'todo',
     'save',
+    'saved',
     'cancel',
-    'ok',
+    'confirm',
+    'created',
+    'deleted',
+    'storageFailed',
     'inputTitlePlaceholder',
     'inputTimePlaceholder',
     'inputLocationPlaceholder',
     'inputNotesPlaceholder',
     'selectCategory',
+    'customCategory',
+    'newCustomCategory',
+    'customCategoryPlaceholder',
+    'categoryNameEmpty',
+    'categoryNameTooLong',
+    'categoryExistsSelected',
+    'deleteCategoryTitle',
+    'deleteCategoryPrefix',
+    'deleteCategorySuffix',
+    'confirmDeleteTitle',
     'confirmDelete',
+    'discardTitle',
+    'discardChanges',
+    'discard',
+    'continueEditing',
     'titleRequired',
     'invalidDate',
-    'sortByTime'
+    'sortAsc',
+    'sortDesc',
+    'markCompleted',
+    'time',
+    'location',
+    'notes'
   ];
   return keys.reduce((text, key) => {
     text[key] = t(key, lang);
@@ -92,6 +118,8 @@ Page({
     customCategoryName: '',
     categories: CATEGORIES,
     memoForm: Object.assign({}, DEFAULT_FORM),
+    memoNotesLength: 0,
+    swipedMemoId: '',
     draggingId: '',
     dragTranslateY: 0,
     sortOrder: 'desc'
@@ -107,8 +135,13 @@ Page({
     this.todayDate = todayDate;
 
     let selectedDate = todayDate;
-    if (options && options.date && /^\d{4}-\d{2}-\d{2}$/.test(options.date)) {
-      selectedDate = options.date;
+    let invalidDateFromOptions = false;
+    if (options && options.date) {
+      if (this.isValidDateString(options.date)) {
+        selectedDate = options.date;
+      } else {
+        invalidDateFromOptions = true;
+      }
     }
 
     // Load memos from local storage
@@ -122,6 +155,12 @@ Page({
       memoDates
     }, () => {
       this.updateSelectedMemos();
+      if (invalidDateFromOptions) {
+        wx.showToast({
+          title: this.data.text.invalidDate,
+          icon: 'none'
+        });
+      }
     });
 
     this.updateNavigationTitle(lang);
@@ -148,19 +187,17 @@ Page({
   },
 
   onShareAppMessage() {
-    const { lang } = this.data;
-    const title = lang === 'zh' ? '备忘录日历 - 记录日程规划生活' : 'Memo Calendar - Track schedule & plan life';
+    const { lang, text } = this.data;
     return {
-      title,
+      title: text.shareTitle,
       path: `/pages/index/index?lang=${lang}`
     };
   },
 
   onShareTimeline() {
-    const { lang } = this.data;
-    const title = lang === 'zh' ? '备忘录日历 - 记录日程规划生活' : 'Memo Calendar - Track schedule & plan life';
+    const { lang, text } = this.data;
     return {
-      title,
+      title: text.shareTitle,
       query: `lang=${lang}`
     };
   },
@@ -196,13 +233,19 @@ Page({
   saveMemosToStorage(memoDates) {
     try {
       wx.setStorageSync('memoCalendarMemos', this.cleanMemoDatesUIFields(memoDates));
+      return true;
     } catch (e) {
       console.error('Failed to save memos to storage:', e);
-      wx.showToast({
-        title: this.data.lang === 'zh' ? '存储失败' : 'Storage failed',
-        icon: 'none'
-      });
+      this.showStorageFailureToast();
+      return false;
     }
+  },
+
+  showStorageFailureToast() {
+    wx.showToast({
+      title: this.data.text.storageFailed,
+      icon: 'none'
+    });
   },
 
   loadCategories() {
@@ -240,12 +283,12 @@ Page({
   },
 
   onSaveCustomCategory() {
-    const { lang } = this.data;
+    const { text } = this.data;
     const content = this.data.customCategoryName ? this.data.customCategoryName.trim() : '';
 
     if (!content) {
       wx.showToast({
-        title: lang === 'zh' ? '分类名称不能为空' : 'Name cannot be empty',
+        title: text.categoryNameEmpty,
         icon: 'none'
       });
       return;
@@ -253,7 +296,7 @@ Page({
 
     if (content.length > 10) {
       wx.showToast({
-        title: lang === 'zh' ? '长度超出10个字' : 'Too long (max 10 chars)',
+        title: text.categoryNameTooLong,
         icon: 'none'
       });
       return;
@@ -273,13 +316,21 @@ Page({
         customCategoryName: ''
       });
       wx.showToast({
-        title: lang === 'zh' ? '分类已存在，已为你自动选中' : 'Category exists, selected',
+        title: text.categoryExistsSelected,
         icon: 'none'
       });
       return;
     }
 
-    const custom = wx.getStorageSync('memoCustomCategories') || [];
+    let custom = [];
+    try {
+      custom = wx.getStorageSync('memoCustomCategories') || [];
+    } catch (e) {
+      console.error('Failed to read custom categories:', e);
+      this.showStorageFailureToast();
+      return;
+    }
+
     const selectedColor = PALETTE[custom.length % PALETTE.length];
     const newCategory = {
       key: `custom-${Date.now()}`,
@@ -291,7 +342,14 @@ Page({
     };
 
     custom.push(newCategory);
-    wx.setStorageSync('memoCustomCategories', custom);
+    try {
+      wx.setStorageSync('memoCustomCategories', custom);
+    } catch (e) {
+      console.error('Failed to save custom category:', e);
+      this.showStorageFailureToast();
+      return;
+    }
+
     this.loadCategories();
 
     this.setData({
@@ -303,19 +361,19 @@ Page({
 
     wx.vibrateShort({ type: 'medium', fail: () => {} });
     wx.showToast({
-      title: lang === 'zh' ? '创建成功' : 'Created',
+      title: text.created,
       icon: 'success'
     });
   },
 
   onDeleteCustomTag(e) {
     const { key, name } = e.currentTarget.dataset;
-    const { lang } = this.data;
+    const { text } = this.data;
 
     wx.vibrateShort({ type: 'medium', fail: () => {} });
     wx.showModal({
-      title: lang === 'zh' ? '删除分类' : 'Delete Category',
-      content: lang === 'zh' ? `确定要删除自定义分类“${name}”吗？` : `Are you sure you want to delete custom category "${name}"?`,
+      title: text.deleteCategoryTitle,
+      content: `${text.deleteCategoryPrefix}${name}${text.deleteCategorySuffix}`,
       confirmColor: '#ef4444',
       success: (res) => {
         if (res.confirm) {
@@ -337,11 +395,12 @@ Page({
 
             wx.vibrateShort({ type: 'light', fail: () => {} });
             wx.showToast({
-              title: lang === 'zh' ? '已删除' : 'Deleted',
+              title: text.deleted,
               icon: 'success'
             });
           } catch (err) {
             console.error('Failed to delete custom category:', err);
+            this.showStorageFailureToast();
           }
         }
       }
@@ -351,16 +410,14 @@ Page({
   updateSelectedMemos() {
     const { selectedDate, memoDates } = this.data;
     const list = memoDates[selectedDate] || [];
-    // Deep clone each memo item to isolate runtime UI state from cache
-    // Explicitly seed isSwiped: false to prevent WeChat's diff engine from caching swipe open state
-    const clonedList = list.map(item => Object.assign({}, item, { isSwiped: false }));
     this.setData({
-      selectedMemos: clonedList
+      selectedMemos: this.cleanMemosUIFields(list),
+      swipedMemoId: ''
     });
   },
 
   sortByTime() {
-    const { selectedMemos, selectedDate, memoDates, lang, sortOrder } = this.data;
+    const { selectedMemos, selectedDate, memoDates, text, sortOrder } = this.data;
     if (!selectedMemos || selectedMemos.length <= 1) return;
 
     const nextOrder = (sortOrder === 'asc') ? 'desc' : 'asc';
@@ -383,19 +440,19 @@ Page({
 
     const updatedMemoDates = Object.assign({}, memoDates);
     updatedMemoDates[selectedDate] = this.cleanMemosUIFields(sorted);
-    
-    this.saveMemosToStorage(updatedMemoDates);
+
+    if (!this.saveMemosToStorage(updatedMemoDates)) return;
+
     wx.vibrateShort({ type: 'light', fail: () => {} });
     
     this.setData({
       selectedMemos: sorted,
       memoDates: updatedMemoDates,
+      swipedMemoId: '',
       sortOrder: nextOrder
     }, () => {
       wx.showToast({
-        title: lang === 'zh' 
-          ? (nextOrder === 'asc' ? '时间正序' : '时间倒序') 
-          : (nextOrder === 'asc' ? 'Sorted Ascending' : 'Sorted Descending'),
+        title: nextOrder === 'asc' ? text.sortAsc : text.sortDesc,
         icon: 'success'
       });
     });
@@ -430,6 +487,20 @@ Page({
     return `${year}-${month}-${day}`;
   },
 
+  isValidDateString(date) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+    if (!match) return false;
+
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const parsed = new Date(year, month - 1, day);
+
+    return parsed.getFullYear() === year &&
+      parsed.getMonth() === month - 1 &&
+      parsed.getDate() === day;
+  },
+
   onDateSelect(e) {
     const { date } = e.detail;
     this.selectDate(date);
@@ -447,10 +518,19 @@ Page({
   },
 
   selectDate(date) {
+    if (!this.isValidDateString(date)) {
+      wx.showToast({
+        title: this.data.text.invalidDate,
+        icon: 'none'
+      });
+      return;
+    }
+
     const todayDate = this.todayDate || this.getTodayDate();
     this.setData({
       selectedDate: date,
       showTodayButton: date !== todayDate,
+      swipedMemoId: '',
       sortOrder: 'desc'
     }, () => {
       this.updateSelectedMemos();
@@ -465,6 +545,8 @@ Page({
     this.originalForm = JSON.stringify(initialForm);
     this.setData({
       memoForm: initialForm,
+      memoNotesLength: 0,
+      swipedMemoId: '',
       modalVisible: true,
       modalClosing: false
     });
@@ -472,18 +554,10 @@ Page({
 
   onEditMemoTap(e) {
     const { id } = e.currentTarget.dataset;
-    const { selectedDate, memoDates, selectedMemos } = this.data;
-    const memoUI = selectedMemos.find(m => m.id === id);
-    
-    // If swiped, click resets the swipe state instead of opening editor
-    if (memoUI && memoUI.isSwiped) {
-      const updated = selectedMemos.map(item => {
-        if (item.id === id) {
-          item.isSwiped = false;
-        }
-        return item;
-      });
-      this.setData({ selectedMemos: updated });
+    const { selectedDate, memoDates, swipedMemoId } = this.data;
+
+    if (swipedMemoId === id) {
+      this.setData({ swipedMemoId: '' });
       return;
     }
 
@@ -496,6 +570,7 @@ Page({
     this.originalForm = JSON.stringify(memo);
     this.setData({
       memoForm: Object.assign({}, memo),
+      memoNotesLength: memo.notes ? memo.notes.length : 0,
       modalVisible: true,
       modalClosing: false
     });
@@ -515,20 +590,9 @@ Page({
 
     // Check if horizontal swipe and minimal vertical move
     if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < 40) {
-      const { selectedMemos } = this.data;
-      const updated = selectedMemos.map(item => {
-        if (item.id === this.activeId) {
-          if (deltaX < 0) {
-            item.isSwiped = true;
-          } else {
-            item.isSwiped = false;
-          }
-        } else {
-          item.isSwiped = false;
-        }
-        return item;
+      this.setData({
+        swipedMemoId: deltaX < 0 ? this.activeId : ''
       });
-      this.setData({ selectedMemos: updated });
     }
   },
 
@@ -544,7 +608,8 @@ Page({
     
     this.setData({
       draggingId: id,
-      dragTranslateY: 0
+      dragTranslateY: 0,
+      swipedMemoId: ''
     });
     
     // Query card positions and heights to calculate swaps accurately
@@ -615,14 +680,28 @@ Page({
     
     const updatedMemoDates = Object.assign({}, memoDates);
     updatedMemoDates[selectedDate] = this.cleanMemosUIFields(selectedMemos);
-    this.saveMemosToStorage(updatedMemoDates);
-    
-    this.setData({
+
+    const saveSucceeded = this.saveMemosToStorage(updatedMemoDates);
+    if (!saveSucceeded) {
+      this.setData({
+        draggingId: '',
+        dragTranslateY: 0,
+        sortOrder: 'desc'
+      }, () => {
+        this.updateSelectedMemos();
+      });
+      this.cardRects = null;
+      return;
+    }
+
+    const nextData = {
       draggingId: '',
       dragTranslateY: 0,
       memoDates: updatedMemoDates,
       sortOrder: 'desc'
-    });
+    };
+
+    this.setData(nextData);
     
     this.cardRects = null;
     wx.vibrateShort({ type: 'medium', fail: () => {} });
@@ -644,8 +723,9 @@ Page({
     });
     
     updatedMemoDates[selectedDate] = this.cleanMemosUIFields(dayMemos);
-    this.saveMemosToStorage(updatedMemoDates);
-    
+
+    if (!this.saveMemosToStorage(updatedMemoDates)) return;
+
     this.setData({
       memoDates: updatedMemoDates
     }, () => {
@@ -653,55 +733,77 @@ Page({
     });
   },
 
-  onSwipeDeleteTap(e) {
-    const { id } = e.currentTarget.dataset;
-    const { selectedDate, memoDates, lang, text } = this.data;
-    
-    wx.vibrateShort({ type: 'medium', fail: () => {} });
-    
+  removeMemoFromDate(memoDates, date, id) {
+    const updatedMemoDates = Object.assign({}, memoDates);
+    const dayMemos = updatedMemoDates[date] ? [...updatedMemoDates[date]] : [];
+    const index = dayMemos.findIndex(m => m.id === id);
+
+    if (index === -1) return null;
+
+    dayMemos.splice(index, 1);
+    if (dayMemos.length === 0) {
+      delete updatedMemoDates[date];
+    } else {
+      updatedMemoDates[date] = dayMemos;
+    }
+
+    return updatedMemoDates;
+  },
+
+  deleteMemoById(id, options = {}) {
+    const { selectedDate, memoDates, text } = this.data;
+    if (!id) return;
+
     wx.showModal({
-      title: lang === 'zh' ? '确认删除' : 'Confirm Delete',
+      title: text.confirmDeleteTitle,
       content: text.confirmDelete,
       confirmColor: '#ef4444',
       success: (res) => {
-        if (res.confirm) {
-          const updatedMemoDates = Object.assign({}, memoDates);
-          const dayMemos = updatedMemoDates[selectedDate] ? [...updatedMemoDates[selectedDate]] : [];
-          const index = dayMemos.findIndex(m => m.id === id);
-          
-          if (index !== -1) {
-            dayMemos.splice(index, 1);
-            if (dayMemos.length === 0) {
-              delete updatedMemoDates[selectedDate];
-            } else {
-              updatedMemoDates[selectedDate] = dayMemos;
-            }
-
-            this.saveMemosToStorage(updatedMemoDates);
-            
-            wx.showToast({
-              title: lang === 'zh' ? '已删除' : 'Deleted',
-              icon: 'success'
-            });
-
-            this.setData({
-              memoDates: updatedMemoDates
-            }, () => {
-              this.updateSelectedMemos();
-            });
+        if (!res.confirm) {
+          if (options.clearSwipeOnCancel) {
+            this.setData({ swipedMemoId: '' });
           }
-        } else {
-          // Reset swipe state on cancel
-          const { selectedMemos } = this.data;
-          const updated = selectedMemos.map(item => {
-            if (item.id === id) {
-              item.isSwiped = false;
-            }
-            return item;
-          });
-          this.setData({ selectedMemos: updated });
+          return;
         }
+
+        const updatedMemoDates = this.removeMemoFromDate(memoDates, selectedDate, id);
+        if (!updatedMemoDates) return;
+        if (!this.saveMemosToStorage(updatedMemoDates)) return;
+
+        if (options.vibrateOnSuccess) {
+          wx.vibrateShort({ type: 'medium', fail: () => {} });
+        }
+
+        wx.showToast({
+          title: text.deleted,
+          icon: 'success'
+        });
+
+        const dataToSet = {
+          memoDates: updatedMemoDates,
+          swipedMemoId: ''
+        };
+
+        if (options.closeModal) {
+          this._closeModalWithData(dataToSet, () => {
+            this.updateSelectedMemos();
+          });
+          return;
+        }
+
+        this.setData(dataToSet, () => {
+          this.updateSelectedMemos();
+        });
       }
+    });
+  },
+
+  onSwipeDeleteTap(e) {
+    const { id } = e.currentTarget.dataset;
+
+    wx.vibrateShort({ type: 'medium', fail: () => {} });
+    this.deleteMemoById(id, {
+      clearSwipeOnCancel: true
     });
   },
 
@@ -709,10 +811,10 @@ Page({
     const isDirty = this.originalForm && this.originalForm !== JSON.stringify(this.data.memoForm);
     if (isDirty) {
       wx.showModal({
-        title: this.data.lang === 'zh' ? '提示' : 'Tip',
-        content: this.data.lang === 'zh' ? '有未保存的修改，确定放弃并退出吗？' : 'Discard unsaved changes?',
-        confirmText: this.data.lang === 'zh' ? '放弃' : 'Yes',
-        cancelText: this.data.lang === 'zh' ? '继续编辑' : 'No',
+        title: this.data.text.discardTitle,
+        content: this.data.text.discardChanges,
+        confirmText: this.data.text.discard,
+        cancelText: this.data.text.continueEditing,
         confirmColor: '#d09a04',
         success: (res) => {
           if (res.confirm) {
@@ -768,7 +870,11 @@ Page({
   },
 
   onFormNotesInput(e) {
-    this.data.memoForm.notes = e.detail.value;
+    const notes = e.detail.value;
+    this.data.memoForm.notes = notes;
+    this.setData({
+      memoNotesLength: notes.length
+    });
   },
 
   onFormTimeChange(e) {
@@ -792,7 +898,7 @@ Page({
   onSaveMemo() {
     if (this.savingMemo) return;
 
-    const { memoForm, selectedDate, memoDates, lang, text } = this.data;
+    const { memoForm, selectedDate, memoDates, text } = this.data;
     
     if (!memoForm.title.trim()) {
       wx.showToast({
@@ -838,11 +944,14 @@ Page({
 
     updatedMemoDates[selectedDate] = dayMemos;
 
-    this.saveMemosToStorage(updatedMemoDates);
+    if (!this.saveMemosToStorage(updatedMemoDates)) {
+      this.savingMemo = false;
+      return;
+    }
 
     wx.vibrateShort({ type: 'medium', fail: () => {} });
     wx.showToast({
-      title: lang === 'zh' ? '保存成功' : 'Saved',
+      title: text.saved,
       icon: 'success'
     });
 
@@ -853,41 +962,12 @@ Page({
   },
 
   onDeleteMemo() {
-    const { memoForm, selectedDate, memoDates, lang, text } = this.data;
+    const { memoForm } = this.data;
     if (!memoForm.id) return;
 
-    wx.showModal({
-      title: lang === 'zh' ? '确认删除' : 'Confirm Delete',
-      content: text.confirmDelete,
-      confirmColor: '#ef4444',
-      success: (res) => {
-        if (res.confirm) {
-          const updatedMemoDates = Object.assign({}, memoDates);
-          const dayMemos = updatedMemoDates[selectedDate] ? [...updatedMemoDates[selectedDate]] : [];
-          const index = dayMemos.findIndex(m => m.id === memoForm.id);
-          
-          if (index !== -1) {
-            dayMemos.splice(index, 1);
-            if (dayMemos.length === 0) {
-              delete updatedMemoDates[selectedDate];
-            } else {
-              updatedMemoDates[selectedDate] = dayMemos;
-            }
-
-            this.saveMemosToStorage(updatedMemoDates);
-            
-            wx.vibrateShort({ type: 'medium', fail: () => {} });
-            wx.showToast({
-              title: lang === 'zh' ? '已删除' : 'Deleted',
-              icon: 'success'
-            });
-
-            this._closeModalWithData({ memoDates: updatedMemoDates }, () => {
-              this.updateSelectedMemos();
-            });
-          }
-        }
-      }
+    this.deleteMemoById(memoForm.id, {
+      closeModal: true,
+      vibrateOnSuccess: true
     });
   },
 

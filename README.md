@@ -79,12 +79,12 @@
   "memos": {
     "2026-07-04": [
       {
-        "id": "memo-1719999999999",
+        "id": "memo-20260704-182500123-456",
         "title": "学习小程序开发",
         "time": "14:30",
         "location": "图书馆",
-        "tag": "Study",
-        "color": "#007aff",
+        "tag": "custom-20260704-181046377",
+        "color": "#34c759",
         "notes": "阅读日程数据导入导出章节",
         "completed": false
       }
@@ -92,7 +92,7 @@
   },
   "categories": [
     {
-      "key": "custom-1719999999999",
+      "key": "custom-20260704-181046377",
       "labelCn": "设计",
       "labelEn": "Design",
       "color": "#34c759",
@@ -108,14 +108,14 @@
   - `"app"`: 必须为固定的 `"MemoCalendar"`。导入模块会校验该指纹，非本应用的数据会被拒绝，防止数据污染。
 * **日程列表 (`"memos"`)**：
   - 以日期 `"YYYY-MM-DD"` 为 Key，对应的值是当天日程的数组。
-  - `id` (必填): 唯一标识符。
+  - `id` (必填): 唯一标识符。系统采用 `memo-YYYYMMDD-HHMMSSms-random` 命名格式以极大提升导出数据的可读性。
   - `title` (必填): 日程标题（限制 40 字内）。
   - `tag` (必填): 分类 Key（如 `Work`, `Life`, `Sport`, `Study`, `Important` 或自定义的 `custom-xxx`）。
   - `completed` (必填): 是否已完成（布尔值 `true`/`false`）。
   - `time`, `location`, `notes` (选填): 包含相应的长度防爆校验。
 * **自定义分类列表 (`"categories"`)**：
   - 存放用户自定义的分类项。
-  - `key` (必填): 必须以 `"custom-"` 开头。
+  - `key` (必填): 必须以 `"custom-` 开头。系统采用 `custom-YYYYMMDD-HHMMSSms` 命名格式以兼顾唯一性与可读性。
   - `labelCn` / `labelEn` (必填): 中英文显示名（限制 10 字内）。
   - `color`: Hex 颜色代码（如 `"#34c759"`）。
   - `icon` (选填): 单个 Emoji 图标。

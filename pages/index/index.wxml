@@ -9,7 +9,7 @@
       </view>
       <view class="header-actions">
         <view class="lang-toggle" hover-class="lang-toggle-hover" hover-stay-time="100" bindtap="onOpenBackupModal" style="margin-right: 15rpx;">
-          <text>⚙️ {{text.backupBtn}}</text>
+          <text>💾 {{text.backupBtn}}</text>
         </view>
         <view class="lang-toggle" hover-class="lang-toggle-hover" hover-stay-time="100" bindtap="toggleLang">
           <text>{{text.langToggle}}</text>

@@ -242,7 +242,7 @@ Page({
   onSaveCustomCategory() {
     const { lang } = this.data;
     const content = this.data.customCategoryName ? this.data.customCategoryName.trim() : '';
-    
+
     if (!content) {
       wx.showToast({
         title: lang === 'zh' ? '分类名称不能为空' : 'Name cannot be empty',
@@ -889,5 +889,9 @@ Page({
         }
       }
     });
+  },
+
+  stopBubble() {
+    // Empty handler to prevent event bubbling/scroll penetration
   }
 });

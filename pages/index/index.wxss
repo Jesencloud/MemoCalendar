@@ -730,3 +730,32 @@ page {
     transform: scale(1);
   }
 }
+
+/* Center alignment for custom confirmation dialog */
+.custom-confirm-mask {
+  align-items: center;
+  padding: 0 80rpx;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.45); /* Slightly darker overlay for emphasis */
+}
+
+.custom-confirm-mask .custom-confirm-panel {
+  width: 100%;
+  max-width: 560rpx;
+  border-radius: 32rpx;
+  padding: 40rpx;
+  margin-bottom: 80rpx;
+  animation: modalZoomIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.15);
+}
+
+.custom-confirm-body {
+  padding: 20rpx 0 40rpx;
+  text-align: center;
+}
+
+.confirm-content-text {
+  font-size: 28rpx;
+  color: #4b5563;
+  line-height: 1.6;
+}

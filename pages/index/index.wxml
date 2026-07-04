@@ -266,4 +266,35 @@
     </view>
   </view>
 
+  <!-- Custom Confirmation Dialog -->
+  <view class="modal-mask custom-confirm-mask" wx:if="{{confirmDialog.visible}}" catchtouchmove="stopBubble" style="z-index: 140;">
+    <view class="modal-panel custom-confirm-panel">
+      <view class="modal-header">
+        <text class="modal-title">{{confirmDialog.title}}</text>
+      </view>
+      
+      <view class="modal-body custom-confirm-body">
+        <text class="confirm-content-text">{{confirmDialog.content}}</text>
+      </view>
+      
+      <view class="modal-actions">
+        <view
+          class="modal-btn btn-cancel"
+          hover-class="btn-cancel-hover"
+          catchtap="onConfirmDialogCancel"
+        >
+          {{confirmDialog.cancelText}}
+        </view>
+        <view
+          class="modal-btn btn-save"
+          hover-class="btn-save-hover"
+          style="background: {{confirmDialog.confirmColor}}; box-shadow: 0 6rpx 20rpx {{confirmDialog.confirmColor}}40;"
+          catchtap="onConfirmDialogConfirm"
+        >
+          {{confirmDialog.confirmText}}
+        </view>
+      </view>
+    </view>
+  </view>
+
 </view>

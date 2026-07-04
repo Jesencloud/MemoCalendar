@@ -116,6 +116,14 @@ Page({
     modalClosing: false,
     customCategoryModalVisible: false,
     customCategoryName: '',
+    confirmDialog: {
+      visible: false,
+      title: '',
+      content: '',
+      confirmText: '',
+      cancelText: '',
+      confirmColor: ''
+    },
     categories: CATEGORIES,
     memoForm: Object.assign({}, DEFAULT_FORM),
     memoNotesLength: 0,
@@ -371,37 +379,35 @@ Page({
     const { text } = this.data;
 
     wx.vibrateShort({ type: 'medium', fail: () => {} });
-    wx.showModal({
+    this.showConfirm({
       title: text.deleteCategoryTitle,
       content: `${text.deleteCategoryPrefix}${name}${text.deleteCategorySuffix}`,
       confirmColor: '#ef4444',
-      success: (res) => {
-        if (res.confirm) {
-          try {
-            const custom = wx.getStorageSync('memoCustomCategories') || [];
-            const updated = custom.filter(c => c.key !== key);
-            wx.setStorageSync('memoCustomCategories', updated);
-            
-            // Reload categories
-            this.loadCategories();
+      confirm: () => {
+        try {
+          const custom = wx.getStorageSync('memoCustomCategories') || [];
+          const updated = custom.filter(c => c.key !== key);
+          wx.setStorageSync('memoCustomCategories', updated);
+          
+          // Reload categories
+          this.loadCategories();
 
-            // If the deleted category was currently selected, reset it to Sport
-            if (this.data.memoForm.tag === key) {
-              this.setData({
-                'memoForm.tag': 'Sport',
-                'memoForm.color': '#ff9500'
-              });
-            }
-
-            wx.vibrateShort({ type: 'light', fail: () => {} });
-            wx.showToast({
-              title: text.deleted,
-              icon: 'success'
+          // If the deleted category was currently selected, reset it to Sport
+          if (this.data.memoForm.tag === key) {
+            this.setData({
+              'memoForm.tag': 'Sport',
+              'memoForm.color': '#ff9500'
             });
-          } catch (err) {
-            console.error('Failed to delete custom category:', err);
-            this.showStorageFailureToast();
           }
+
+          wx.vibrateShort({ type: 'light', fail: () => {} });
+          wx.showToast({
+            title: text.deleted,
+            icon: 'success'
+          });
+        } catch (err) {
+          console.error('Failed to delete custom category:', err);
+          this.showStorageFailureToast();
         }
       }
     });
@@ -754,18 +760,13 @@ Page({
     const { selectedDate, memoDates, text } = this.data;
     if (!id) return;
 
-    wx.showModal({
+    this.showConfirm({
       title: text.confirmDeleteTitle,
       content: text.confirmDelete,
+      confirmText: text.delete,
+      cancelText: text.cancel,
       confirmColor: '#ef4444',
-      success: (res) => {
-        if (!res.confirm) {
-          if (options.clearSwipeOnCancel) {
-            this.setData({ swipedMemoId: '' });
-          }
-          return;
-        }
-
+      confirm: () => {
         const updatedMemoDates = this.removeMemoFromDate(memoDates, selectedDate, id);
         if (!updatedMemoDates) return;
         if (!this.saveMemosToStorage(updatedMemoDates)) return;
@@ -794,6 +795,11 @@ Page({
         this.setData(dataToSet, () => {
           this.updateSelectedMemos();
         });
+      },
+      cancel: () => {
+        if (options.clearSwipeOnCancel) {
+          this.setData({ swipedMemoId: '' });
+        }
       }
     });
   },
@@ -810,16 +816,14 @@ Page({
   closeModal() {
     const isDirty = this.originalForm && this.originalForm !== JSON.stringify(this.data.memoForm);
     if (isDirty) {
-      wx.showModal({
+      this.showConfirm({
         title: this.data.text.discardTitle,
         content: this.data.text.discardChanges,
         confirmText: this.data.text.discard,
         cancelText: this.data.text.continueEditing,
         confirmColor: '#d09a04',
-        success: (res) => {
-          if (res.confirm) {
-            this._closeModalWithData();
-          }
+        confirm: () => {
+          this._closeModalWithData();
         }
       });
     } else {
@@ -973,5 +977,41 @@ Page({
 
   stopBubble() {
     // Empty handler to prevent event bubbling/scroll penetration
+  },
+
+  showConfirm(options) {
+    this.confirmCallback = options.confirm || null;
+    this.cancelCallback = options.cancel || null;
+    
+    this.setData({
+      confirmDialog: {
+        visible: true,
+        title: options.title || '',
+        content: options.content || '',
+        confirmText: options.confirmText || this.data.text.confirm,
+        cancelText: options.cancelText || this.data.text.cancel,
+        confirmColor: options.confirmColor || '#ef4444'
+      }
+    });
+  },
+
+  onConfirmDialogConfirm() {
+    this.setData({
+      'confirmDialog.visible': false
+    }, () => {
+      if (this.confirmCallback) {
+        this.confirmCallback();
+      }
+    });
+  },
+
+  onConfirmDialogCancel() {
+    this.setData({
+      'confirmDialog.visible': false
+    }, () => {
+      if (this.cancelCallback) {
+        this.cancelCallback();
+      }
+    });
   }
 });

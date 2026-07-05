@@ -34,8 +34,11 @@ const STORAGE_KEYS = {
   CUSTOM_CATEGORIES: 'memoCustomCategories'
 };
 const DRAG_TRANSLATE_THROTTLE_MS = 48;
+const TEXT_CACHE = {};
 
 function getText(lang) {
+  if (TEXT_CACHE[lang]) return TEXT_CACHE[lang];
+
   const keys = [
     'title',
     'subtitle',
@@ -105,10 +108,12 @@ function getText(lang) {
     'confirmOverwriteTitle',
     'confirmOverwriteDesc'
   ];
-  return keys.reduce((text, key) => {
-    text[key] = t(key, lang);
-    return text;
+  const text = keys.reduce((result, key) => {
+    result[key] = t(key, lang);
+    return result;
   }, {});
+  TEXT_CACHE[lang] = text;
+  return text;
 }
 
 Page({
@@ -171,15 +176,18 @@ Page({
     // Load memos from local storage
     const memoDates = await this.loadMemosFromStorage();
     this.memoDates = memoDates;
+    const selectedMemos = cleanMemosUIFields(memoDates[selectedDate] || []);
+    const initialMemoDateMeta = this.updateMemoDateMeta({}, selectedDate, selectedMemos);
 
     this.setData({
       lang,
       text: getText(lang),
       selectedDate,
+      selectedMemos,
       showTodayButton: selectedDate !== todayDate,
-      memoDateMeta: this.createMemoDateMeta(memoDates)
+      memoDateMeta: initialMemoDateMeta
     }, () => {
-      this.updateSelectedMemos();
+      this.refreshMemoDateMetaAsync(memoDates);
       if (invalidDateFromOptions) {
         this.showToast(this.data.text.invalidDate);
       }
@@ -322,15 +330,36 @@ Page({
     return cleanMemoDates;
   },
 
-  createMemoDateMeta(memoDates) {
+  refreshMemoDateMetaAsync(memoDates = this.memoDates) {
+    const source = memoDates || {};
+    const dates = Object.keys(source);
     const memoDateMeta = {};
-    Object.keys(memoDates || {}).forEach(date => {
-      const meta = this.createMemoDateMetaItem(memoDates[date]);
-      if (meta.hasMemo) {
-        memoDateMeta[date] = meta;
+    this.memoDateMetaBuildToken = (this.memoDateMetaBuildToken || 0) + 1;
+    const token = this.memoDateMetaBuildToken;
+
+    let index = 0;
+    const buildChunk = () => {
+      if (this.memoDateMetaBuildToken !== token) return;
+
+      const end = Math.min(index + 60, dates.length);
+      for (; index < end; index += 1) {
+        const date = dates[index];
+        const meta = this.createMemoDateMetaItem(source[date]);
+        if (meta.hasMemo) {
+          memoDateMeta[date] = meta;
+        }
       }
-    });
-    return memoDateMeta;
+
+      if (index < dates.length) {
+        setTimeout(buildChunk, 0);
+        return;
+      }
+
+      if (this.memoDates !== source) return;
+      this.setData({ memoDateMeta });
+    };
+
+    setTimeout(buildChunk, 0);
   },
 
   createMemoDateMetaItem(dayMemos) {
@@ -341,9 +370,17 @@ Page({
       };
     }
 
+    const memoColors = [];
+    for (let i = 0; i < dayMemos.length && memoColors.length < 3; i += 1) {
+      const color = dayMemos[i].color || '#d09a04';
+      if (memoColors.indexOf(color) === -1) {
+        memoColors.push(color);
+      }
+    }
+
     return {
       hasMemo: true,
-      memoColors: Array.from(new Set(dayMemos.map(m => m.color || '#d09a04'))).slice(0, 3)
+      memoColors
     };
   },
 
@@ -619,8 +656,6 @@ Page({
     this.setData({
       lang: nextLang,
       text: getText(nextLang)
-    }, () => {
-      this.updateSelectedMemos();
     });
     this.updateNavigationTitle(nextLang);
   },
@@ -1315,12 +1350,14 @@ Page({
 
       await this.loadCategories();
       this.memoDates = finalData.memos;
+      const selectedMemos = cleanMemosUIFields(finalData.memos[this.data.selectedDate] || []);
       this.setData({
-        memoDateMeta: this.createMemoDateMeta(finalData.memos),
+        selectedMemos,
+        memoDateMeta: this.updateMemoDateMeta({}, this.data.selectedDate, selectedMemos),
         backupModalVisible: false,
         importInputText: ''
       }, () => {
-        this.updateSelectedMemos();
+        this.refreshMemoDateMetaAsync(finalData.memos);
         this.showToast(txt.importSuccess, 'success');
       });
     } catch (e) {

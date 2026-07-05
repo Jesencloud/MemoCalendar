@@ -113,11 +113,11 @@ function getText(lang) {
 
 Page({
   todayDate: '',
+  memoDates: {},
 
   data: {
     selectedDate: '',
     selectedMemos: [],
-    memoDates: {}, // Structure: { 'YYYY-MM-DD': [ { id, title, time, location, tag, color, notes, tagCn, tagEn, categoryIcon } ] }
     memoDateMeta: {},
     showTodayButton: false,
     lang: 'zh',
@@ -170,13 +170,13 @@ Page({
 
     // Load memos from local storage
     const memoDates = await this.loadMemosFromStorage();
+    this.memoDates = memoDates;
 
     this.setData({
       lang,
       text: getText(lang),
       selectedDate,
       showTodayButton: selectedDate !== todayDate,
-      memoDates,
       memoDateMeta: this.createMemoDateMeta(memoDates)
     }, () => {
       this.updateSelectedMemos();
@@ -565,8 +565,8 @@ Page({
   },
 
   updateSelectedMemos() {
-    const { selectedDate, memoDates } = this.data;
-    const list = memoDates[selectedDate] || [];
+    const { selectedDate } = this.data;
+    const list = this.memoDates[selectedDate] || [];
     this.setData({
       selectedMemos: cleanMemosUIFields(list),
       swipedMemoId: ''
@@ -574,7 +574,7 @@ Page({
   },
 
   async sortByTime() {
-    const { selectedMemos, selectedDate, memoDates, text, sortOrder } = this.data;
+    const { selectedMemos, selectedDate, text, sortOrder } = this.data;
     if (!selectedMemos || selectedMemos.length <= 1) return;
 
     const nextOrder = (sortOrder === 'asc') ? 'desc' : 'asc';
@@ -595,16 +595,16 @@ Page({
 
     const sorted = [...selectedMemos].sort(nextOrder === 'asc' ? compareAsc : compareDesc);
 
-    const updatedMemoDates = Object.assign({}, memoDates);
+    const updatedMemoDates = Object.assign({}, this.memoDates);
     updatedMemoDates[selectedDate] = cleanMemosUIFields(sorted);
 
     if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
 
     this.vibrate();
+    this.memoDates = updatedMemoDates;
     
     this.setData({
       selectedMemos: sorted,
-      memoDates: updatedMemoDates,
       memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, sorted),
       swipedMemoId: '',
       sortOrder: nextOrder
@@ -706,14 +706,14 @@ Page({
 
   onEditMemoTap(e) {
     const { id } = e.currentTarget.dataset;
-    const { selectedDate, memoDates, swipedMemoId } = this.data;
+    const { selectedDate, swipedMemoId } = this.data;
 
     if (swipedMemoId === id) {
       this.setData({ swipedMemoId: '' });
       return;
     }
 
-    const dayMemos = memoDates[selectedDate] || [];
+    const dayMemos = this.memoDates[selectedDate] || [];
     const memo = dayMemos.find(m => m.id === id);
     if (!memo) return;
 
@@ -834,9 +834,9 @@ Page({
   async onDragEnd() {
     if (!this.data.draggingId) return;
     
-    const { selectedMemos, selectedDate, memoDates } = this.data;
+    const { selectedMemos, selectedDate } = this.data;
     
-    const updatedMemoDates = Object.assign({}, memoDates);
+    const updatedMemoDates = Object.assign({}, this.memoDates);
     updatedMemoDates[selectedDate] = cleanMemosUIFields(selectedMemos);
 
     const saveSucceeded = await this.saveMemosToStorage(updatedMemoDates, selectedDate);
@@ -856,11 +856,11 @@ Page({
     const nextData = {
       draggingId: '',
       dragTranslateY: 0,
-      memoDates: updatedMemoDates,
       memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, selectedMemos),
       sortOrder: 'desc'
     };
 
+    this.memoDates = updatedMemoDates;
     this.setData(nextData);
     
     this.cardRects = null;
@@ -870,11 +870,11 @@ Page({
 
   async onSwipeDoneTap(e) {
     const { id } = e.currentTarget.dataset;
-    const { selectedDate, memoDates } = this.data;
+    const { selectedDate } = this.data;
     
     this.vibrate();
     
-    const updatedMemoDates = Object.assign({}, memoDates);
+    const updatedMemoDates = Object.assign({}, this.memoDates);
     const dayMemos = (updatedMemoDates[selectedDate] || []).map(item => {
       const cleanItem = Object.assign({}, item);
       if (cleanItem.id === id) {
@@ -887,8 +887,8 @@ Page({
 
     if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
 
+    this.memoDates = updatedMemoDates;
     this.setData({
-      memoDates: updatedMemoDates,
       memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, updatedMemoDates[selectedDate])
     }, () => {
       this.updateSelectedMemos();
@@ -913,7 +913,7 @@ Page({
   },
 
   deleteMemoById(id, options = {}) {
-    const { selectedDate, memoDates, text } = this.data;
+    const { selectedDate, text } = this.data;
     if (!id) return;
 
     this.showConfirm({
@@ -923,7 +923,7 @@ Page({
       cancelText: text.cancel,
       confirmColor: '#ef4444',
       confirm: async () => {
-        const updatedMemoDates = this.removeMemoFromDate(memoDates, selectedDate, id);
+        const updatedMemoDates = this.removeMemoFromDate(this.memoDates, selectedDate, id);
         if (!updatedMemoDates) return;
         if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
 
@@ -932,9 +932,9 @@ Page({
         }
 
         this.showToast(text.deleted, 'success');
+        this.memoDates = updatedMemoDates;
 
         const dataToSet = {
-          memoDates: updatedMemoDates,
           memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, updatedMemoDates[selectedDate]),
           swipedMemoId: ''
         };
@@ -1056,7 +1056,7 @@ Page({
   async onSaveMemo() {
     if (this.savingMemo) return;
 
-    const { memoForm, selectedDate, memoDates, text } = this.data;
+    const { memoForm, selectedDate, text } = this.data;
     
     if (!memoForm.title.trim()) {
       this.showToast(text.titleRequired);
@@ -1081,7 +1081,7 @@ Page({
       completed: memoForm.completed || false
     };
 
-    const updatedMemoDates = Object.assign({}, memoDates);
+    const updatedMemoDates = Object.assign({}, this.memoDates);
     const dayMemos = updatedMemoDates[selectedDate] ? [...updatedMemoDates[selectedDate]] : [];
 
     if (memoForm.id) {
@@ -1106,9 +1106,9 @@ Page({
 
     this.vibrate('medium');
     this.showToast(text.saved, 'success');
+    this.memoDates = updatedMemoDates;
 
     this._closeModalWithData({
-      memoDates: updatedMemoDates,
       memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, dayMemos)
     }, () => {
       this.updateSelectedMemos();
@@ -1314,8 +1314,8 @@ Page({
       if (!await this.saveImportedDataSafely(finalData, previousData)) return;
 
       await this.loadCategories();
+      this.memoDates = finalData.memos;
       this.setData({
-        memoDates: finalData.memos,
         memoDateMeta: this.createMemoDateMeta(finalData.memos),
         backupModalVisible: false,
         importInputText: ''

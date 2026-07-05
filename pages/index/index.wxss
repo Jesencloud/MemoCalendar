@@ -200,10 +200,6 @@ page {
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
 }
 
-.swipe-btn:active {
-  filter: brightness(0.9);
-}
-
 .swipe-btn.btn-done {
   background: #52a373; /* Premium Sage Green */
   transition-delay: 0s;
@@ -265,11 +261,6 @@ page {
   flex-shrink: 0;
   cursor: grab;
   transition: color 0.2s ease;
-}
-
-.drag-handle:active {
-  cursor: grabbing;
-  color: #d09a04;
 }
 
 .memo-time-inline {
@@ -459,10 +450,6 @@ page {
   line-height: 1;
 }
 
-.modal-delete-icon:active {
-  opacity: 0.7;
-}
-
 .modal-title {
   font-size: 36rpx;
   font-weight: 700;
@@ -475,10 +462,6 @@ page {
   padding: 10rpx;
   line-height: 1;
   transition: color 0.2s ease;
-}
-
-.modal-close:active {
-  color: #4b5563;
 }
 
 .modal-form {
@@ -591,21 +574,10 @@ page {
   transition: all 0.2s ease;
 }
 
-.tag-delete-btn:active {
-  background: #ef4444;
-  color: #fff;
-}
-
 .tag-item-add {
   background: transparent;
   border: 2rpx dashed #d1d5db;
   color: #6b7280;
-}
-
-.tag-item-add:active {
-  background: #f3f4f6;
-  border-color: #9ca3af;
-  transform: scale(0.96);
 }
 
 .tag-icon {

@@ -176,12 +176,14 @@ Page({
     // Load memos and custom categories from local storage in parallel
     const [memoDates, customCategories] = await Promise.all([
       this.loadMemosFromStorage(),
-      this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, [])
+      this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []).catch(() => {
+        return [];
+      })
     ]);
     this.memoDates = memoDates;
     const selectedMemos = cleanMemosUIFields(memoDates[selectedDate] || []);
     const initialMemoDateMeta = this.updateMemoDateMeta({}, selectedDate, selectedMemos);
- 
+
     this.setData({
       lang,
       text: getText(lang),
@@ -199,10 +201,10 @@ Page({
         this.showToast(this.data.text.invalidDate);
       }
     });
- 
+
     this.updateNavigationTitle(lang);
   },
- 
+
   onReady() {
     this.calendarCtx = this.selectComponent('#calendar');
   },

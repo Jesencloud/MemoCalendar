@@ -173,35 +173,38 @@ Page({
       }
     }
 
-    // Load memos from local storage
-    const memoDates = await this.loadMemosFromStorage();
+    // Load memos and custom categories from local storage in parallel
+    const [memoDates, customCategories] = await Promise.all([
+      this.loadMemosFromStorage(),
+      this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, [])
+    ]);
     this.memoDates = memoDates;
     const selectedMemos = cleanMemosUIFields(memoDates[selectedDate] || []);
     const initialMemoDateMeta = this.updateMemoDateMeta({}, selectedDate, selectedMemos);
-
+ 
     this.setData({
       lang,
       text: getText(lang),
       selectedDate,
       selectedMemos,
       showTodayButton: selectedDate !== todayDate,
-      memoDateMeta: initialMemoDateMeta
+      memoDateMeta: initialMemoDateMeta,
+      categories: mergeCategories(customCategories)
     }, () => {
+      // Defer full database calendar indicators scan by 400ms to yield thread completely
       setTimeout(() => {
         this.refreshMemoDateMetaAsync(memoDates);
-      }, 200);
+      }, 400);
       if (invalidDateFromOptions) {
         this.showToast(this.data.text.invalidDate);
       }
     });
-
+ 
     this.updateNavigationTitle(lang);
   },
-
-  async onReady() {
+ 
+  onReady() {
     this.calendarCtx = this.selectComponent('#calendar');
-    // Load custom categories after initial page paint completes
-    await this.loadCategories();
   },
 
   onShow() {

@@ -130,16 +130,19 @@
   font-size: 30rpx;
   color: #333;
   z-index: 1;
-}
-
-.day-item.selected {
-  background: #fceec5;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
+  transition: all 0.2s ease;
 }
 
 .day-item.selected .day-num {
+  background: #fa8231;
+  color: #ffffff;
   font-weight: bold;
-  color: #d09a04;
 }
 
 .day-item.past .day-num {
@@ -211,9 +214,9 @@
 }
 
 .year-option.active {
-  color: #d09a04;
+  color: #fa8231;
   font-weight: bold;
-  background: #fdf8e6;
+  background: #fff1e6;
 }
 
 .month-grid {
@@ -232,9 +235,9 @@
 }
 
 .month-option.active {
-  color: #d09a04;
+  color: #fa8231;
   font-weight: bold;
-  background: #fdf8e6;
+  background: #fff1e6;
   border-radius: 16rpx;
 }
 
@@ -257,6 +260,6 @@
 }
 
 .fold-indicator-hover .fold-line {
-  background-color: #d09a04;
+  background-color: #fa8231;
   width: 80rpx;
 }

@@ -1,6 +1,6 @@
 /* pages/index/index.wxss */
 page {
-  background-color: #f4f3ef; /* Apple Notes warm paper background */
+  background-color: #fffcf9; /* Sunny Citrus Orange & Cream background */
 }
 
 .container {
@@ -77,7 +77,7 @@ page {
   top: 6rpx;
   bottom: 6rpx;
   width: 8rpx;
-  background: #d09a04; /* Apple Notes Gold vertical bar */
+  background: #fa8231; /* Citrus Orange vertical bar */
   border-radius: 99rpx;
 }
 
@@ -90,15 +90,15 @@ page {
 .today-btn {
   padding: 10rpx 26rpx;
   border-radius: 99rpx;
-  background: #fdf8e6; /* Apple Notes Gold light background */
-  color: #d09a04;      /* Apple Notes Gold text */
+  background: #fff1e6; /* Citrus Orange light background */
+  color: #fa8231;      /* Citrus Orange text */
   font-size: 24rpx;
   font-weight: 600;
   transition: all 0.2s ease;
 }
 
 .today-btn-hover {
-  background: #fceec5;
+  background: #ffe0cc;
   transform: scale(0.95);
 }
 
@@ -156,10 +156,10 @@ page {
   z-index: 2;
   background: #fff;
   border-radius: 20rpx;
-  border-left: 8rpx solid var(--memo-color, #d09a04);
-  border-top: 2rpx solid var(--memo-border-color, rgba(208, 154, 4, 0.25));
-  border-right: 2rpx solid var(--memo-border-color, rgba(208, 154, 4, 0.25));
-  border-bottom: 2rpx solid var(--memo-border-color, rgba(208, 154, 4, 0.25));
+  border-left: 8rpx solid var(--memo-color, #fa8231);
+  border-top: 2rpx solid var(--memo-border-color, rgba(250, 130, 49, 0.25));
+  border-right: 2rpx solid var(--memo-border-color, rgba(250, 130, 49, 0.25));
+  border-bottom: 2rpx solid var(--memo-border-color, rgba(250, 130, 49, 0.25));
   box-shadow: 0 6rpx 18rpx rgba(0, 0, 0, 0.02);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
@@ -301,7 +301,7 @@ page {
 .memo-tag-inline {
   font-size: 26rpx;
   font-weight: 500;
-  color: var(--memo-color, #d09a04);
+  color: var(--memo-color, #fa8231);
   flex-shrink: 0;
   margin-left: auto;
   max-width: 180rpx;
@@ -355,8 +355,8 @@ page {
   width: 110rpx;
   height: 110rpx;
   border-radius: 50%;
-  background: #d09a04; /* Apple Notes Gold */
-  box-shadow: 0 8rpx 32rpx rgba(208, 154, 4, 0.3);
+  background: #fa8231; /* Sunny Orange */
+  box-shadow: 0 8rpx 32rpx rgba(250, 130, 49, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -366,7 +366,7 @@ page {
 
 .fab-hover {
   transform: scale(1.08) rotate(90deg);
-  box-shadow: 0 12rpx 40rpx rgba(208, 154, 4, 0.45);
+  box-shadow: 0 12rpx 40rpx rgba(250, 130, 49, 0.35);
 }
 
 .fab-icon {
@@ -666,9 +666,9 @@ page {
 }
 
 .btn-save {
-  background: #d09a04; /* Apple Notes Gold */
+  background: #fa8231; /* Sunny Orange */
   color: #fff;
-  box-shadow: 0 6rpx 20rpx rgba(208, 154, 4, 0.25);
+  box-shadow: 0 6rpx 20rpx rgba(250, 130, 49, 0.25);
 }
 
 .custom-confirm-panel .btn-save {
@@ -795,14 +795,14 @@ page {
 
 .backup-btn-action {
   width: 100% !important;
-  background: #d09a04 !important; /* Apple Notes Gold */
+  background: #fa8231 !important; /* Sunny Orange */
   color: #fff !important;
   font-size: 28rpx;
   font-weight: 500;
   border-radius: 16rpx;
   padding: 18rpx 0;
   margin: 0 !important;
-  box-shadow: 0 4rpx 12rpx rgba(208, 154, 4, 0.2);
+  box-shadow: 0 4rpx 12rpx rgba(250, 130, 49, 0.2);
   border: none;
 }
 

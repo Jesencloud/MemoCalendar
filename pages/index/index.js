@@ -379,7 +379,7 @@ Page({
 
     const memoColors = [];
     for (let i = 0; i < dayMemos.length && memoColors.length < 3; i += 1) {
-      const color = dayMemos[i].color || '#d09a04';
+      const color = dayMemos[i].color || '#fa8231';
       if (memoColors.indexOf(color) === -1) {
         memoColors.push(color);
       }
@@ -1017,7 +1017,7 @@ Page({
         content: this.data.text.discardChanges,
         confirmText: this.data.text.discard,
         cancelText: this.data.text.continueEditing,
-        confirmColor: '#d09a04',
+        confirmColor: '#fa8231',
         confirm: () => {
           this._closeModalWithData();
         }

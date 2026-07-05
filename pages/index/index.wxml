@@ -56,7 +56,7 @@
             hover-class="{{item.id === swipedMemoId || draggingId ? 'none' : 'memo-card-hover'}}"
             data-id="{{item.id}}"
             bindtap="onEditMemoTap"
-            style="--memo-color: {{item.completed ? '#d1d5db' : (item.color || '#d09a04')}}; --memo-border-color: {{item.completed ? '#e5e7eb' : (item.color || '#d09a04') + '40'}};"
+            style="--memo-color: {{item.completed ? '#d1d5db' : (item.color || '#fa8231')}}; --memo-border-color: {{item.completed ? '#e5e7eb' : (item.color || '#fa8231') + '40'}};"
           >
             <view class="memo-card-main">
               <view class="memo-row-inline">
@@ -130,7 +130,7 @@
         <!-- Completed Switch -->
         <view class="form-item form-item-switch" wx:if="{{memoForm.id}}">
           <text class="form-label">{{text.markCompleted}}</text>
-          <switch checked="{{memoForm.completed}}" bindchange="onFormCompletedChange" color="#d09a04" />
+          <switch checked="{{memoForm.completed}}" bindchange="onFormCompletedChange" color="#fa8231" />
         </view>
         
         <!-- Category Selector -->

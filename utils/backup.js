@@ -1,12 +1,7 @@
+const { DEFAULT_CATEGORY } = require('./categories.js');
+
 const BACKUP_APP = 'MemoCalendar';
 const DEFAULT_COLOR = '#d09a04';
-const DEFAULT_CATEGORY = {
-  key: 'Sport',
-  labelCn: '运动',
-  labelEn: 'Sport',
-  color: '#ff9500',
-  icon: '🏋'
-};
 
 function isPlainObject(value) {
   return Object.prototype.toString.call(value) === '[object Object]';

@@ -187,7 +187,9 @@ Page({
       showTodayButton: selectedDate !== todayDate,
       memoDateMeta: initialMemoDateMeta
     }, () => {
-      this.refreshMemoDateMetaAsync(memoDates);
+      setTimeout(() => {
+        this.refreshMemoDateMetaAsync(memoDates);
+      }, 200);
       if (invalidDateFromOptions) {
         this.showToast(this.data.text.invalidDate);
       }

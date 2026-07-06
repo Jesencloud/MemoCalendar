@@ -157,14 +157,6 @@ Page({
     sharedMemoDate: '',
     sharedMemo: null,
     savingSharedMemo: false,
-    confirmDialog: {
-      visible: false,
-      title: '',
-      content: '',
-      confirmText: '',
-      cancelText: '',
-      confirmColor: ''
-    },
     categories: DEFAULT_CATEGORIES,
     memoForm: Object.assign({}, DEFAULT_FORM),
     memoNotesLength: 0,
@@ -1382,51 +1374,39 @@ Page({
   },
 
   showConfirm(options) {
-    this.confirmCallback = options.confirm || null;
-    this.cancelCallback = options.cancel || null;
-
-    this.setData({
-      confirmDialog: {
-        visible: true,
-        title: options.title || '',
-        content: options.content || '',
-        confirmText: options.confirmText || this.data.text.confirm,
-        cancelText: options.cancelText || this.data.text.cancel,
-        confirmColor: options.confirmColor || '#ef4444'
-      }
-    });
-  },
-
-  closeConfirmDialog(callbackName) {
-    this.setData({
-      'confirmDialog.visible': false
-    }, () => {
-      const callback = this[callbackName];
-      this.confirmCallback = null;
-      this.cancelCallback = null;
-
-      try {
-        if (callback) {
-          const result = callback();
-          if (result && typeof result.catch === 'function') {
-            result.catch(err => {
+    this.vibrate();
+    wx.showModal({
+      title: options.title || '',
+      content: options.content || '',
+      confirmText: options.confirmText || this.data.text.confirm,
+      cancelText: options.cancelText || this.data.text.cancel,
+      confirmColor: options.confirmColor || '#fa8231',
+      success: (res) => {
+        if (res.confirm) {
+          if (options.confirm) {
+            try {
+              const result = options.confirm();
+              if (result && typeof result.catch === 'function') {
+                result.catch(err => console.error('Confirm callback failed:', err));
+              }
+            } catch (err) {
               console.error('Confirm callback failed:', err);
-            });
+            }
+          }
+        } else if (res.cancel) {
+          if (options.cancel) {
+            try {
+              const result = options.cancel();
+              if (result && typeof result.catch === 'function') {
+                result.catch(err => console.error('Cancel callback failed:', err));
+              }
+            } catch (err) {
+              console.error('Cancel callback failed:', err);
+            }
           }
         }
-      } finally {
-        this.confirmCallback = null;
-        this.cancelCallback = null;
       }
     });
-  },
-
-  onConfirmDialogConfirm() {
-    this.closeConfirmDialog('confirmCallback');
-  },
-
-  onConfirmDialogCancel() {
-    this.closeConfirmDialog('cancelCallback');
   },
 
   onOpenBackupModal() {

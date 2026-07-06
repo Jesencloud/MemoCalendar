@@ -1,5 +1,5 @@
 <!--pages/index/index.wxml-->
-<page-meta page-style="overflow: {{modalVisible || modalClosing || confirmDialog.visible || backupModalVisible || sharePreviewVisible ? 'hidden' : 'visible'}}" />
+<page-meta page-style="overflow: {{modalVisible || modalClosing || backupModalVisible || sharePreviewVisible ? 'hidden' : 'visible'}}" />
 <view class="container {{lang === 'zh' ? 'lang-zh' : 'lang-en'}}">
   <view class="header">
     <view class="header-main">
@@ -286,39 +286,8 @@
     </view>
   </view>
 
-  <!-- Custom Confirmation Dialog -->
-  <view class="modal-mask custom-confirm-mask" wx:if="{{confirmDialog.visible}}" catchtouchmove="stopBubble">
-    <view class="modal-panel custom-confirm-panel">
-      <view class="modal-header">
-        <text class="modal-title">{{confirmDialog.title}}</text>
-      </view>
-
-      <view class="modal-body custom-confirm-body">
-        <text class="confirm-content-text">{{confirmDialog.content}}</text>
-      </view>
-
-      <view class="modal-actions">
-        <view
-          class="modal-btn btn-cancel"
-          hover-class="btn-cancel-hover"
-          catchtap="onConfirmDialogCancel"
-        >
-          {{confirmDialog.cancelText}}
-        </view>
-        <view
-          class="modal-btn btn-save"
-          hover-class="btn-save-hover"
-          style="--confirm-color: {{confirmDialog.confirmColor}}; --confirm-shadow-color: {{confirmDialog.confirmColor}}40;"
-          catchtap="onConfirmDialogConfirm"
-        >
-          {{confirmDialog.confirmText}}
-        </view>
-      </view>
-    </view>
-  </view>
-
   <!-- Shared Memo Preview Modal -->
-  <view class="modal-mask custom-confirm-mask share-preview-mask" wx:if="{{sharePreviewVisible}}" catchtouchmove="stopBubble">
+  <view class="modal-mask share-preview-mask" wx:if="{{sharePreviewVisible}}" catchtouchmove="stopBubble">
     <view class="modal-panel share-preview-panel">
       <view class="modal-header">
         <text class="modal-title">{{text.sharedMemoTitle}}</text>
@@ -375,9 +344,8 @@
       </view>
     </view>
   </view>
-
   <!-- Data Backup & Restore Modal -->
-  <view class="modal-mask custom-confirm-mask backup-mask" wx:if="{{backupModalVisible}}" catchtouchmove="stopBubble">
+  <view class="modal-mask backup-mask" wx:if="{{backupModalVisible}}" catchtouchmove="stopBubble">
     <view class="modal-panel backup-panel">
       <view class="modal-header">
         <text class="modal-title">{{text.dataBackupTitle}}</text>

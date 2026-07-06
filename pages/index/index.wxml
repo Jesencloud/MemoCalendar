@@ -118,7 +118,7 @@
       <view class="modal-header">
         <text class="modal-title">{{memoForm.id ? text.editMemo : text.addMemo}}</text>
         <view class="modal-header-actions">
-          <view wx:if="{{memoForm.id}}" class="modal-delete-icon" bindtap="onDeleteMemo">🗑️</view>
+          <view wx:if="{{memoForm.id}}" class="modal-delete-btn" hover-class="modal-delete-btn-hover" bindtap="onDeleteMemo">{{text.delete}}</view>
           <view class="modal-close" catchtap="closeModal">×</view>
         </view>
       </view>

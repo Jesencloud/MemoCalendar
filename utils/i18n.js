@@ -112,7 +112,7 @@ const translations = {
     today: 'Today',
     events: '\'s Memos',
     noEventsTitle: 'No Memos Today',
-    noEventsDesc: 'Tap the "+" button below to plan your day',
+    noEventsDesc: 'Tap "+" below to plan your day',
     langToggle: '中文',
     weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     months: [

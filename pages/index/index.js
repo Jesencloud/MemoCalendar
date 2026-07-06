@@ -17,6 +17,12 @@ const {
   getNextCategoryColor,
   createCustomCategory
 } = require('../../utils/categories.js');
+const {
+  MAX_SHARE_PATH_LENGTH,
+  createSharedMemoPayload,
+  parseSharedMemoPayload,
+  createSharedMemoImportForSave
+} = require('../../utils/share.js');
 
 const DEFAULT_FORM = {
   id: '',
@@ -43,6 +49,13 @@ function getText(lang) {
     'title',
     'subtitle',
     'shareTitle',
+    'shareMemo',
+    'shareMemoTitlePrefix',
+    'shareDataTooLong',
+    'sharedMemoTitle',
+    'sharedMemoDesc',
+    'addSharedMemo',
+    'sharedMemoAdded',
     'today',
     'events',
     'noEvents',
@@ -137,6 +150,10 @@ Page({
     importInputText: '',
     importingData: false,
     exportingData: false,
+    sharePreviewVisible: false,
+    sharedMemoDate: '',
+    sharedMemo: null,
+    savingSharedMemo: false,
     confirmDialog: {
       visible: false,
       title: '',
@@ -173,6 +190,17 @@ Page({
       }
     }
 
+    let sharedMemoImport = null;
+    let invalidShareFromOptions = false;
+    if (options && options.share) {
+      sharedMemoImport = this.parseSharedMemoOption(options.share);
+      if (sharedMemoImport) {
+        selectedDate = sharedMemoImport.date;
+      } else {
+        invalidShareFromOptions = true;
+      }
+    }
+
     // Load memos and custom categories from local storage in parallel
     const [memoDates, customCategories] = await Promise.all([
       this.loadMemosFromStorage(),
@@ -200,6 +228,12 @@ Page({
       if (invalidDateFromOptions) {
         this.showToast(this.data.text.invalidDate);
       }
+      if (invalidShareFromOptions) {
+        this.showToast(this.data.text.invalidBackupFormat);
+      }
+      if (sharedMemoImport) {
+        this.showSharedMemoPreview(sharedMemoImport);
+      }
     });
 
     this.updateNavigationTitle(lang);
@@ -223,11 +257,53 @@ Page({
     this.clearModalCloseTimer();
   },
 
-  onShareAppMessage() {
+  getDefaultShareConfig() {
     const { lang, text } = this.data;
     return {
       title: text.shareTitle,
       path: `/pages/index/index?lang=${lang}`
+    };
+  },
+
+  findMemoForShare(date, id) {
+    if (!this.isValidDateString(date) || !id) return null;
+    const dayMemos = this.memoDates[date] || [];
+    return dayMemos.find(memo => memo.id === id) || null;
+  },
+
+  createMemoShareTitle(memo, date) {
+    const { text } = this.data;
+    const titleParts = [date];
+    if (memo.time) titleParts.push(memo.time);
+    titleParts.push(memo.title);
+    return `${text.shareMemoTitlePrefix}${titleParts.join(' ')}`.slice(0, 80);
+  },
+
+  onShareAppMessage(e) {
+    const defaultConfig = this.getDefaultShareConfig();
+    if (!e || e.from !== 'button') return defaultConfig;
+
+    const dataset = e.target && e.target.dataset ? e.target.dataset : {};
+    const { date, id } = dataset;
+    const memo = this.findMemoForShare(date, id);
+    if (!memo) return defaultConfig;
+
+    const category = findCategoryByKey(this.data.categories, memo.tag);
+    let payload = createSharedMemoPayload(date, memo, category);
+    let path = `/pages/index/index?lang=${this.data.lang}&share=${payload}`;
+    if (payload && path.length > MAX_SHARE_PATH_LENGTH && memo.notes) {
+      payload = createSharedMemoPayload(date, memo, category, { includeNotes: false });
+      path = `/pages/index/index?lang=${this.data.lang}&share=${payload}`;
+    }
+
+    if (!payload || path.length > MAX_SHARE_PATH_LENGTH) {
+      this.showToast(this.data.text.shareDataTooLong);
+      return defaultConfig;
+    }
+
+    return {
+      title: this.createMemoShareTitle(memo, date),
+      path
     };
   },
 
@@ -447,6 +523,90 @@ Page({
 
   showStorageFailureToast() {
     this.showToast(this.data.text.storageFailed);
+  },
+
+  parseSharedMemoOption(share) {
+    return parseSharedMemoPayload(share, {
+      defaultCategories: DEFAULT_CATEGORIES,
+      palette: CATEGORY_PALETTE,
+      isValidDateString: this.isValidDateString.bind(this)
+    });
+  },
+
+  showSharedMemoPreview(sharedMemoImport) {
+    this.sharedMemoImport = sharedMemoImport;
+    this.setData({
+      sharePreviewVisible: true,
+      sharedMemoDate: sharedMemoImport.date,
+      sharedMemo: sharedMemoImport.memo,
+      swipedMemoId: ''
+    });
+  },
+
+  onCloseSharePreview() {
+    if (this.savingSharedMemo) return;
+
+    this.sharedMemoImport = null;
+    this.setData({
+      sharePreviewVisible: false,
+      sharedMemoDate: '',
+      sharedMemo: null
+    });
+  },
+
+  async onSaveSharedMemo() {
+    if (!this.sharedMemoImport || !this.startBusyState('savingSharedMemo')) return;
+
+    const sharedMemoImport = this.sharedMemoImport;
+    const { text: txt } = this.data;
+    try {
+      let previousData;
+      try {
+        previousData = await this.getBackupStorageSnapshot();
+      } catch (e) {
+        this.showStorageFailureToast();
+        return;
+      }
+
+      const importedData = createSharedMemoImportForSave(
+        sharedMemoImport,
+        previousData.memos,
+        this.generateMemoId.bind(this)
+      );
+      if (!importedData) {
+        this.showToast(txt.invalidBackupFormat);
+        return;
+      }
+
+      const finalData = mergeImportedData(importedData, previousData.memos, previousData.categories, {
+        palette: CATEGORY_PALETTE
+      });
+
+      if (!await this.saveImportedDataSafely(finalData, previousData)) return;
+
+      this.memoDates = finalData.memos;
+      const selectedDate = sharedMemoImport.date;
+      const selectedMemos = cleanMemosUIFields(finalData.memos[selectedDate] || []);
+      const todayDate = this.todayDate || this.getTodayDate();
+
+      this.sharedMemoImport = null;
+      this.setData({
+        selectedDate,
+        selectedMemos,
+        categories: mergeCategories(finalData.categories),
+        showTodayButton: selectedDate !== todayDate,
+        memoDateMeta: this.updateMemoDateMeta({}, selectedDate, selectedMemos),
+        sharePreviewVisible: false,
+        sharedMemoDate: '',
+        sharedMemo: null,
+        swipedMemoId: ''
+      }, () => {
+        this.refreshMemoDateMetaAsync(finalData.memos);
+        this.showToast(txt.sharedMemoAdded, 'success');
+      });
+    } finally {
+      this.finishBusyState('savingSharedMemo');
+    }
   },
 
   setBusyState(key, value) {

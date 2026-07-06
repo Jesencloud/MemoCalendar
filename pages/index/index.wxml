@@ -1,5 +1,5 @@
 <!--pages/index/index.wxml-->
-<page-meta page-style="overflow: {{modalVisible || modalClosing || confirmDialog.visible || backupModalVisible ? 'hidden' : 'visible'}}" />
+<page-meta page-style="overflow: {{modalVisible || modalClosing || confirmDialog.visible || backupModalVisible || sharePreviewVisible ? 'hidden' : 'visible'}}" />
 <view class="container {{lang === 'zh' ? 'lang-zh' : 'lang-en'}}">
   <view class="header">
     <view class="header-main">
@@ -81,6 +81,15 @@
           </view>
           
           <view class="swipe-actions">
+            <button
+              class="swipe-btn btn-share"
+              open-type="share"
+              data-id="{{item.id}}"
+              data-date="{{selectedDate}}"
+              hover-class="none"
+            >
+              <text>{{text.shareMemo}}</text>
+            </button>
             <view class="swipe-btn btn-done" catchtap="onSwipeDoneTap" data-id="{{item.id}}">
               <text>{{item.completed ? text.todo : text.done}}</text>
             </view>
@@ -297,6 +306,65 @@
           catchtap="onConfirmDialogConfirm"
         >
           {{confirmDialog.confirmText}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Shared Memo Preview Modal -->
+  <view class="modal-mask custom-confirm-mask share-preview-mask" wx:if="{{sharePreviewVisible}}" catchtouchmove="stopBubble">
+    <view class="modal-panel share-preview-panel">
+      <view class="modal-header">
+        <text class="modal-title">{{text.sharedMemoTitle}}</text>
+        <view class="modal-close" catchtap="onCloseSharePreview">×</view>
+      </view>
+
+      <scroll-view scroll-y class="modal-form share-preview-body">
+        <view
+          class="share-preview-card"
+          style="--memo-color: {{sharedMemo.completed ? '#d1d5db' : (sharedMemo.color || '#fa8231')}}; --memo-border-color: {{sharedMemo.completed ? '#e5e7eb' : (sharedMemo.color || '#fa8231') + '40'}};"
+        >
+          <text class="share-preview-date">{{sharedMemoDate}}</text>
+          <text class="share-preview-title">{{sharedMemo.title}}</text>
+
+          <view class="share-preview-row" wx:if="{{sharedMemo.time}}">
+            <text class="share-preview-label">{{text.time}}</text>
+            <text class="share-preview-value">{{sharedMemo.time}}</text>
+          </view>
+
+          <view class="share-preview-row" wx:if="{{sharedMemo.location}}">
+            <text class="share-preview-label">{{text.location}}</text>
+            <text class="share-preview-value">{{sharedMemo.location}}</text>
+          </view>
+
+          <view class="share-preview-row">
+            <text class="share-preview-label">{{text.selectCategory}}</text>
+            <text class="share-preview-value">{{sharedMemo.categoryIcon === '🏷️' ? '#' + (lang === 'zh' ? sharedMemo.tagCn : sharedMemo.tagEn) : sharedMemo.categoryIcon}}</text>
+          </view>
+
+          <view class="share-preview-notes" wx:if="{{sharedMemo.notes}}">
+            <text class="share-preview-label">{{text.notes}}</text>
+            <text class="share-preview-note-text">{{sharedMemo.notes}}</text>
+          </view>
+        </view>
+
+        <text class="share-preview-desc">{{text.sharedMemoDesc}}</text>
+      </scroll-view>
+
+      <view class="modal-actions">
+        <view
+          class="modal-btn btn-cancel"
+          hover-class="btn-cancel-hover"
+          catchtap="onCloseSharePreview"
+        >
+          {{text.cancel}}
+        </view>
+        <view
+          class="modal-btn btn-save {{savingSharedMemo ? 'is-disabled' : ''}}"
+          hover-class="{{savingSharedMemo ? 'none' : 'btn-save-hover'}}"
+          catchtap="onSaveSharedMemo"
+        >
+          {{text.addSharedMemo}}
         </view>
       </view>
     </view>

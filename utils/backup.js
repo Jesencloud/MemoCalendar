@@ -75,6 +75,12 @@ function normalizeImportedMemoDates(memos, options = {}) {
   return normalized;
 }
 
+function normalizeImportedTime(time) {
+  if (typeof time !== 'string') return '';
+  const match = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(time.trim());
+  return match ? `${match[1].padStart(2, '0')}:${match[2]}` : '';
+}
+
 function normalizeImportedMemo(item, categoryMap, fallbackCategory) {
   if (!isPlainObject(item)) return null;
 
@@ -90,7 +96,7 @@ function normalizeImportedMemo(item, categoryMap, fallbackCategory) {
   return {
     id,
     title: title.slice(0, 40),
-    time: typeof item.time === 'string' ? item.time : '',
+    time: normalizeImportedTime(item.time),
     location: typeof item.location === 'string' ? item.location.trim().slice(0, 100) : '',
     tag,
     color,

@@ -137,7 +137,49 @@ test('5. parseBackupData - 未知分类回退到默认分类', () => {
   assert.strictEqual(memo.categoryIcon, '🏋');
 });
 
-test('6. normalizeImportedCategories - 颜色过滤与调色盘兜底', () => {
+test('6. parseBackupData - 非法时间字段清空', () => {
+  const data = JSON.stringify({
+    version: 1,
+    app: 'MemoCalendar',
+    memos: {
+      '2026-07-04': [
+        {
+          id: 'memo-1',
+          title: '非法时间测试',
+          time: '99:99',
+          tag: 'Sport'
+        }
+      ]
+    }
+  });
+
+  const result = parseBackupData(data, options);
+  assert.ok(result);
+  assert.strictEqual(result.memos['2026-07-04'][0].time, '');
+});
+
+test('7. parseBackupData - 单位数小时归一化', () => {
+  const data = JSON.stringify({
+    version: 1,
+    app: 'MemoCalendar',
+    memos: {
+      '2026-07-04': [
+        {
+          id: 'memo-1',
+          title: '时间归一化测试',
+          time: '8:30',
+          tag: 'Sport'
+        }
+      ]
+    }
+  });
+
+  const result = parseBackupData(data, options);
+  assert.ok(result);
+  assert.strictEqual(result.memos['2026-07-04'][0].time, '08:30');
+});
+
+test('8. normalizeImportedCategories - 颜色过滤与调色盘兜底', () => {
   const badColorCategories = [
     { key: 'custom-1', labelCn: '分类1', labelEn: 'Cat1', color: 'invalid-color' },
     { key: 'custom-2', labelCn: '分类2', labelEn: 'Cat2', color: '#ff3b30' }
@@ -151,7 +193,7 @@ test('6. normalizeImportedCategories - 颜色过滤与调色盘兜底', () => {
   assert.strictEqual(result[1].color, '#ff3b30');
 });
 
-test('7. mergeImportedData - 同 ID 日程覆盖合并与追加', () => {
+test('9. mergeImportedData - 同 ID 日程覆盖合并与追加', () => {
   const localMemos = {
     '2026-07-04': [
       { id: 'memo-1', title: '旧的日程1', tag: 'Sport', completed: false },
@@ -185,7 +227,7 @@ test('7. mergeImportedData - 同 ID 日程覆盖合并与追加', () => {
   assert.strictEqual(memo3.title, '新增日程3');
 });
 
-test('8. mergeImportedData - 重复分类的去重逻辑', () => {
+test('10. mergeImportedData - 重复分类的去重逻辑', () => {
   const localCategories = [
     { key: 'custom-1', labelCn: '设计', labelEn: 'Design', color: '#ff3b30' }
   ];

@@ -59,12 +59,10 @@ Component({
       const parsedInitialDate = this.parseDate(this.properties.selectedDate);
       const initialDate = parsedInitialDate ? this.properties.selectedDate : defaultDate;
       const parsed = parsedInitialDate || { year: now.getFullYear(), month: now.getMonth(), day: now.getDate() };
-
       const currentYear = parsed.year;
       const currentMonth = parsed.month;
       const locale = getCalendarText(this.data.lang);
       const calendarState = this.getCalendarState(currentYear, currentMonth, initialDate, 'month');
-
       this.setData({
         currentYear,
         currentMonth,
@@ -80,14 +78,12 @@ Component({
     getCalendarState(currentYear, currentMonth, selectedDate, viewMode) {
       const now = new Date();
       const todayDate = this.formatDate(now.getFullYear(), now.getMonth(), now.getDate());
-
       let rowCount = 1;
       if (viewMode === 'month') {
         const firstDay = new Date(currentYear, currentMonth, 1).getDay();
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
         rowCount = Math.ceil((firstDay + daysInMonth) / 7);
       }
-
       if (viewMode === 'week') {
         const prevWeekDate = this.getShiftedWeekDate(selectedDate, -1);
         const nextWeekDate = this.getShiftedWeekDate(selectedDate, 1);
@@ -105,12 +101,10 @@ Component({
             days: this.createWeekDays(nextWeekDate, todayDate)
           }
         ];
-
         return { swiperPanels, activeRowIdx: 0, rowCount: 1 };
       } else {
         const prevMonth = this.getShiftedMonth(currentYear, currentMonth, -1);
         const nextMonth = this.getShiftedMonth(currentYear, currentMonth, 1);
-
         const currentDays = this.createMonthDays(currentYear, currentMonth, todayDate);
         const swiperPanels = [
           {
@@ -126,13 +120,11 @@ Component({
             days: this.createMonthDays(nextMonth.year, nextMonth.month, todayDate)
           }
         ];
-
         let activeRowIdx = 0;
         const idx = currentDays.findIndex(d => d.fullDate === selectedDate);
         if (idx !== -1) {
           activeRowIdx = Math.floor(idx / 7);
         }
-
         return { swiperPanels, activeRowIdx, rowCount };
       }
     },
@@ -140,9 +132,7 @@ Component({
     createMonthDays(year, month, todayDate) {
       const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
-
       const days = [];
-
       for (let i = 0; i < firstDay; i++) {
         days.push({
           day: '',
@@ -151,25 +141,20 @@ Component({
           hasMemo: false
         });
       }
-
       const memoDateMeta = this.data.memoDateMeta || {};
       for (let i = 1; i <= daysInMonth; i++) {
         days.push(this.createDayItem(new Date(year, month, i), todayDate, memoDateMeta));
       }
-
       return days;
     },
 
     createWeekDays(baseDateStr, todayDate) {
       const baseDate = this.parseDate(baseDateStr);
       if (!baseDate) return [];
-
       const dateObj = new Date(baseDate.year, baseDate.month, baseDate.day);
       const dayOfWeek = dateObj.getDay(); // 0 is Sunday
-
       const days = [];
       const memoDateMeta = this.data.memoDateMeta || {};
-
       for (let i = 0; i < 7; i++) {
         const d = new Date(baseDate.year, baseDate.month, baseDate.day - dayOfWeek + i);
         days.push(this.createDayItem(d, todayDate, memoDateMeta));
@@ -180,7 +165,6 @@ Component({
     createDayItem(date, todayDate, memoDateMeta) {
       const fullDate = this.formatDate(date.getFullYear(), date.getMonth(), date.getDate());
       const meta = memoDateMeta[fullDate] || {};
-
       return {
         day: date.getDate(),
         fullDate,
@@ -232,7 +216,6 @@ Component({
     getShiftedWeekDate(dateStr, offset) {
       const parsed = this.parseDate(dateStr);
       if (!parsed) return dateStr;
-
       const d = new Date(parsed.year, parsed.month, parsed.day + offset * 7);
       return this.formatDate(d.getFullYear(), d.getMonth(), d.getDate());
     },
@@ -280,12 +263,9 @@ Component({
       const current = e.detail && typeof e.detail.current === 'number'
         ? e.detail.current
         : SWIPER_CENTER_INDEX;
-
       if (current === SWIPER_CENTER_INDEX) return;
-
       const offset = current > SWIPER_CENTER_INDEX ? 1 : -1;
       this.calendarSwipeAnimating = true;
-
       if (this.data.viewMode === 'week') {
         this.changeWeek(offset, { autoSelectDate: true, resetSwiper: true });
       } else {
@@ -300,7 +280,6 @@ Component({
 
     slideCalendar(offset) {
       if (this.calendarSwipeAnimating) return;
-
       this.calendarSwipeAnimating = true;
       this.setData({
         swiperCurrent: offset > 0 ? SWIPER_CENTER_INDEX + 1 : SWIPER_CENTER_INDEX - 1,
@@ -317,7 +296,6 @@ Component({
       } else {
         day = new Date().getDate();
       }
-
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const targetDay = Math.min(day, daysInMonth);
       return this.formatDate(year, month, targetDay);
@@ -439,7 +417,6 @@ Component({
       if (this.touchStartY !== null && this.touchMoveY !== null) {
         const deltaY = this.touchMoveY - this.touchStartY;
         const deltaX = this.touchMoveX - this.touchStartX;
-
         if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 40) {
           if (deltaY < 0 && this.data.viewMode !== 'week') {
             this.toggleViewMode('week');
@@ -456,12 +433,9 @@ Component({
       const mode = (typeof targetMode === 'string')
         ? targetMode
         : (this.data.viewMode === 'month' ? 'week' : 'month');
-
       this.vibrate();
-
       const { currentYear, currentMonth, selectedDate } = this.data;
       const nextState = this.getCalendarState(currentYear, currentMonth, selectedDate, mode);
-
       this.setData({
         viewMode: mode,
         ...nextState

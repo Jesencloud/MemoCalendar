@@ -603,7 +603,7 @@ button.swipe-btn::after {
 
 .custom-tag-item {
   position: relative;
-  padding-right: 48rpx;
+  padding-right: 56rpx;
 }
 
 .custom-tag-item .tag-text {
@@ -612,22 +612,28 @@ button.swipe-btn::after {
 
 .tag-delete-btn {
   position: absolute;
-  right: 10rpx;
+  right: 12rpx;
   top: 50%;
   transform: translateY(-50%);
-  width: 28rpx;
-  height: 28rpx;
+  width: 34rpx;
+  height: 34rpx;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.08);
   color: #6b7280;
-  font-size: 20rpx;
-  line-height: 24rpx;
+  font-size: 24rpx;
+  line-height: 1;
   text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+}
+
+.tag-delete-btn-hover {
+  background: rgba(214, 84, 84, 0.15); /* Soft red tint */
+  color: #d65454; /* Brick Red */
+  transform: translateY(-50%) scale(1.08);
 }
 
 .tag-item-add {

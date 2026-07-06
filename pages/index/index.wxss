@@ -51,6 +51,23 @@ page {
   transform: scale(0.95);
 }
 
+.backup-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38rpx;
+  color: #6b7280;
+  margin-right: 28rpx;
+  background: transparent;
+  transition: all 0.2s ease;
+  padding: 10rpx;
+}
+
+.backup-icon-btn-hover {
+  opacity: 0.6;
+  transform: scale(0.9);
+}
+
 /* Event / Memo Section */
 .event-section {
   margin-top: 10rpx;

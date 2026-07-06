@@ -1,5 +1,5 @@
 <!-- components/calendar/calendar.wxml -->
-<view 
+<view
   class="calendar-container"
   bindtouchstart="onCalendarTouchStart"
   bindtouchmove="onCalendarTouchMove"
@@ -7,12 +7,10 @@
 >
   <view class="calendar-header">
     <view class="nav-btn" hover-class="nav-btn-hover" hover-stay-time="100" bindtap="prevMonth">❮</view>
-    <picker 
-      mode="date" 
-      fields="month" 
-      value="{{currentYear}}-{{currentMonth + 1 < 10 ? '0' + (currentMonth + 1) : (currentMonth + 1)}}" 
-      start="2010-01" 
-      end="2035-12" 
+    <picker
+      mode="date"
+      fields="month"
+      value="{{currentYear}}-{{currentMonth + 1 < 10 ? '0' + (currentMonth + 1) : (currentMonth + 1)}}"
       bindchange="onMonthPickerChange"
       disabled="{{viewMode === 'week'}}"
     >
@@ -30,8 +28,8 @@
     </block>
   </view>
 
-  <view 
-    class="calendar-days-viewport {{viewMode === 'week' ? 'week-mode' : ''}}" 
+  <view
+    class="calendar-days-viewport {{viewMode === 'week' ? 'week-mode' : ''}}"
     style="height: {{viewMode === 'week' ? 100 : rowCount * 100}}rpx;"
   >
     <swiper
@@ -45,8 +43,8 @@
     >
       <block wx:for="{{swiperPanels}}" wx:key="key" wx:for-item="panel">
         <swiper-item class="month-panel {{viewMode === 'week' ? 'week-mode' : ''}}">
-          <view 
-            class="days-grid {{viewMode === 'week' ? 'week-mode' : ''}}" 
+          <view
+            class="days-grid {{viewMode === 'week' ? 'week-mode' : ''}}"
             style="transform: translateY({{viewMode === 'week' ? -activeRowIdx * 100 : 0}}rpx);"
           >
             <block wx:for="{{panel.days}}" wx:key="dateKey" wx:for-item="day">
@@ -78,6 +76,4 @@
   <view class="fold-indicator" hover-class="fold-indicator-hover" hover-stay-time="100" bindtap="toggleViewMode">
     <view class="fold-line {{viewMode === 'week' ? 'week-mode' : ''}}"></view>
   </view>
-
-
 </view>

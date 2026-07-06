@@ -59,7 +59,7 @@ Component({
       const parsedInitialDate = this.parseDate(this.properties.selectedDate);
       const initialDate = parsedInitialDate ? this.properties.selectedDate : defaultDate;
       const parsed = parsedInitialDate || { year: now.getFullYear(), month: now.getMonth(), day: now.getDate() };
-      
+
       const currentYear = parsed.year;
       const currentMonth = parsed.month;
       const locale = getCalendarText(this.data.lang);
@@ -80,7 +80,7 @@ Component({
     getCalendarState(currentYear, currentMonth, selectedDate, viewMode) {
       const now = new Date();
       const todayDate = this.formatDate(now.getFullYear(), now.getMonth(), now.getDate());
-      
+
       let rowCount = 1;
       if (viewMode === 'month') {
         const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -105,7 +105,7 @@ Component({
             days: this.createWeekDays(nextWeekDate, todayDate)
           }
         ];
-        
+
         return { swiperPanels, activeRowIdx: 0, rowCount: 1 };
       } else {
         const prevMonth = this.getShiftedMonth(currentYear, currentMonth, -1);
@@ -126,13 +126,13 @@ Component({
             days: this.createMonthDays(nextMonth.year, nextMonth.month, todayDate)
           }
         ];
-        
+
         let activeRowIdx = 0;
         const idx = currentDays.findIndex(d => d.fullDate === selectedDate);
         if (idx !== -1) {
           activeRowIdx = Math.floor(idx / 7);
         }
-        
+
         return { swiperPanels, activeRowIdx, rowCount };
       }
     },
@@ -140,9 +140,9 @@ Component({
     createMonthDays(year, month, todayDate) {
       const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
-      
+
       const days = [];
-      
+
       for (let i = 0; i < firstDay; i++) {
         days.push({
           day: '',
@@ -151,7 +151,7 @@ Component({
           hasMemo: false
         });
       }
-      
+
       const memoDateMeta = this.data.memoDateMeta || {};
       for (let i = 1; i <= daysInMonth; i++) {
         days.push(this.createDayItem(new Date(year, month, i), todayDate, memoDateMeta));
@@ -163,13 +163,13 @@ Component({
     createWeekDays(baseDateStr, todayDate) {
       const baseDate = this.parseDate(baseDateStr);
       if (!baseDate) return [];
-      
+
       const dateObj = new Date(baseDate.year, baseDate.month, baseDate.day);
       const dayOfWeek = dateObj.getDay(); // 0 is Sunday
-      
+
       const days = [];
       const memoDateMeta = this.data.memoDateMeta || {};
-      
+
       for (let i = 0; i < 7; i++) {
         const d = new Date(baseDate.year, baseDate.month, baseDate.day - dayOfWeek + i);
         days.push(this.createDayItem(d, todayDate, memoDateMeta));
@@ -235,7 +235,7 @@ Component({
     getShiftedWeekDate(dateStr, offset) {
       const parsed = this.parseDate(dateStr);
       if (!parsed) return dateStr;
-      
+
       const d = new Date(parsed.year, parsed.month, parsed.day + offset * 7);
       return this.formatDate(d.getFullYear(), d.getMonth(), d.getDate());
     },
@@ -328,8 +328,6 @@ Component({
       return this.formatDate(year, month, targetDay);
     },
 
-
-
     changeMonth(offset, options = {}) {
       const shiftedMonth = this.getShiftedMonth(
         this.data.currentYear,
@@ -342,7 +340,7 @@ Component({
       const selectedDate = options.autoSelectDate
         ? this.getAutoSelectedDate(currentYear, currentMonth)
         : this.data.selectedDate;
-      
+
       const nextData = {
         currentMonth,
         currentYear,
@@ -366,7 +364,7 @@ Component({
     changeWeek(offset, options = {}) {
       const { selectedDate } = this.data;
       const nextSelectedDate = this.getShiftedWeekDate(selectedDate, offset);
-      
+
       const parsed = this.parseDate(nextSelectedDate);
       if (!parsed) {
         this.calendarSwipeAnimating = false;
@@ -404,9 +402,9 @@ Component({
     selectDay(e) {
       const { date } = e.currentTarget.dataset;
       if (!date) return;
-      
+
       this.vibrate();
-      
+
       const parsed = this.parseDate(date);
       if (!parsed) return;
 
@@ -415,7 +413,7 @@ Component({
         currentYear: parsed.year,
         currentMonth: parsed.month
       };
-      
+
       if (this.data.viewMode === 'week') {
         Object.assign(nextState, this.getCalendarState(parsed.year, parsed.month, date, 'week'));
       } else {
@@ -426,7 +424,7 @@ Component({
           nextState.activeRowIdx = Math.floor(idx / 7);
         }
       }
-      
+
       this.setData(nextState, () => {
         this.triggerEvent('selectdate', { date });
       });
@@ -459,7 +457,7 @@ Component({
       if (this.touchStartY !== null && this.touchMoveY !== null) {
         const deltaY = this.touchMoveY - this.touchStartY;
         const deltaX = this.touchMoveX - this.touchStartX;
-        
+
         if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 40) {
           if (deltaY < 0 && this.data.viewMode !== 'week') {
             this.toggleViewMode('week');
@@ -473,15 +471,15 @@ Component({
     },
 
     toggleViewMode(targetMode) {
-      const mode = (typeof targetMode === 'string') 
-        ? targetMode 
+      const mode = (typeof targetMode === 'string')
+        ? targetMode
         : (this.data.viewMode === 'month' ? 'week' : 'month');
-        
+
       this.vibrate();
-      
+
       const { currentYear, currentMonth, selectedDate } = this.data;
       const nextState = this.getCalendarState(currentYear, currentMonth, selectedDate, mode);
-      
+
       this.setData({
         viewMode: mode,
         ...nextState

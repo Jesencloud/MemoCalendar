@@ -17,7 +17,8 @@
       disabled="{{viewMode === 'week'}}"
     >
       <view class="current-month" hover-class="{{viewMode === 'week' ? '' : 'current-month-hover'}}">
-        {{monthNames[currentMonth]}} {{currentYear}}
+        <block wx:if="{{lang === 'zh'}}">{{currentYear}}年 {{monthNames[currentMonth]}}</block>
+        <block wx:else>{{monthNames[currentMonth]}} {{currentYear}}</block>
       </view>
     </picker>
     <view class="nav-btn" hover-class="nav-btn-hover" hover-stay-time="100" bindtap="nextMonth">❯</view>

@@ -7,9 +7,19 @@
 >
   <view class="calendar-header">
     <view class="nav-btn" hover-class="nav-btn-hover" hover-stay-time="100" bindtap="prevMonth">❮</view>
-    <view class="current-month" hover-class="{{viewMode === 'week' ? '' : 'current-month-hover'}}" bindtap="openMonthPicker">
-      {{monthNames[currentMonth]}} {{currentYear}}
-    </view>
+    <picker 
+      mode="date" 
+      fields="month" 
+      value="{{currentYear}}-{{currentMonth + 1 < 10 ? '0' + (currentMonth + 1) : (currentMonth + 1)}}" 
+      start="2010-01" 
+      end="2035-12" 
+      bindchange="onMonthPickerChange"
+      disabled="{{viewMode === 'week'}}"
+    >
+      <view class="current-month" hover-class="{{viewMode === 'week' ? '' : 'current-month-hover'}}">
+        {{monthNames[currentMonth]}} {{currentYear}}
+      </view>
+    </picker>
     <view class="nav-btn" hover-class="nav-btn-hover" hover-stay-time="100" bindtap="nextMonth">❯</view>
   </view>
 
@@ -68,36 +78,5 @@
     <view class="fold-line {{viewMode === 'week' ? 'week-mode' : ''}}"></view>
   </view>
 
-  <!-- Month Picker Panel -->
-  <view wx:if="{{showMonthPicker}}" class="month-picker-mask" bindtap="closeMonthPicker">
-    <view class="month-picker-panel" catchtap="stopMonthPickerTap">
-      <view class="month-picker-header">
-        <view
-          class="year-option {{baseYear === pickerYear ? 'active' : ''}}"
-          data-year="{{baseYear}}"
-          bindtap="selectPickerYear"
-        >
-          <text>{{baseYear}}</text>
-        </view>
-        <view
-          class="year-option {{baseYear + 1 === pickerYear ? 'active' : ''}}"
-          data-year="{{baseYear + 1}}"
-          bindtap="selectPickerYear"
-        >
-          <text>{{baseYear + 1}}</text>
-        </view>
-      </view>
-      <view class="month-grid">
-        <block wx:for="{{monthNames}}" wx:key="*this">
-          <view
-            class="month-option {{index === currentMonth && pickerYear === currentYear ? 'active' : ''}}"
-            data-month="{{index}}"
-            bindtap="selectMonth"
-          >
-            <text>{{item}}</text>
-          </view>
-        </block>
-      </view>
-    </view>
-  </view>
+
 </view>

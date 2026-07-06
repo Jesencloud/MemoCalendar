@@ -170,76 +170,7 @@
   opacity: 0.5;
 }
 
-.month-picker-mask {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40rpx;
-  box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.28);
-}
 
-.month-picker-panel {
-  width: 100%;
-  max-width: 620rpx;
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  box-sizing: border-box;
-  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.16);
-}
-
-.month-picker-header {
-  display: flex;
-  justify-content: center;
-  gap: 16rpx;
-  margin-bottom: 24rpx;
-}
-
-.year-option {
-  min-width: 132rpx;
-  height: 64rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 16rpx;
-  font-size: 34rpx;
-  color: #333;
-}
-
-.year-option.active {
-  color: #fa8231;
-  font-weight: bold;
-  background: #fff1e6;
-}
-
-.month-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-}
-
-.month-option {
-  height: 92rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  color: #333;
-  font-size: 28rpx;
-}
-
-.month-option.active {
-  color: #fa8231;
-  font-weight: bold;
-  background: #fff1e6;
-  border-radius: 16rpx;
-}
 
 .fold-indicator {
   width: 100%;

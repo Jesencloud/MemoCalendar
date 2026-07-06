@@ -463,9 +463,11 @@ page {
 }
 
 .modal-close {
-  font-size: 48rpx;
+  font-size: 56rpx;
   color: #9ca3af;
-  padding: 10rpx;
+  padding: 16rpx;
+  margin-top: -12rpx;
+  margin-right: -12rpx;
   line-height: 1;
   transition: color 0.2s ease;
 }

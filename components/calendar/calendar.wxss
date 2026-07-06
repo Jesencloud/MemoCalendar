@@ -170,8 +170,6 @@
   opacity: 0.5;
 }
 
-
-
 .fold-indicator {
   width: 100%;
   height: 32rpx;

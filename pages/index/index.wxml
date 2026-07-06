@@ -65,7 +65,7 @@
                 <view class="memo-location-inline" wx:if="{{item.location}}">
                   <text class="location-text">{{item.location}}</text>
                 </view>
-                <text class="memo-tag-inline">{{item.categoryIcon === '🏷️' ? '#' + (lang === 'zh' ? item.tagCn : item.tagEn) : item.categoryIcon}}</text>
+                <text class="memo-tag-inline">{{item.categoryIcon === '🏷️' ? (lang === 'zh' ? item.tagCn : item.tagEn) : item.categoryIcon}}</text>
                 <view
                   class="drag-handle"
                   catchtouchstart="onDragStart"

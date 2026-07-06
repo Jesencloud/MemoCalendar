@@ -46,6 +46,8 @@ function getText(lang) {
     'today',
     'events',
     'noEvents',
+    'noEventsTitle',
+    'noEventsDesc',
     'langToggle',
     'addMemo',
     'editMemo',

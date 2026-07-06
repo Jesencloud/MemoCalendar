@@ -153,6 +153,7 @@
               style="--tag-color: {{item.color}}; --tag-bg: {{item.color}}15"
               data-key="{{item.key}}"
               bindtap="onSelectTag"
+              bindlongpress="onLongPressTag"
             >
               <text class="tag-icon" wx:if="{{item.icon !== '🏷️'}}">{{item.icon}}</text>
               <text class="tag-text">{{lang === 'zh' ? item.labelCn : item.labelEn}}</text>
@@ -249,7 +250,7 @@
   <view class="modal-mask custom-category-mask" wx:if="{{customCategoryModalVisible}}" catchtouchmove="stopBubble">
     <view class="modal-panel custom-category-panel">
       <view class="modal-header">
-        <text class="modal-title">{{text.newCustomCategory}}</text>
+        <text class="modal-title">{{editingCategoryKey ? text.editCustomCategory : text.newCustomCategory}}</text>
       </view>
 
       <scroll-view scroll-y class="modal-form" style="padding-bottom: 20rpx;">

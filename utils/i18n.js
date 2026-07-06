@@ -21,20 +21,7 @@ const translations = {
     noEventsDesc: '点击右下角按钮，规划你的精彩日程',
     langToggle: 'EN',
     weekdays: ['日', '一', '二', '三', '四', '五', '六'],
-    months: [
-      '一月',
-      '二月',
-      '三月',
-      '四月',
-      '五月',
-      '六月',
-      '七月',
-      '八月',
-      '九月',
-      '十月',
-      '十一月',
-      '十二月'
-    ],
+
     addMemo: '新建日程',
     editMemo: '编辑日程',
     delete: '删除',
@@ -115,20 +102,7 @@ const translations = {
     noEventsDesc: 'Tap "+" below to plan your day',
     langToggle: '中文',
     weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-    months: [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ],
+
     addMemo: 'New Memo',
     editMemo: 'Edit Memo',
     delete: 'Delete',

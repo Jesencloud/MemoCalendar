@@ -145,7 +145,7 @@
               data-key="{{item.key}}"
               bindtap="onSelectTag"
             >
-              <text class="tag-icon">{{item.icon}}</text>
+              <text class="tag-icon" wx:if="{{item.icon !== '🏷️'}}">{{item.icon}}</text>
               <text class="tag-text">{{lang === 'zh' ? item.labelCn : item.labelEn}}</text>
               <!-- Delete icon for custom categories -->
               <view

@@ -1,6 +1,6 @@
 /* pages/index/index.wxss */
 page {
-  background-color: #fffcf9; /* Sunny Citrus Orange & Cream background */
+  background-color: #ffffff; /* Native pure white background */
 }
 
 .container {

@@ -151,6 +151,7 @@
               <view
                 wx:if="{{item.isCustom}}"
                 class="tag-delete-btn"
+                hover-class="tag-delete-btn-hover"
                 catchtap="onDeleteCustomTag"
                 data-key="{{item.key}}"
                 data-name="{{item.labelCn}}"

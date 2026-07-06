@@ -58,7 +58,6 @@ function getText(lang) {
     'sharedMemoAdded',
     'today',
     'events',
-    'noEvents',
     'noEventsTitle',
     'noEventsDesc',
     'langToggle',

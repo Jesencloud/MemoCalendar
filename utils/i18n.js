@@ -19,7 +19,6 @@ const translations = {
     events: '的日程',
     noEventsTitle: '今日无日程',
     noEventsDesc: '点击右下角按钮，规划你的精彩日程',
-    noEvents: '今日暂无日程，点击右下角按钮添加吧！',
     langToggle: 'EN',
     weekdays: ['日', '一', '二', '三', '四', '五', '六'],
     months: [
@@ -113,7 +112,6 @@ const translations = {
     events: '\'s Memos',
     noEventsTitle: 'No Memos Today',
     noEventsDesc: 'Tap the "+" button below to plan your day',
-    noEvents: 'No memos for today. Tap the "+" button in the bottom right to add one!',
     langToggle: '中文',
     weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     months: [

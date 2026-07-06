@@ -201,10 +201,8 @@ Component({
 
     parseDate(date) {
       if (typeof date !== 'string') return null;
-
       const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
       if (!match) return null;
-
       const year = Number(match[1]);
       const month = Number(match[2]) - 1;
       const day = Number(match[3]);
@@ -216,7 +214,6 @@ Component({
       ) {
         return null;
       }
-
       return {
         year,
         month,
@@ -247,7 +244,6 @@ Component({
     goToDate(date) {
       const parsedDate = this.parseDate(date);
       if (!parsedDate) return;
-
       this.setData({
         currentYear: parsedDate.year,
         currentMonth: parsedDate.month,
@@ -265,7 +261,6 @@ Component({
       const year = Number(parts[0]);
       const month = Number(parts[1]) - 1; // 0-indexed month
       if (Number.isNaN(year) || Number.isNaN(month)) return;
-
       const selectedDate = this.getAutoSelectedDate(year, month);
       this.setData({
         currentMonth: month,
@@ -336,23 +331,19 @@ Component({
       );
       const currentYear = shiftedMonth.year;
       const currentMonth = shiftedMonth.month;
-
       const selectedDate = options.autoSelectDate
         ? this.getAutoSelectedDate(currentYear, currentMonth)
         : this.data.selectedDate;
-
       const nextData = {
         currentMonth,
         currentYear,
         selectedDate,
         ...this.getCalendarState(currentYear, currentMonth, selectedDate, 'month')
       };
-
       if (options.resetSwiper) {
         nextData.swiperCurrent = SWIPER_CENTER_INDEX;
         nextData.swiperDuration = 0;
       }
-
       this.setData(nextData, () => {
         this.calendarSwipeAnimating = false;
         if (options.autoSelectDate) {
@@ -364,25 +355,21 @@ Component({
     changeWeek(offset, options = {}) {
       const { selectedDate } = this.data;
       const nextSelectedDate = this.getShiftedWeekDate(selectedDate, offset);
-
       const parsed = this.parseDate(nextSelectedDate);
       if (!parsed) {
         this.calendarSwipeAnimating = false;
         return;
       }
-
       const nextData = {
         selectedDate: nextSelectedDate,
         currentYear: parsed.year,
         currentMonth: parsed.month,
         ...this.getCalendarState(parsed.year, parsed.month, nextSelectedDate, 'week')
       };
-
       if (options.resetSwiper) {
         nextData.swiperCurrent = SWIPER_CENTER_INDEX;
         nextData.swiperDuration = 0;
       }
-
       this.setData(nextData, () => {
         this.calendarSwipeAnimating = false;
         if (options.autoSelectDate) {
@@ -402,18 +389,14 @@ Component({
     selectDay(e) {
       const { date } = e.currentTarget.dataset;
       if (!date) return;
-
       this.vibrate();
-
       const parsed = this.parseDate(date);
       if (!parsed) return;
-
       const nextState = {
         selectedDate: date,
         currentYear: parsed.year,
         currentMonth: parsed.month
       };
-
       if (this.data.viewMode === 'week') {
         Object.assign(nextState, this.getCalendarState(parsed.year, parsed.month, date, 'week'));
       } else {
@@ -424,7 +407,6 @@ Component({
           nextState.activeRowIdx = Math.floor(idx / 7);
         }
       }
-
       this.setData(nextState, () => {
         this.triggerEvent('selectdate', { date });
       });

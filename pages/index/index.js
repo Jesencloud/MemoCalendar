@@ -67,6 +67,7 @@ function getText(lang) {
     'selectCategory',
     'customCategory',
     'newCustomCategory',
+    'editCustomCategory',
     'customCategoryPlaceholder',
     'categoryNameEmpty',
     'categoryNameTooLong',
@@ -132,6 +133,7 @@ Page({
     modalClosing: false,
     customCategoryModalVisible: false,
     customCategoryName: '',
+    editingCategoryKey: null,
     savingMemo: false,
     savingCategory: false,
     backupModalVisible: false,
@@ -483,7 +485,21 @@ Page({
     this.vibrate();
     this.setData({
       customCategoryModalVisible: true,
-      customCategoryName: ''
+      customCategoryName: '',
+      editingCategoryKey: null
+    });
+  },
+
+  onLongPressTag(e) {
+    const { key } = e.currentTarget.dataset;
+    const category = this.data.categories.find(c => c.key === key);
+    if (!category || !category.isCustom) return;
+
+    this.vibrate('light');
+    this.setData({
+      editingCategoryKey: key,
+      customCategoryName: this.data.lang === 'zh' ? category.labelCn : category.labelEn,
+      customCategoryModalVisible: true
     });
   },
 
@@ -497,14 +513,15 @@ Page({
     this.vibrate();
     this.setData({
       customCategoryModalVisible: false,
-      customCategoryName: ''
+      customCategoryName: '',
+      editingCategoryKey: null
     });
   },
 
   async onSaveCustomCategory() {
     if (this.savingCategory) return;
 
-    const { text } = this.data;
+    const { text, editingCategoryKey } = this.data;
     const content = this.data.customCategoryName ? this.data.customCategoryName.trim() : '';
 
     if (!content) {
@@ -519,12 +536,13 @@ Page({
 
     const existing = findCategoryByName(this.data.categories, content);
 
-    if (existing) {
+    if (existing && (!editingCategoryKey || existing.key !== editingCategoryKey)) {
       this.setData({
         'memoForm.tag': existing.key,
         'memoForm.color': existing.color,
         customCategoryModalVisible: false,
-        customCategoryName: ''
+        customCategoryName: '',
+        editingCategoryKey: null
       });
       this.showToast(text.categoryExistsSelected);
       return;
@@ -542,32 +560,62 @@ Page({
         return;
       }
 
-      const newCategory = createCustomCategory(
-        this.generateCategoryKey(),
-        content,
-        getNextCategoryColor(custom)
-      );
+      if (editingCategoryKey) {
+        const idx = custom.findIndex(c => c.key === editingCategoryKey);
+        if (idx !== -1) {
+          custom[idx].labelCn = content;
+          custom[idx].labelEn = content;
+        }
 
-      custom.push(newCategory);
-      try {
-        await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, custom);
-      } catch (e) {
-        console.error('Failed to save custom category:', e);
-        this.showStorageFailureToast();
-        return;
+        try {
+          await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, custom);
+        } catch (e) {
+          console.error('Failed to save custom category:', e);
+          this.showStorageFailureToast();
+          return;
+        }
+
+        await this.loadCategories();
+
+        this.setData({
+          'memoForm.tag': editingCategoryKey,
+          'memoForm.color': custom[idx] ? custom[idx].color : this.data.memoForm.color,
+          customCategoryModalVisible: false,
+          customCategoryName: '',
+          editingCategoryKey: null
+        });
+
+        this.vibrate('medium');
+        this.showToast(text.saved, 'success');
+      } else {
+        const newCategory = createCustomCategory(
+          this.generateCategoryKey(),
+          content,
+          getNextCategoryColor(custom)
+        );
+
+        custom.push(newCategory);
+        try {
+          await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, custom);
+        } catch (e) {
+          console.error('Failed to save custom category:', e);
+          this.showStorageFailureToast();
+          return;
+        }
+
+        await this.loadCategories();
+
+        this.setData({
+          'memoForm.tag': newCategory.key,
+          'memoForm.color': newCategory.color,
+          customCategoryModalVisible: false,
+          customCategoryName: '',
+          editingCategoryKey: null
+        });
+
+        this.vibrate('medium');
+        this.showToast(text.created, 'success');
       }
-
-      await this.loadCategories();
-
-      this.setData({
-        'memoForm.tag': newCategory.key,
-        'memoForm.color': newCategory.color,
-        customCategoryModalVisible: false,
-        customCategoryName: ''
-      });
-
-      this.vibrate('medium');
-      this.showToast(text.created, 'success');
     } finally {
       this.finishBusyState('savingCategory');
     }

@@ -93,8 +93,11 @@
     </view>
     
     <view wx:else class="no-events">
-      <text class="no-events-icon">📝</text>
-      <text class="no-events-text">{{text.noEvents}}</text>
+      <view class="no-events-icon-wrapper">
+        <text class="no-events-icon">📝</text>
+      </view>
+      <text class="no-events-title">{{text.noEventsTitle}}</text>
+      <text class="no-events-desc">{{text.noEventsDesc}}</text>
     </view>
   </view>
 

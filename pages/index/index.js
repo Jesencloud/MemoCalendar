@@ -45,7 +45,6 @@ function getText(lang) {
     'shareTitle',
     'today',
     'events',
-    'noEvents',
     'noEventsTitle',
     'noEventsDesc',
     'langToggle',

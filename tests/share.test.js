@@ -5,7 +5,7 @@ const {
   createSharedMemoPayload,
   parseSharedMemoPayload,
   createSharedMemoImportForSave
-} = require('./share.js');
+} = require('../utils/share.js');
 
 const DEFAULT_CATEGORIES = [
   { key: 'Sport', labelCn: '运动', labelEn: 'Sport', color: '#ff9500', icon: '🏋' },

@@ -108,12 +108,8 @@
         "type": "prefix"
       },
       {
-        "value": "backup.test.js",
-        "type": "file"
-      },
-      {
-        "value": "share.test.js",
-        "type": "file"
+        "value": "tests",
+        "type": "folder"
       }
     ],
     "include": []

@@ -4,7 +4,7 @@ const {
   parseBackupData,
   mergeImportedData,
   normalizeImportedCategories
-} = require('./backup.js');
+} = require('../utils/backup.js');
 
 // Mock data structures
 const MOCK_DEFAULT_CATEGORIES = [

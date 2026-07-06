@@ -367,7 +367,7 @@ page {
   font-size: 24rpx;
   text-align: center;
   line-height: 1.5;
-  max-width: 440rpx;
+  max-width: 520rpx;
 }
 
 /* Floating Action Button (FAB) */

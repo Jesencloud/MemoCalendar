@@ -8,8 +8,8 @@
         <text class="subtitle">{{text.subtitle}}</text>
       </view>
       <view class="header-actions">
-        <view class="lang-toggle" hover-class="lang-toggle-hover" hover-stay-time="100" bindtap="onOpenBackupModal" style="margin-right: 15rpx;">
-          <text>{{text.backupBtn}}</text>
+        <view class="backup-icon-btn" hover-class="backup-icon-btn-hover" hover-stay-time="100" bindtap="onOpenBackupModal">
+          <text>💾</text>
         </view>
         <view class="lang-toggle" hover-class="lang-toggle-hover" hover-stay-time="100" bindtap="toggleLang">
           <text>{{text.langToggle}}</text>

@@ -45,9 +45,6 @@ Component({
     currentMonth: 0,
     currentYear: 0,
     selectedDate: '',
-    showMonthPicker: false,
-    baseYear: 0,
-    pickerYear: 0,
     swiperCurrent: SWIPER_CENTER_INDEX,
     swiperDuration: SWIPER_DURATION_MS,
     weekdays: [],
@@ -74,8 +71,6 @@ Component({
         currentYear,
         currentMonth,
         selectedDate: initialDate,
-        baseYear: currentYear,
-        pickerYear: currentYear,
         weekdays: locale.weekdays,
         monthNames: locale.months,
         viewMode: 'month',
@@ -266,29 +261,27 @@ Component({
       }, () => this.restoreSwiperDuration());
     },
 
-    openMonthPicker() {
-      if (this.data.viewMode === 'week') return;
-      const { currentYear } = this.data;
+    onMonthPickerChange(e) {
+      const val = e.detail.value;
+      if (!val) return;
+      const parts = val.split('-');
+      const year = Number(parts[0]);
+      const month = Number(parts[1]) - 1; // 0-indexed month
+      if (Number.isNaN(year) || Number.isNaN(month)) return;
 
+      const selectedDate = this.getAutoSelectedDate(year, month);
       this.setData({
-        baseYear: currentYear,
-        showMonthPicker: true,
-        pickerYear: currentYear
+        currentMonth: month,
+        currentYear: year,
+        selectedDate,
+        swiperCurrent: SWIPER_CENTER_INDEX,
+        swiperDuration: 0,
+        ...this.getCalendarState(year, month, selectedDate, 'month')
+      }, () => {
+        this.calendarSwipeAnimating = false;
+        this.restoreSwiperDuration();
+        this.triggerEvent('selectdate', { date: selectedDate });
       });
-    },
-
-    closeMonthPicker() {
-      this.setData({ showMonthPicker: false });
-    },
-
-    stopMonthPickerTap() {},
-
-    selectPickerYear(e) {
-      const year = Number(e.currentTarget.dataset.year);
-      if (Number.isNaN(year)) return;
-      if (year !== this.data.baseYear && year !== this.data.baseYear + 1) return;
-
-      this.setData({ pickerYear: year });
     },
 
     onCalendarSwiperFinish(e) {
@@ -338,26 +331,7 @@ Component({
       return this.formatDate(year, month, targetDay);
     },
 
-    selectMonth(e) {
-      const month = Number(e.currentTarget.dataset.month);
-      if (Number.isNaN(month)) return;
 
-      const currentYear = this.data.pickerYear;
-      const selectedDate = this.getAutoSelectedDate(currentYear, month);
-      this.setData({
-        currentMonth: month,
-        currentYear,
-        selectedDate,
-        showMonthPicker: false,
-        swiperCurrent: SWIPER_CENTER_INDEX,
-        swiperDuration: 0,
-        ...this.getCalendarState(currentYear, month, selectedDate, 'month')
-      }, () => {
-        this.calendarSwipeAnimating = false;
-        this.restoreSwiperDuration();
-        this.triggerEvent('selectdate', { date: selectedDate });
-      });
-    },
 
     changeMonth(offset, options = {}) {
       const shiftedMonth = this.getShiftedMonth(

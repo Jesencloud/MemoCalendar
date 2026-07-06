@@ -7,6 +7,7 @@ page {
   padding: 30rpx 30rpx 140rpx; /* Extra bottom padding for FAB */
   min-height: 100vh;
   box-sizing: border-box;
+  background-color: #ffffff !important; /* Force pure white backdrop */
 }
 
 .header {

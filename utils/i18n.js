@@ -20,7 +20,7 @@ const translations = {
     noEventsTitle: '今日无日程',
     noEventsDesc: '点击右下角按钮，规划你的精彩日程',
     langToggle: 'EN',
-    weekdays: ['日', '一', '二', '三', '四', '五', '六'],
+    weekdays: ['一', '二', '三', '四', '五', '六', '日'],
 
     addMemo: '新建日程',
     editMemo: '编辑日程',
@@ -100,7 +100,7 @@ const translations = {
     noEventsTitle: 'No Memos Today',
     noEventsDesc: 'Tap "+" below to plan your day',
     langToggle: '中',
-    weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
 
     addMemo: 'New Memo',
     editMemo: 'Edit Memo',

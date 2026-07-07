@@ -81,8 +81,9 @@ Component({
       let rowCount = 1;
       if (viewMode === 'month') {
         const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const emptyDaysBefore = (firstDay + 6) % 7;
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-        rowCount = Math.ceil((firstDay + daysInMonth) / 7);
+        rowCount = Math.ceil((emptyDaysBefore + daysInMonth) / 7);
       }
       if (viewMode === 'week') {
         const prevWeekDate = this.getShiftedWeekDate(selectedDate, -1);
@@ -131,9 +132,10 @@ Component({
 
     createMonthDays(year, month, todayDate) {
       const firstDay = new Date(year, month, 1).getDay();
+      const emptyDaysBefore = (firstDay + 6) % 7;
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const days = [];
-      for (let i = 0; i < firstDay; i++) {
+      for (let i = 0; i < emptyDaysBefore; i++) {
         days.push({
           day: '',
           fullDate: '',
@@ -152,11 +154,12 @@ Component({
       const baseDate = this.parseDate(baseDateStr);
       if (!baseDate) return [];
       const dateObj = new Date(baseDate.year, baseDate.month, baseDate.day);
-      const dayOfWeek = dateObj.getDay(); // 0 is Sunday
+      const dayOfWeek = dateObj.getDay();
+      const emptyDaysBefore = (dayOfWeek + 6) % 7;
       const days = [];
       const memoDateMeta = this.data.memoDateMeta || {};
       for (let i = 0; i < 7; i++) {
-        const d = new Date(baseDate.year, baseDate.month, baseDate.day - dayOfWeek + i);
+        const d = new Date(baseDate.year, baseDate.month, baseDate.day - emptyDaysBefore + i);
         days.push(this.createDayItem(d, todayDate, memoDateMeta));
       }
       return days;

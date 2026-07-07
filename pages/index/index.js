@@ -89,7 +89,6 @@ function getText(lang) {
     'time',
     'location',
     'notes',
-    'backupBtn',
     'dataBackupTitle',
     'exportData',
     'exportDesc',

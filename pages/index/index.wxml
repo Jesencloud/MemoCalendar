@@ -196,7 +196,7 @@
         <view class="form-item">
           <text class="form-label">{{text.location}}</text>
           <view class="input-container">
-            <text class="field-emoji">📌</text>
+            <text class="field-emoji">📍</text>
             <input
               class="input-field"
               placeholder="{{text.inputLocationPlaceholder}}"

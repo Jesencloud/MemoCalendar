@@ -281,7 +281,7 @@ button.swipe-btn::after {
 }
 
 .memo-card-main {
-  padding: 30rpx;
+  padding: 20rpx 30rpx;
 }
 
 .memo-row-inline {

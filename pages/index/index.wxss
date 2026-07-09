@@ -338,11 +338,6 @@ button.swipe-btn::after {
   width: 100%;
 }
 
-.memo-location-icon {
-  font-size: 22rpx;
-  color: #9ca3af;
-  flex-shrink: 0;
-}
 
 .memo-location-text {
   font-size: 24rpx;

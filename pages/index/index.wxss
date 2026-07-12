@@ -236,11 +236,11 @@ button.swipe-btn::after {
 }
 
 .swipe-btn.btn-done {
-  background: #52a373; /* Premium Sage Green */
+  background: #73917d; /* Premium Muted Sage Green */
 }
 
 .swipe-btn.btn-delete {
-  background: #d65454; /* Premium Brick Red */
+  background: #ad6060; /* Premium Muted Terra Cotta Red */
 }
 
 /* Entrance when revealed */

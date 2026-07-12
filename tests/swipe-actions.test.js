@@ -36,6 +36,24 @@ function createPage() {
   return page;
 }
 
+function installFakeTimers() {
+  const originalSetTimeout = global.setTimeout;
+  const originalClearTimeout = global.clearTimeout;
+  const timers = [];
+  global.setTimeout = (callback, delay) => {
+    timers.push({ callback, delay });
+    return timers.length;
+  };
+  global.clearTimeout = () => {};
+  return {
+    timers,
+    restore() {
+      global.setTimeout = originalSetTimeout;
+      global.clearTimeout = originalClearTimeout;
+    }
+  };
+}
+
 test('swipe done toggles and commits UI state once after saving', async () => {
   const page = createPage();
   const date = '2026-07-09';
@@ -127,16 +145,56 @@ test('cancelling swipe delete releases the lock and closes swipe actions', () =>
 test('storage failure releases the swipe mutation lock', async () => {
   const page = createPage();
   const date = '2026-07-09';
+  const fakeTimers = installFakeTimers();
   page.data.selectedDate = date;
+  page.data.swipedMemoId = 'memo-1';
   page.memoDates = {
     [date]: [{ id: 'memo-1', title: 'One', completed: false }]
   };
   page.saveMemosToStorage = async () => false;
 
-  await page.onSwipeDoneTap({ currentTarget: { dataset: { id: 'memo-1' } } });
+  try {
+    await page.onSwipeDoneTap({ currentTarget: { dataset: { id: 'memo-1' } } });
 
-  assert.strictEqual(page.memoMutationLock, '');
-  assert.strictEqual(page.data.memoActionId, '');
+    assert.strictEqual(page.memoMutationLock, '');
+    assert.strictEqual(page.data.memoActionId, '');
+    assert.strictEqual(fakeTimers.timers[0].delay, 3000);
+
+    fakeTimers.timers[0].callback();
+    assert.strictEqual(page.data.swipedMemoId, '');
+  } finally {
+    fakeTimers.restore();
+  }
+});
+
+test('delete storage failure restarts swipe auto close', async () => {
+  const page = createPage();
+  const date = '2026-07-09';
+  const fakeTimers = installFakeTimers();
+  let confirmOptions;
+  page.data.selectedDate = date;
+  page.data.swipedMemoId = 'memo-1';
+  page.memoDates = {
+    [date]: [{ id: 'memo-1', title: 'One', completed: false }]
+  };
+  page.showConfirm = options => {
+    confirmOptions = options;
+  };
+  page.saveMemosToStorage = async () => false;
+
+  try {
+    page.deleteMemoById('memo-1', { clearSwipeOnCancel: true });
+    await confirmOptions.confirm();
+
+    assert.strictEqual(page.memoMutationLock, '');
+    assert.strictEqual(page.data.memoActionId, '');
+    assert.strictEqual(fakeTimers.timers[0].delay, 3000);
+
+    fakeTimers.timers[0].callback();
+    assert.strictEqual(page.data.swipedMemoId, '');
+  } finally {
+    fakeTimers.restore();
+  }
 });
 
 test('active swipe mutation blocks sorting writes', async () => {
@@ -173,4 +231,45 @@ test('active swipe mutation blocks backup import writes', async () => {
   assert.strictEqual(snapshotRead, false);
   assert.strictEqual(page.memoMutationLock, 'swipe-done:memo-1');
   assert.strictEqual(page.data.importingData, false);
+});
+
+test('opened swipe actions close automatically after three seconds', () => {
+  const page = createPage();
+  const fakeTimers = installFakeTimers();
+
+  try {
+    page.openSwipeActions('memo-1');
+    assert.strictEqual(page.data.swipedMemoId, 'memo-1');
+    assert.strictEqual(fakeTimers.timers[0].delay, 3000);
+
+    page.openSwipeActions('memo-2');
+    fakeTimers.timers[0].callback();
+    assert.strictEqual(page.data.swipedMemoId, 'memo-2');
+
+    fakeTimers.timers[1].callback();
+    assert.strictEqual(page.data.swipedMemoId, '');
+    assert.strictEqual(page.swipeCloseTimer, null);
+  } finally {
+    fakeTimers.restore();
+  }
+});
+
+test('opening another memo for editing closes existing swipe actions', () => {
+  const page = createPage();
+  const date = '2026-07-09';
+  page.data.selectedDate = date;
+  page.data.swipedMemoId = 'memo-1';
+  page.memoDates = {
+    [date]: [
+      { id: 'memo-1', title: 'One', notes: '' },
+      { id: 'memo-2', title: 'Two', notes: 'Details' }
+    ]
+  };
+
+  page.onEditMemoTap({ currentTarget: { dataset: { id: 'memo-2' } } });
+
+  assert.strictEqual(page.data.swipedMemoId, '');
+  assert.strictEqual(page.data.modalVisible, true);
+  assert.strictEqual(page.data.memoForm.id, 'memo-2');
+  assert.strictEqual(page.setDataCalls.length, 1);
 });

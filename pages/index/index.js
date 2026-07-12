@@ -41,6 +41,7 @@ const STORAGE_KEYS = {
   CUSTOM_CATEGORIES: 'memoCustomCategories'
 };
 const DRAG_TRANSLATE_THROTTLE_MS = 48;
+const SWIPE_AUTO_CLOSE_MS = 3000;
 
 
 Page({
@@ -163,6 +164,7 @@ Page({
 
   onUnload() {
     this.clearModalCloseTimer();
+    this.clearSwipeCloseTimer();
   },
 
   getDefaultShareConfig() {
@@ -534,13 +536,61 @@ Page({
     this.setBusyState(key, false);
   },
 
+  clearSwipeCloseTimer() {
+    this.swipeCloseToken = (this.swipeCloseToken || 0) + 1;
+    if (this.swipeCloseTimer) {
+      clearTimeout(this.swipeCloseTimer);
+      this.swipeCloseTimer = null;
+    }
+  },
+
+  closeSwipeActions() {
+    this.clearSwipeCloseTimer();
+    if (this.data.swipedMemoId) {
+      this.setData({ swipedMemoId: '' });
+    }
+  },
+
+  scheduleSwipeAutoClose(id, token) {
+    this.swipeCloseTimer = setTimeout(() => {
+      if (token !== this.swipeCloseToken) return;
+      this.swipeCloseTimer = null;
+      if (!this.memoMutationLock && this.data.swipedMemoId === id) {
+        this.setData({ swipedMemoId: '' });
+      }
+    }, SWIPE_AUTO_CLOSE_MS);
+  },
+
+  restartSwipeAutoClose(id) {
+    this.clearSwipeCloseTimer();
+    if (!id || this.data.swipedMemoId !== id) return;
+    this.scheduleSwipeAutoClose(id, this.swipeCloseToken);
+  },
+
+  openSwipeActions(id) {
+    if (!id) {
+      this.closeSwipeActions();
+      return;
+    }
+
+    this.clearSwipeCloseTimer();
+    const token = this.swipeCloseToken;
+    this.setData({ swipedMemoId: id }, () => {
+      if (token !== this.swipeCloseToken || this.data.swipedMemoId !== id) return;
+      this.scheduleSwipeAutoClose(id, token);
+    });
+  },
+
   startMemoMutation(owner, actionMemoId = '') {
     if (!owner || this.memoMutationLock) return false;
     if (this.data.draggingId && owner !== 'drag') return false;
 
     this.memoMutationLock = owner;
+    this.clearSwipeCloseTimer();
     if (actionMemoId) {
       this.setData({ memoActionId: actionMemoId });
+    } else if (this.data.swipedMemoId) {
+      this.setData({ swipedMemoId: '' });
     }
     return true;
   },
@@ -707,6 +757,7 @@ Page({
   },
 
   updateSelectedMemos() {
+    this.clearSwipeCloseTimer();
     const { selectedDate } = this.data;
     const list = this.memoDates[selectedDate] || [];
     this.setData({
@@ -818,6 +869,7 @@ Page({
   // Modal Actions
   onAddMemoTap() {
     this.clearModalCloseTimer();
+    this.clearSwipeCloseTimer();
     this.vibrate();
     const initialForm = Object.assign({}, DEFAULT_FORM, { id: '' });
     this.originalForm = JSON.stringify(initialForm);
@@ -835,7 +887,7 @@ Page({
     const { selectedDate, swipedMemoId } = this.data;
 
     if (swipedMemoId === id) {
-      this.setData({ swipedMemoId: '' });
+      this.closeSwipeActions();
       return;
     }
 
@@ -845,10 +897,12 @@ Page({
 
     this.vibrate();
     this.clearModalCloseTimer();
+    this.clearSwipeCloseTimer();
     this.originalForm = JSON.stringify(memo);
     this.setData({
       memoForm: Object.assign({}, memo),
       memoNotesLength: memo.notes ? memo.notes.length : 0,
+      swipedMemoId: '',
       modalVisible: true,
       modalClosing: false
     });
@@ -878,14 +932,17 @@ Page({
 
     // Check if horizontal swipe and minimal vertical move
     if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < 40) {
-      this.setData({
-        swipedMemoId: deltaX < 0 ? this.activeId : ''
-      });
+      if (deltaX < 0) {
+        this.openSwipeActions(this.activeId);
+      } else {
+        this.closeSwipeActions();
+      }
     }
   },
 
   onDragStart(e) {
     if (this.memoMutationLock) return;
+    this.clearSwipeCloseTimer();
     const { id, index } = e.currentTarget.dataset;
     const touch = e.touches[0];
 
@@ -1063,6 +1120,7 @@ Page({
     } finally {
       if (this.memoMutationLock === mutationOwner) {
         this.finishMemoMutation();
+        this.restartSwipeAutoClose(id);
       }
     }
   },
@@ -1133,6 +1191,7 @@ Page({
         } finally {
           if (this.memoMutationLock === mutationOwner) {
             this.finishMemoMutation();
+            this.restartSwipeAutoClose(id);
           }
         }
       },

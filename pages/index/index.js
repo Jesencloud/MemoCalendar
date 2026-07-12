@@ -1179,18 +1179,13 @@ Page({
 
     const updatedMemoDates = Object.assign({}, this.memoDates);
     const dayMemos = updatedMemoDates[selectedDate] ? [...updatedMemoDates[selectedDate]] : [];
-
-    if (memoForm.id) {
-      // Edit existing
-      const index = dayMemos.findIndex(m => m.id === memoForm.id);
-      if (index !== -1) {
-        dayMemos[index] = memoItem;
-      } else {
-        dayMemos.push(memoItem);
-      }
-    } else {
-      // Add new
+    const memoIndex = memoForm.id
+      ? dayMemos.findIndex(m => m.id === memoForm.id)
+      : -1;
+    if (memoIndex === -1) {
       dayMemos.push(memoItem);
+    } else {
+      dayMemos[memoIndex] = memoItem;
     }
 
     updatedMemoDates[selectedDate] = dayMemos;
@@ -1234,29 +1229,17 @@ Page({
       confirmText: options.confirmText || this.data.text.confirm,
       cancelText: options.cancelText || this.data.text.cancel,
       confirmColor: options.confirmColor || '#fa8231',
-      success: (res) => {
-        if (res.confirm) {
-          if (options.confirm) {
-            try {
-              const result = options.confirm();
-              if (result && typeof result.catch === 'function') {
-                result.catch(err => console.error('Confirm callback failed:', err));
-              }
-            } catch (err) {
-              console.error('Confirm callback failed:', err);
-            }
-          }
-        } else if (res.cancel) {
-          if (options.cancel) {
-            try {
-              const result = options.cancel();
-              if (result && typeof result.catch === 'function') {
-                result.catch(err => console.error('Cancel callback failed:', err));
-              }
-            } catch (err) {
-              console.error('Cancel callback failed:', err);
-            }
-          }
+      success: async (res) => {
+        const callback = res.confirm
+          ? options.confirm
+          : (res.cancel ? options.cancel : null);
+        if (!callback) return;
+
+        try {
+          await callback();
+        } catch (err) {
+          const action = res.confirm ? 'Confirm' : 'Cancel';
+          console.error(`${action} callback failed:`, err);
         }
       }
     });
@@ -1336,6 +1319,14 @@ Page({
   },
 
   onTriggerMergeImport() {
+    this.triggerImportFromInput(false);
+  },
+
+  onTriggerOverwriteImport() {
+    this.triggerImportFromInput(true);
+  },
+
+  triggerImportFromInput(isOverwrite) {
     if (this.importingData) return;
 
     const text = this.data.importInputText ? this.data.importInputText.trim() : '';
@@ -1343,15 +1334,9 @@ Page({
       this.showToast(this.data.text.clipboardEmpty);
       return;
     }
-    this.processImportData(text, false);
-  },
 
-  onTriggerOverwriteImport() {
-    if (this.importingData) return;
-
-    const text = this.data.importInputText ? this.data.importInputText.trim() : '';
-    if (!text) {
-      this.showToast(this.data.text.clipboardEmpty);
+    if (!isOverwrite) {
+      this.processImportData(text, false);
       return;
     }
 

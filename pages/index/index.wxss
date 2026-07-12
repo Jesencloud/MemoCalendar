@@ -664,24 +664,7 @@ button.swipe-btn::after {
   font-size: 28rpx;
 }
 
-.picker-value {
-  width: 100%;
-  height: 90rpx;
-  background: #f3f4f6;
-  border-radius: 16rpx;
-  padding: 0 28rpx;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 14rpx;
-  font-size: 28rpx;
-  color: #111827;
-}
-
-.picker-value.placeholder {
-  color: #9ca3af;
-}
-
+.picker-value,
 .input-container {
   width: 100%;
   height: 90rpx;
@@ -692,6 +675,15 @@ button.swipe-btn::after {
   display: flex;
   align-items: center;
   gap: 14rpx;
+}
+
+.picker-value {
+  font-size: 28rpx;
+  color: #111827;
+}
+
+.picker-value.placeholder {
+  color: #9ca3af;
 }
 
 .input-field {

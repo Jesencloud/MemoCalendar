@@ -64,7 +64,7 @@ test('swipe done toggles and commits UI state once after saving', async () => {
 test('memo action lock blocks overlapping swipe actions', async () => {
   const page = createPage();
   let saveCalled = false;
-  page.memoActionId = 'memo-in-progress';
+  page.memoMutationLock = 'swipe-done:memo-in-progress';
   page.saveMemosToStorage = async () => {
     saveCalled = true;
     return true;
@@ -73,7 +73,7 @@ test('memo action lock blocks overlapping swipe actions', async () => {
   await page.onSwipeDoneTap({ currentTarget: { dataset: { id: 'memo-2' } } });
 
   assert.strictEqual(saveCalled, false);
-  assert.strictEqual(page.memoActionId, 'memo-in-progress');
+  assert.strictEqual(page.memoMutationLock, 'swipe-done:memo-in-progress');
 });
 
 test('swipe delete releases the lock and updates the list in one commit', async () => {
@@ -95,12 +95,14 @@ test('swipe delete releases the lock and updates the list in one commit', async 
   page.updateMemoDateMeta = () => ({ updated: true });
 
   page.deleteMemoById('memo-1', { clearSwipeOnCancel: true });
-  assert.strictEqual(page.memoActionId, 'memo-1');
+  assert.strictEqual(page.memoMutationLock, 'delete:memo-1');
+  assert.strictEqual(page.data.memoActionId, 'memo-1');
 
   await confirmOptions.confirm();
 
   assert.deepStrictEqual(page.memoDates[date].map(item => item.id), ['memo-2']);
   assert.deepStrictEqual(page.data.selectedMemos.map(item => item.id), ['memo-2']);
+  assert.strictEqual(page.memoMutationLock, '');
   assert.strictEqual(page.data.memoActionId, '');
   assert.strictEqual(page.setDataCalls.length, 2);
 });
@@ -117,7 +119,58 @@ test('cancelling swipe delete releases the lock and closes swipe actions', () =>
   page.deleteMemoById('memo-1', { clearSwipeOnCancel: true });
   confirmOptions.cancel();
 
-  assert.strictEqual(page.memoActionId, '');
+  assert.strictEqual(page.memoMutationLock, '');
   assert.strictEqual(page.data.memoActionId, '');
   assert.strictEqual(page.data.swipedMemoId, '');
+});
+
+test('storage failure releases the swipe mutation lock', async () => {
+  const page = createPage();
+  const date = '2026-07-09';
+  page.data.selectedDate = date;
+  page.memoDates = {
+    [date]: [{ id: 'memo-1', title: 'One', completed: false }]
+  };
+  page.saveMemosToStorage = async () => false;
+
+  await page.onSwipeDoneTap({ currentTarget: { dataset: { id: 'memo-1' } } });
+
+  assert.strictEqual(page.memoMutationLock, '');
+  assert.strictEqual(page.data.memoActionId, '');
+});
+
+test('active swipe mutation blocks sorting writes', async () => {
+  const page = createPage();
+  let saveCalled = false;
+  page.data.selectedDate = '2026-07-09';
+  page.data.selectedMemos = [
+    { id: 'memo-1', title: 'One', time: '10:00' },
+    { id: 'memo-2', title: 'Two', time: '09:00' }
+  ];
+  page.memoMutationLock = 'swipe-done:memo-1';
+  page.saveMemosToStorage = async () => {
+    saveCalled = true;
+    return true;
+  };
+
+  await page.sortByTime();
+
+  assert.strictEqual(saveCalled, false);
+  assert.strictEqual(page.memoMutationLock, 'swipe-done:memo-1');
+});
+
+test('active swipe mutation blocks backup import writes', async () => {
+  const page = createPage();
+  let snapshotRead = false;
+  page.memoMutationLock = 'swipe-done:memo-1';
+  page.getBackupStorageSnapshot = async () => {
+    snapshotRead = true;
+    return { memos: {}, categories: [] };
+  };
+
+  await page.processImportData('{}');
+
+  assert.strictEqual(snapshotRead, false);
+  assert.strictEqual(page.memoMutationLock, 'swipe-done:memo-1');
+  assert.strictEqual(page.data.importingData, false);
 });

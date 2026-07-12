@@ -337,9 +337,11 @@ Page({
     return `memo-${this.getFormattedDateTime()}-${random}`;
   },
 
-  async saveMemosToStorage(memoDates, changedDate = '') {
+  async saveMemosToStorage(memoDates, changedDate = '', options = {}) {
     try {
-      const cleanMemoDates = changedDate
+      const cleanMemoDates = options.changedDateIsClean
+        ? memoDates
+        : changedDate
         ? this.cleanMemoDateUIFields(memoDates, changedDate)
         : cleanMemoDatesUIFields(memoDates);
       await this.setStorage(STORAGE_KEYS.MEMOS, cleanMemoDates);
@@ -378,16 +380,24 @@ Page({
     this.setBusyState(key, false);
   },
 
-  startMemoAction(id) {
-    if (!id || this.memoActionId) return false;
-    this.memoActionId = id;
-    this.setData({ memoActionId: id });
+  startMemoMutation(owner, actionMemoId = '') {
+    if (!owner || this.memoMutationLock) return false;
+    if (this.data.draggingId && owner !== 'drag') return false;
+
+    this.memoMutationLock = owner;
+    if (actionMemoId) {
+      this.setData({ memoActionId: actionMemoId });
+    }
     return true;
   },
 
-  finishMemoAction(extraData = {}) {
-    this.memoActionId = '';
-    this.setData(Object.assign({ memoActionId: '' }, extraData));
+  releaseMemoMutation(extraData = {}) {
+    this.memoMutationLock = '';
+    return Object.assign({ memoActionId: '' }, extraData);
+  },
+
+  finishMemoMutation(extraData = {}) {
+    this.setData(this.releaseMemoMutation(extraData));
   },
 
   onAddCustomTag() {
@@ -554,41 +564,48 @@ Page({
   async sortByTime() {
     const { selectedMemos, selectedDate, text, sortOrder } = this.data;
     if (!selectedMemos || selectedMemos.length <= 1) return;
+    const mutationOwner = 'sort';
+    if (!this.startMemoMutation(mutationOwner)) return;
 
-    const nextOrder = (sortOrder === 'asc') ? 'desc' : 'asc';
+    try {
+      const nextOrder = (sortOrder === 'asc') ? 'desc' : 'asc';
 
-    const compareAsc = (a, b) => {
-      if (a.time && b.time) return a.time.localeCompare(b.time);
-      if (a.time) return -1;
-      if (b.time) return 1;
-      return 0;
-    };
+      const compareAsc = (a, b) => {
+        if (a.time && b.time) return a.time.localeCompare(b.time);
+        if (a.time) return -1;
+        if (b.time) return 1;
+        return 0;
+      };
 
-    const compareDesc = (a, b) => {
-      if (a.time && b.time) return b.time.localeCompare(a.time);
-      if (a.time) return -1;
-      if (b.time) return 1;
-      return 0;
-    };
+      const compareDesc = (a, b) => {
+        if (a.time && b.time) return b.time.localeCompare(a.time);
+        if (a.time) return -1;
+        if (b.time) return 1;
+        return 0;
+      };
 
-    const sorted = [...selectedMemos].sort(nextOrder === 'asc' ? compareAsc : compareDesc);
+      const sorted = [...selectedMemos].sort(nextOrder === 'asc' ? compareAsc : compareDesc);
 
-    const updatedMemoDates = Object.assign({}, this.memoDates);
-    updatedMemoDates[selectedDate] = cleanMemosUIFields(sorted);
+      const updatedMemoDates = Object.assign({}, this.memoDates);
+      updatedMemoDates[selectedDate] = cleanMemosUIFields(sorted);
 
-    if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
+      if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate, { changedDateIsClean: true })) return;
 
-    this.vibrate();
-    this.memoDates = updatedMemoDates;
-    
-    this.setData({
-      selectedMemos: sorted,
-      memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, sorted),
-      swipedMemoId: '',
-      sortOrder: nextOrder
-    }, () => {
-      this.showToast(nextOrder === 'asc' ? text.sortAsc : text.sortDesc, 'success');
-    });
+      this.vibrate();
+      this.memoDates = updatedMemoDates;
+      this.setData({
+        selectedMemos: sorted,
+        memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, sorted),
+        swipedMemoId: '',
+        sortOrder: nextOrder
+      }, () => {
+        this.showToast(nextOrder === 'asc' ? text.sortAsc : text.sortDesc, 'success');
+      });
+    } finally {
+      if (this.memoMutationLock === mutationOwner) {
+        this.releaseMemoMutation();
+      }
+    }
   },
 
   toggleLang() {
@@ -684,7 +701,7 @@ Page({
   },
 
   onSwipeTouchStart(e) {
-    if (this.memoActionId) {
+    if (this.memoMutationLock) {
       this.swipeTouchActive = false;
       return;
     }
@@ -699,7 +716,7 @@ Page({
   onSwipeTouchEnd(e) {
     if (!this.swipeTouchActive) return;
     this.swipeTouchActive = false;
-    if (this.memoActionId) return;
+    if (this.memoMutationLock) return;
     const touch = e.changedTouches[0];
     if (!touch) return;
     const deltaX = touch.clientX - this.startX;
@@ -714,9 +731,10 @@ Page({
   },
 
   onDragStart(e) {
+    if (this.memoMutationLock) return;
     const { id, index } = e.currentTarget.dataset;
     const touch = e.touches[0];
-    
+
     this.dragStartY = touch.clientY;
     this.dragIndex = index;
     this.lastDragSetDataTime = 0;
@@ -798,45 +816,63 @@ Page({
 
   async onDragEnd() {
     if (!this.data.draggingId) return;
-    
-    const { selectedMemos, selectedDate } = this.data;
-    
-    const updatedMemoDates = Object.assign({}, this.memoDates);
-    updatedMemoDates[selectedDate] = cleanMemosUIFields(selectedMemos);
-
-    const saveSucceeded = await this.saveMemosToStorage(updatedMemoDates, selectedDate);
-    if (!saveSucceeded) {
+    const mutationOwner = 'drag';
+    if (!this.startMemoMutation(mutationOwner)) {
       this.setData({
         draggingId: '',
         dragTranslateY: 0,
         sortOrder: 'desc'
-      }, () => {
-        this.updateSelectedMemos();
-      });
+      }, () => this.updateSelectedMemos());
       this.cardRects = null;
       this.lastDragTranslateY = 0;
       return;
     }
 
-    const nextData = {
-      draggingId: '',
-      dragTranslateY: 0,
-      memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, selectedMemos),
-      sortOrder: 'desc'
-    };
+    try {
+      const { selectedMemos, selectedDate } = this.data;
+      const updatedMemoDates = Object.assign({}, this.memoDates);
+      updatedMemoDates[selectedDate] = cleanMemosUIFields(selectedMemos);
 
-    this.memoDates = updatedMemoDates;
-    this.setData(nextData);
-    
-    this.cardRects = null;
-    this.lastDragTranslateY = 0;
-    this.vibrate('medium');
+      const saveSucceeded = await this.saveMemosToStorage(
+        updatedMemoDates,
+        selectedDate,
+        { changedDateIsClean: true }
+      );
+      if (!saveSucceeded) {
+        this.setData({
+          draggingId: '',
+          dragTranslateY: 0,
+          sortOrder: 'desc'
+        }, () => {
+          this.updateSelectedMemos();
+        });
+        return;
+      }
+
+      const nextData = {
+        draggingId: '',
+        dragTranslateY: 0,
+        memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, selectedMemos),
+        sortOrder: 'desc'
+      };
+
+      this.memoDates = updatedMemoDates;
+      this.setData(nextData);
+      this.vibrate('medium');
+    } finally {
+      this.cardRects = null;
+      this.lastDragTranslateY = 0;
+      if (this.memoMutationLock === mutationOwner) {
+        this.releaseMemoMutation();
+      }
+    }
   },
 
   async onSwipeDoneTap(e) {
     const { id } = e.currentTarget.dataset;
     const { selectedDate } = this.data;
-    if (!this.startMemoAction(id)) return;
+    const mutationOwner = `swipe-done:${id}`;
+    if (!this.startMemoMutation(mutationOwner, id)) return;
 
     try {
       let found = false;
@@ -855,7 +891,11 @@ Page({
       const updatedMemoDates = Object.assign({}, this.memoDates, {
         [selectedDate]: dayMemos
       });
-      if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
+      if (!await this.saveMemosToStorage(
+        updatedMemoDates,
+        selectedDate,
+        { changedDateIsClean: true }
+      )) return;
 
       this.memoDates = updatedMemoDates;
       const nextData = {
@@ -865,10 +905,10 @@ Page({
       if (this.data.selectedDate === selectedDate) {
         nextData.selectedMemos = dayMemos;
       }
-      this.finishMemoAction(nextData);
+      this.finishMemoMutation(nextData);
     } finally {
-      if (this.memoActionId === id) {
-        this.finishMemoAction();
+      if (this.memoMutationLock === mutationOwner) {
+        this.finishMemoMutation();
       }
     }
   },
@@ -892,11 +932,12 @@ Page({
 
   deleteMemoById(id, options = {}) {
     const { selectedDate, text } = this.data;
-    if (!this.startMemoAction(id)) return;
+    const mutationOwner = `delete:${id}`;
+    if (!this.startMemoMutation(mutationOwner, id)) return;
 
     const finishCancelledAction = () => {
       const nextData = options.clearSwipeOnCancel ? { swipedMemoId: '' } : {};
-      this.finishMemoAction(nextData);
+      this.finishMemoMutation(nextData);
     };
 
     this.showConfirm({
@@ -927,15 +968,17 @@ Page({
           }
 
           if (options.closeModal) {
-            this.memoActionId = '';
-            this._closeModalWithData(Object.assign({ memoActionId: '' }, dataToSet));
+            const closeData = this.releaseMemoMutation(dataToSet);
+            if (!this._closeModalWithData(closeData)) {
+              this.setData(closeData);
+            }
             return;
           }
 
-          this.finishMemoAction(dataToSet);
+          this.finishMemoMutation(dataToSet);
         } finally {
-          if (this.memoActionId === id) {
-            this.finishMemoAction();
+          if (this.memoMutationLock === mutationOwner) {
+            this.finishMemoMutation();
           }
         }
       },
@@ -970,7 +1013,7 @@ Page({
   },
 
   _closeModalWithData(extraData = {}, callback = null) {
-    if (!this.data.modalVisible || this.data.modalClosing) return;
+    if (!this.data.modalVisible || this.data.modalClosing) return false;
 
     const dataToSet = Object.assign({ modalClosing: true }, extraData);
     this.setData(dataToSet, () => {
@@ -985,6 +1028,7 @@ Page({
         });
       }, 160);
     });
+    return true;
   },
 
   clearModalCloseTimer() {
@@ -1047,52 +1091,62 @@ Page({
       return;
     }
 
-    if (!this.startBusyState('savingMemo')) return;
-
-    const category = resolveCategory(this.data.categories, memoForm.tag);
-    
-    const memoItem = {
-      id: memoForm.id || this.generateMemoId(),
-      title: memoForm.title.trim(),
-      time: memoForm.time,
-      location: memoForm.location.trim(),
-      tag: memoForm.tag,
-      color: memoForm.color || category.color,
-      notes: memoForm.notes.trim(),
-      tagCn: category.labelCn,
-      tagEn: category.labelEn,
-      categoryIcon: category.icon,
-      completed: memoForm.completed || false
-    };
-
-    const updatedMemoDates = Object.assign({}, this.memoDates);
-    const dayMemos = updatedMemoDates[selectedDate] ? [...updatedMemoDates[selectedDate]] : [];
-    const memoIndex = memoForm.id
-      ? dayMemos.findIndex(m => m.id === memoForm.id)
-      : -1;
-    if (memoIndex === -1) {
-      dayMemos.push(memoItem);
-    } else {
-      dayMemos[memoIndex] = memoItem;
-    }
-
-    updatedMemoDates[selectedDate] = dayMemos;
-
-    if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) {
-      this.finishBusyState('savingMemo');
+    const mutationOwner = 'save-memo';
+    if (!this.startMemoMutation(mutationOwner)) return;
+    if (!this.startBusyState('savingMemo')) {
+      this.releaseMemoMutation();
       return;
     }
 
-    this.vibrate('medium');
-    this.showToast(text.saved, 'success');
-    this.memoDates = updatedMemoDates;
+    let closeStarted = false;
+    try {
+      const category = resolveCategory(this.data.categories, memoForm.tag);
+      const memoItem = {
+        id: memoForm.id || this.generateMemoId(),
+        title: memoForm.title.trim(),
+        time: memoForm.time,
+        location: memoForm.location.trim(),
+        tag: memoForm.tag,
+        color: memoForm.color || category.color,
+        notes: memoForm.notes.trim(),
+        tagCn: category.labelCn,
+        tagEn: category.labelEn,
+        categoryIcon: category.icon,
+        completed: memoForm.completed || false
+      };
 
-    this._closeModalWithData({
-      memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, dayMemos)
-    }, () => {
-      this.updateSelectedMemos();
-      this.finishBusyState('savingMemo');
-    });
+      const updatedMemoDates = Object.assign({}, this.memoDates);
+      const dayMemos = updatedMemoDates[selectedDate] ? [...updatedMemoDates[selectedDate]] : [];
+      const memoIndex = memoForm.id
+        ? dayMemos.findIndex(m => m.id === memoForm.id)
+        : -1;
+      if (memoIndex === -1) {
+        dayMemos.push(memoItem);
+      } else {
+        dayMemos[memoIndex] = memoItem;
+      }
+
+      updatedMemoDates[selectedDate] = dayMemos;
+      if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
+
+      this.vibrate('medium');
+      this.showToast(text.saved, 'success');
+      this.memoDates = updatedMemoDates;
+
+      closeStarted = this._closeModalWithData({
+        memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, dayMemos)
+      }, () => {
+        this.updateSelectedMemos();
+        this.finishBusyState('savingMemo');
+      });
+    } finally {
+      if (this.memoMutationLock === mutationOwner) {
+        this.releaseMemoMutation();
+      }
+      if (!closeStarted && this.savingMemo) {
+        this.finishBusyState('savingMemo');
+      }
+    }
   },
 
   onDeleteMemo() {
@@ -1186,6 +1240,11 @@ Page({
 
   onImportFromClipboard() {
     if (!this.startBusyState('importingData')) return;
+    const mutationOwner = 'import';
+    if (!this.startMemoMutation(mutationOwner)) {
+      this.finishBusyState('importingData');
+      return;
+    }
 
     const { text: txt } = this.data;
     wx.getClipboardData({
@@ -1193,6 +1252,9 @@ Page({
         const text = res.data ? res.data.trim() : '';
         if (!text) {
           this.showToast(txt.clipboardEmpty);
+          if (this.memoMutationLock === mutationOwner) {
+            this.releaseMemoMutation();
+          }
           this.finishBusyState('importingData');
           return;
         }
@@ -1201,6 +1263,9 @@ Page({
       },
       fail: () => {
         this.showToast(txt.clipboardReadFailed);
+        if (this.memoMutationLock === mutationOwner) {
+          this.releaseMemoMutation();
+        }
         this.finishBusyState('importingData');
       }
     });
@@ -1243,7 +1308,14 @@ Page({
   },
 
   async processImportData(text, isOverwrite = false, lockAcquired = false) {
-    if (!lockAcquired && !this.startBusyState('importingData')) return;
+    const mutationOwner = 'import';
+    if (!lockAcquired) {
+      if (!this.startBusyState('importingData')) return;
+      if (!this.startMemoMutation(mutationOwner)) {
+        this.finishBusyState('importingData');
+        return;
+      }
+    }
 
     const { text: txt } = this.data;
     try {
@@ -1290,6 +1362,9 @@ Page({
       console.error('Failed to import data:', e);
       this.showStorageFailureToast();
     } finally {
+      if (this.memoMutationLock === mutationOwner) {
+        this.releaseMemoMutation();
+      }
       this.finishBusyState('importingData');
     }
   }

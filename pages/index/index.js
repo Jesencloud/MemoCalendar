@@ -1,5 +1,5 @@
 // pages/index/index.js
-const { t, getTranslations } = require('../../utils/i18n.js');
+const { getTranslations } = require('../../utils/i18n.js');
 const { formatDate, isValidDateString } = require('../../utils/date.js');
 const {
   parseBackupData,
@@ -744,7 +744,7 @@ Page({
 
   updateNavigationTitle(lang) {
     wx.setNavigationBarTitle({
-      title: t('navTitle', lang)
+      title: getTranslations(lang).navTitle
     });
   },
 
@@ -1336,7 +1336,7 @@ Page({
     }
 
     if (!isOverwrite) {
-      this.processImportData(text, false);
+      this.processImportData(text);
       return;
     }
 

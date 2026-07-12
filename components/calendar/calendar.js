@@ -1,16 +1,10 @@
 // components/calendar/calendar.js
-const { t } = require('../../utils/i18n.js');
+const { getTranslations } = require('../../utils/i18n.js');
 const { formatDate, parseDate } = require('../../utils/date.js');
 const { CHINA_HOLIDAYS_2026 } = require('../../data/china_holidays.js');
 
 const SWIPER_CENTER_INDEX = 1;
 const SWIPER_DURATION_MS = 220;
-
-function getCalendarText(lang) {
-  return {
-    weekdays: t('weekdays', lang)
-  };
-}
 
 Component({
   calendarSwipeAnimating: false,
@@ -62,13 +56,12 @@ Component({
       const parsed = parsedInitialDate || { year: now.getFullYear(), month: now.getMonth(), day: now.getDate() };
       const currentYear = parsed.year;
       const currentMonth = parsed.month;
-      const locale = getCalendarText(this.data.lang);
       const calendarState = this.getCalendarState(currentYear, currentMonth, initialDate, 'month');
       this.setData({
         currentYear,
         currentMonth,
         selectedDate: initialDate,
-        weekdays: locale.weekdays,
+        weekdays: getTranslations(this.data.lang).weekdays,
         viewMode: 'month',
         ...calendarState
       });
@@ -242,9 +235,9 @@ Component({
       const offset = current > SWIPER_CENTER_INDEX ? 1 : -1;
       this.calendarSwipeAnimating = true;
       if (this.data.viewMode === 'week') {
-        this.changeWeek(offset, { autoSelectDate: true, resetSwiper: true });
+        this.changeWeek(offset);
       } else {
-        this.changeMonth(offset, { autoSelectDate: true, resetSwiper: true });
+        this.changeMonth(offset);
       }
     },
 
@@ -276,20 +269,16 @@ Component({
       return formatDate(new Date(year, month, targetDay));
     },
 
-    applyCalendarChange(nextData, selectedDate, options = {}) {
-      if (options.resetSwiper) {
-        nextData.swiperCurrent = SWIPER_CENTER_INDEX;
-        nextData.swiperDuration = 0;
-      }
+    applyCalendarChange(nextData, selectedDate) {
+      nextData.swiperCurrent = SWIPER_CENTER_INDEX;
+      nextData.swiperDuration = 0;
       this.setData(nextData, () => {
         this.calendarSwipeAnimating = false;
-        if (options.autoSelectDate) {
-          this.triggerEvent('selectdate', { date: selectedDate });
-        }
+        this.triggerEvent('selectdate', { date: selectedDate });
       });
     },
 
-    changeMonth(offset, options = {}) {
+    changeMonth(offset) {
       const shiftedMonth = this.getShiftedMonth(
         this.data.currentYear,
         this.data.currentMonth,
@@ -297,19 +286,17 @@ Component({
       );
       const currentYear = shiftedMonth.year;
       const currentMonth = shiftedMonth.month;
-      const selectedDate = options.autoSelectDate
-        ? this.getAutoSelectedDate(currentYear, currentMonth)
-        : this.data.selectedDate;
+      const selectedDate = this.getAutoSelectedDate(currentYear, currentMonth);
       const nextData = {
         currentMonth,
         currentYear,
         selectedDate,
         ...this.getCalendarState(currentYear, currentMonth, selectedDate, 'month')
       };
-      this.applyCalendarChange(nextData, selectedDate, options);
+      this.applyCalendarChange(nextData, selectedDate);
     },
 
-    changeWeek(offset, options = {}) {
+    changeWeek(offset) {
       const { selectedDate } = this.data;
       const nextSelectedDate = this.getShiftedWeekDate(selectedDate, offset);
       const parsed = parseDate(nextSelectedDate);
@@ -323,7 +310,7 @@ Component({
         currentMonth: parsed.month,
         ...this.getCalendarState(parsed.year, parsed.month, nextSelectedDate, 'week')
       };
-      this.applyCalendarChange(nextData, nextSelectedDate, options);
+      this.applyCalendarChange(nextData, nextSelectedDate);
     },
 
     prevMonth() {
@@ -415,9 +402,8 @@ Component({
 
   observers: {
     'lang': function(lang) {
-      const locale = getCalendarText(lang);
       this.setData({
-        weekdays: locale.weekdays
+        weekdays: getTranslations(lang).weekdays
       });
     }
   }

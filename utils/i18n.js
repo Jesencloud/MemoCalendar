@@ -166,18 +166,11 @@ const translations = {
 };
 
 function getTranslations(lang = 'zh') {
-  return translations[lang] || translations.zh;
-}
-
-function t(key, lang = 'zh') {
-  const dict = getTranslations(lang);
-  if (Object.prototype.hasOwnProperty.call(dict, key)) return dict[key];
-  if (Object.prototype.hasOwnProperty.call(translations.zh, key)) return translations.zh[key];
-  return key;
+  const dict = translations[lang];
+  if (!dict || lang === 'zh') return translations.zh;
+  return Object.assign({}, translations.zh, dict);
 }
 
 module.exports = {
-  translations,
-  getTranslations,
-  t
+  getTranslations
 };

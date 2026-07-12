@@ -276,6 +276,19 @@ Component({
       return formatDate(new Date(year, month, targetDay));
     },
 
+    applyCalendarChange(nextData, selectedDate, options = {}) {
+      if (options.resetSwiper) {
+        nextData.swiperCurrent = SWIPER_CENTER_INDEX;
+        nextData.swiperDuration = 0;
+      }
+      this.setData(nextData, () => {
+        this.calendarSwipeAnimating = false;
+        if (options.autoSelectDate) {
+          this.triggerEvent('selectdate', { date: selectedDate });
+        }
+      });
+    },
+
     changeMonth(offset, options = {}) {
       const shiftedMonth = this.getShiftedMonth(
         this.data.currentYear,
@@ -293,16 +306,7 @@ Component({
         selectedDate,
         ...this.getCalendarState(currentYear, currentMonth, selectedDate, 'month')
       };
-      if (options.resetSwiper) {
-        nextData.swiperCurrent = SWIPER_CENTER_INDEX;
-        nextData.swiperDuration = 0;
-      }
-      this.setData(nextData, () => {
-        this.calendarSwipeAnimating = false;
-        if (options.autoSelectDate) {
-          this.triggerEvent('selectdate', { date: selectedDate });
-        }
-      });
+      this.applyCalendarChange(nextData, selectedDate, options);
     },
 
     changeWeek(offset, options = {}) {
@@ -319,16 +323,7 @@ Component({
         currentMonth: parsed.month,
         ...this.getCalendarState(parsed.year, parsed.month, nextSelectedDate, 'week')
       };
-      if (options.resetSwiper) {
-        nextData.swiperCurrent = SWIPER_CENTER_INDEX;
-        nextData.swiperDuration = 0;
-      }
-      this.setData(nextData, () => {
-        this.calendarSwipeAnimating = false;
-        if (options.autoSelectDate) {
-          this.triggerEvent('selectdate', { date: nextSelectedDate });
-        }
-      });
+      this.applyCalendarChange(nextData, nextSelectedDate, options);
     },
 
     prevMonth() {

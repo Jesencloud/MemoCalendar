@@ -63,9 +63,7 @@
                 <text class="memo-time-inline" wx:if="{{item.time}}">{{item.time}}</text>
                 <view class="memo-content-column">
                   <text class="memo-title-inline">{{item.title}}</text>
-                  <view class="memo-location-row" wx:if="{{item.location}}">
-                    <text class="memo-location-text">{{item.location}}</text>
-                  </view>
+                  <text class="memo-location-text" wx:if="{{item.location}}">{{item.location}}</text>
                 </view>
                 <text class="memo-tag-inline">{{item.categoryIcon === '🏷️' ? (lang === 'zh' ? item.tagCn : item.tagEn) : item.categoryIcon}}</text>
                 <view

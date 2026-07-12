@@ -151,8 +151,12 @@ const translations = {
   }
 };
 
+function getTranslations(lang = 'zh') {
+  return translations[lang] || translations.zh;
+}
+
 function t(key, lang = 'zh') {
-  const dict = translations[lang] || translations.zh;
+  const dict = getTranslations(lang);
   if (Object.prototype.hasOwnProperty.call(dict, key)) return dict[key];
   if (Object.prototype.hasOwnProperty.call(translations.zh, key)) return translations.zh[key];
   return key;
@@ -160,5 +164,6 @@ function t(key, lang = 'zh') {
 
 module.exports = {
   translations,
+  getTranslations,
   t
 };

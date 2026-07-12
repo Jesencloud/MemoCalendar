@@ -1,5 +1,6 @@
 // components/calendar/calendar.js
 const { t } = require('../../utils/i18n.js');
+const { formatDate, parseDate } = require('../../utils/date.js');
 const { CHINA_HOLIDAYS_2026 } = require('../../data/china_holidays.js');
 
 const SWIPER_CENTER_INDEX = 1;
@@ -55,8 +56,8 @@ Component({
   lifetimes: {
     attached() {
       const now = new Date();
-      const defaultDate = this.formatDate(now.getFullYear(), now.getMonth(), now.getDate());
-      const parsedInitialDate = this.parseDate(this.properties.selectedDate);
+      const defaultDate = formatDate(now);
+      const parsedInitialDate = parseDate(this.properties.selectedDate);
       const initialDate = parsedInitialDate ? this.properties.selectedDate : defaultDate;
       const parsed = parsedInitialDate || { year: now.getFullYear(), month: now.getMonth(), day: now.getDate() };
       const currentYear = parsed.year;
@@ -77,7 +78,7 @@ Component({
   methods: {
     getCalendarState(currentYear, currentMonth, selectedDate, viewMode) {
       const now = new Date();
-      const todayDate = this.formatDate(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayDate = formatDate(now);
       let rowCount = 1;
       if (viewMode === 'month') {
         const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -151,7 +152,7 @@ Component({
     },
 
     createWeekDays(baseDateStr, todayDate) {
-      const baseDate = this.parseDate(baseDateStr);
+      const baseDate = parseDate(baseDateStr);
       if (!baseDate) return [];
       const dateObj = new Date(baseDate.year, baseDate.month, baseDate.day);
       const dayOfWeek = dateObj.getDay();
@@ -166,7 +167,7 @@ Component({
     },
 
     createDayItem(date, todayDate, memoDateMeta) {
-      const fullDate = this.formatDate(date.getFullYear(), date.getMonth(), date.getDate());
+      const fullDate = formatDate(date);
       const meta = memoDateMeta[fullDate] || {};
       return {
         day: date.getDate(),
@@ -179,35 +180,6 @@ Component({
       };
     },
 
-    formatDate(year, month, day) {
-      const m = month + 1;
-      const mm = m < 10 ? '0' + m : m;
-      const dd = day < 10 ? '0' + day : day;
-      return `${year}-${mm}-${dd}`;
-    },
-
-    parseDate(date) {
-      if (typeof date !== 'string') return null;
-      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
-      if (!match) return null;
-      const year = Number(match[1]);
-      const month = Number(match[2]) - 1;
-      const day = Number(match[3]);
-      const parsed = new Date(year, month, day);
-      if (
-        parsed.getFullYear() !== year ||
-        parsed.getMonth() !== month ||
-        parsed.getDate() !== day
-      ) {
-        return null;
-      }
-      return {
-        year,
-        month,
-        day
-      };
-    },
-
     getShiftedMonth(year, month, offset) {
       const date = new Date(year, month + offset, 1);
       return {
@@ -217,10 +189,10 @@ Component({
     },
 
     getShiftedWeekDate(dateStr, offset) {
-      const parsed = this.parseDate(dateStr);
+      const parsed = parseDate(dateStr);
       if (!parsed) return dateStr;
       const d = new Date(parsed.year, parsed.month, parsed.day + offset * 7);
-      return this.formatDate(d.getFullYear(), d.getMonth(), d.getDate());
+      return formatDate(d);
     },
 
     vibrate() {
@@ -228,7 +200,7 @@ Component({
     },
 
     goToDate(date) {
-      const parsedDate = this.parseDate(date);
+      const parsedDate = parseDate(date);
       if (!parsedDate) return;
       this.setData({
         currentYear: parsedDate.year,
@@ -293,7 +265,7 @@ Component({
     getAutoSelectedDate(year, month) {
       let day = 1;
       const currentSelected = this.data.selectedDate;
-      const parsed = this.parseDate(currentSelected);
+      const parsed = parseDate(currentSelected);
       if (parsed) {
         day = parsed.day;
       } else {
@@ -301,7 +273,7 @@ Component({
       }
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const targetDay = Math.min(day, daysInMonth);
-      return this.formatDate(year, month, targetDay);
+      return formatDate(new Date(year, month, targetDay));
     },
 
     changeMonth(offset, options = {}) {
@@ -336,7 +308,7 @@ Component({
     changeWeek(offset, options = {}) {
       const { selectedDate } = this.data;
       const nextSelectedDate = this.getShiftedWeekDate(selectedDate, offset);
-      const parsed = this.parseDate(nextSelectedDate);
+      const parsed = parseDate(nextSelectedDate);
       if (!parsed) {
         this.calendarSwipeAnimating = false;
         return;
@@ -371,7 +343,7 @@ Component({
       const { date } = e.currentTarget.dataset;
       if (!date) return;
       this.vibrate();
-      const parsed = this.parseDate(date);
+      const parsed = parseDate(date);
       if (!parsed) return;
       const nextState = {
         selectedDate: date,

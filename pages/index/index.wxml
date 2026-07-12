@@ -80,20 +80,20 @@
             </view>
           </view>
           
-          <view class="swipe-actions">
+          <view class="swipe-actions {{item.id === memoActionId ? 'is-processing' : ''}}">
             <button
               class="swipe-btn btn-share"
               open-type="share"
               data-id="{{item.id}}"
               data-date="{{selectedDate}}"
-              hover-class="none"
+              hover-class="swipe-btn-hover"
             >
               <text>{{text.shareMemo}}</text>
             </button>
-            <view class="swipe-btn btn-done" catchtap="onSwipeDoneTap" data-id="{{item.id}}">
+            <view class="swipe-btn btn-done" hover-class="swipe-btn-hover" catchtap="onSwipeDoneTap" data-id="{{item.id}}">
               <text>{{item.completed ? text.todo : text.done}}</text>
             </view>
-            <view class="swipe-btn btn-delete" catchtap="onSwipeDeleteTap" data-id="{{item.id}}">
+            <view class="swipe-btn btn-delete" hover-class="swipe-btn-hover" catchtap="onSwipeDeleteTap" data-id="{{item.id}}">
               <text>{{text.delete}}</text>
             </view>
           </view>

@@ -1,0 +1,123 @@
+const test = require('node:test');
+const assert = require('node:assert');
+
+let pageDefinition;
+const originalPage = global.Page;
+try {
+  global.Page = definition => {
+    pageDefinition = definition;
+  };
+  require('../pages/index/index.js');
+} finally {
+  global.Page = originalPage;
+}
+
+function setDataValue(data, path, value) {
+  const parts = path.split('.');
+  let target = data;
+  for (let i = 0; i < parts.length - 1; i += 1) {
+    target = target[parts[i]];
+  }
+  target[parts[parts.length - 1]] = value;
+}
+
+function createPage() {
+  const page = Object.assign({}, pageDefinition);
+  page.data = JSON.parse(JSON.stringify(pageDefinition.data));
+  page.memoDates = {};
+  page.setDataCalls = [];
+  page.setData = function(update, callback) {
+    this.setDataCalls.push(update);
+    Object.keys(update).forEach(key => setDataValue(this.data, key, update[key]));
+    if (callback) callback();
+  };
+  page.vibrate = () => {};
+  page.showToast = () => {};
+  return page;
+}
+
+test('swipe done toggles and commits UI state once after saving', async () => {
+  const page = createPage();
+  const date = '2026-07-09';
+  page.data.selectedDate = date;
+  page.data.memoDateMeta = {};
+  page.memoDates = {
+    [date]: [
+      { id: 'memo-1', title: 'One', completed: false, isSwiped: true },
+      { id: 'memo-2', title: 'Two', completed: false }
+    ]
+  };
+  page.saveMemosToStorage = async () => true;
+  page.updateMemoDateMeta = () => ({ updated: true });
+
+  await page.onSwipeDoneTap({ currentTarget: { dataset: { id: 'memo-1' } } });
+
+  assert.strictEqual(page.memoDates[date][0].completed, true);
+  assert.strictEqual(Object.hasOwn(page.memoDates[date][0], 'isSwiped'), false);
+  assert.strictEqual(page.data.memoActionId, '');
+  assert.strictEqual(page.data.swipedMemoId, '');
+  assert.strictEqual(page.data.selectedMemos[0].completed, true);
+  assert.strictEqual(page.setDataCalls.length, 2);
+  assert.ok(page.setDataCalls[1].selectedMemos);
+});
+
+test('memo action lock blocks overlapping swipe actions', async () => {
+  const page = createPage();
+  let saveCalled = false;
+  page.memoActionId = 'memo-in-progress';
+  page.saveMemosToStorage = async () => {
+    saveCalled = true;
+    return true;
+  };
+
+  await page.onSwipeDoneTap({ currentTarget: { dataset: { id: 'memo-2' } } });
+
+  assert.strictEqual(saveCalled, false);
+  assert.strictEqual(page.memoActionId, 'memo-in-progress');
+});
+
+test('swipe delete releases the lock and updates the list in one commit', async () => {
+  const page = createPage();
+  const date = '2026-07-09';
+  let confirmOptions;
+  page.data.selectedDate = date;
+  page.data.memoDateMeta = {};
+  page.memoDates = {
+    [date]: [
+      { id: 'memo-1', title: 'One', completed: false },
+      { id: 'memo-2', title: 'Two', completed: false }
+    ]
+  };
+  page.showConfirm = options => {
+    confirmOptions = options;
+  };
+  page.saveMemosToStorage = async () => true;
+  page.updateMemoDateMeta = () => ({ updated: true });
+
+  page.deleteMemoById('memo-1', { clearSwipeOnCancel: true });
+  assert.strictEqual(page.memoActionId, 'memo-1');
+
+  await confirmOptions.confirm();
+
+  assert.deepStrictEqual(page.memoDates[date].map(item => item.id), ['memo-2']);
+  assert.deepStrictEqual(page.data.selectedMemos.map(item => item.id), ['memo-2']);
+  assert.strictEqual(page.data.memoActionId, '');
+  assert.strictEqual(page.setDataCalls.length, 2);
+});
+
+test('cancelling swipe delete releases the lock and closes swipe actions', () => {
+  const page = createPage();
+  let confirmOptions;
+  page.data.selectedDate = '2026-07-09';
+  page.data.swipedMemoId = 'memo-1';
+  page.showConfirm = options => {
+    confirmOptions = options;
+  };
+
+  page.deleteMemoById('memo-1', { clearSwipeOnCancel: true });
+  confirmOptions.cancel();
+
+  assert.strictEqual(page.memoActionId, '');
+  assert.strictEqual(page.data.memoActionId, '');
+  assert.strictEqual(page.data.swipedMemoId, '');
+});

@@ -73,6 +73,7 @@ Page({
     memoForm: Object.assign({}, DEFAULT_FORM),
     memoNotesLength: 0,
     swipedMemoId: '',
+    memoActionId: '',
     draggingId: '',
     dragTranslateY: 0,
     sortOrder: 'desc'
@@ -531,6 +532,18 @@ Page({
     this.setBusyState(key, false);
   },
 
+  startMemoAction(id) {
+    if (!id || this.memoActionId) return false;
+    this.memoActionId = id;
+    this.setData({ memoActionId: id });
+    return true;
+  },
+
+  finishMemoAction(extraData = {}) {
+    this.memoActionId = '';
+    this.setData(Object.assign({ memoActionId: '' }, extraData));
+  },
+
   onAddCustomTag() {
     this.vibrate();
     this.setData({
@@ -825,14 +838,24 @@ Page({
   },
 
   onSwipeTouchStart(e) {
+    if (this.memoActionId) {
+      this.swipeTouchActive = false;
+      return;
+    }
     const touch = e.touches[0];
+    if (!touch) return;
+    this.swipeTouchActive = true;
     this.startX = touch.clientX;
     this.startY = touch.clientY;
     this.activeId = e.currentTarget.dataset.id;
   },
 
   onSwipeTouchEnd(e) {
+    if (!this.swipeTouchActive) return;
+    this.swipeTouchActive = false;
+    if (this.memoActionId) return;
     const touch = e.changedTouches[0];
+    if (!touch) return;
     const deltaX = touch.clientX - this.startX;
     const deltaY = touch.clientY - this.startY;
 
@@ -967,28 +990,41 @@ Page({
   async onSwipeDoneTap(e) {
     const { id } = e.currentTarget.dataset;
     const { selectedDate } = this.data;
-    
-    this.vibrate();
-    
-    const updatedMemoDates = Object.assign({}, this.memoDates);
-    const dayMemos = (updatedMemoDates[selectedDate] || []).map(item => {
-      const cleanItem = Object.assign({}, item);
-      if (cleanItem.id === id) {
-        cleanItem.completed = !cleanItem.completed;
+    if (!this.startMemoAction(id)) return;
+
+    try {
+      let found = false;
+      const dayMemos = (this.memoDates[selectedDate] || []).map(item => {
+        const cleanItem = Object.assign({}, item);
+        delete cleanItem.isSwiped;
+        if (cleanItem.id === id) {
+          cleanItem.completed = !cleanItem.completed;
+          found = true;
+        }
+        return cleanItem;
+      });
+      if (!found) return;
+
+      this.vibrate();
+      const updatedMemoDates = Object.assign({}, this.memoDates, {
+        [selectedDate]: dayMemos
+      });
+      if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
+
+      this.memoDates = updatedMemoDates;
+      const nextData = {
+        memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, dayMemos),
+        swipedMemoId: ''
+      };
+      if (this.data.selectedDate === selectedDate) {
+        nextData.selectedMemos = dayMemos;
       }
-      return cleanItem;
-    });
-    
-    updatedMemoDates[selectedDate] = cleanMemosUIFields(dayMemos);
-
-    if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
-
-    this.memoDates = updatedMemoDates;
-    this.setData({
-      memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, updatedMemoDates[selectedDate])
-    }, () => {
-      this.updateSelectedMemos();
-    });
+      this.finishMemoAction(nextData);
+    } finally {
+      if (this.memoActionId === id) {
+        this.finishMemoAction();
+      }
+    }
   },
 
   removeMemoFromDate(memoDates, date, id) {
@@ -1010,7 +1046,12 @@ Page({
 
   deleteMemoById(id, options = {}) {
     const { selectedDate, text } = this.data;
-    if (!id) return;
+    if (!this.startMemoAction(id)) return;
+
+    const finishCancelledAction = () => {
+      const nextData = options.clearSwipeOnCancel ? { swipedMemoId: '' } : {};
+      this.finishMemoAction(nextData);
+    };
 
     this.showConfirm({
       title: text.confirmDeleteTitle,
@@ -1019,45 +1060,46 @@ Page({
       cancelText: text.cancel,
       confirmColor: '#ef4444',
       confirm: async () => {
-        const updatedMemoDates = this.removeMemoFromDate(this.memoDates, selectedDate, id);
-        if (!updatedMemoDates) return;
-        if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
+        try {
+          const updatedMemoDates = this.removeMemoFromDate(this.memoDates, selectedDate, id);
+          if (!updatedMemoDates) return;
+          if (!await this.saveMemosToStorage(updatedMemoDates, selectedDate)) return;
 
-        if (options.vibrateOnSuccess) {
-          this.vibrate('medium');
+          if (options.vibrateOnSuccess) {
+            this.vibrate('medium');
+          }
+
+          this.showToast(text.deleted, 'success');
+          this.memoDates = updatedMemoDates;
+
+          const dataToSet = {
+            memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, updatedMemoDates[selectedDate]),
+            swipedMemoId: ''
+          };
+          if (this.data.selectedDate === selectedDate) {
+            dataToSet.selectedMemos = cleanMemosUIFields(updatedMemoDates[selectedDate] || []);
+          }
+
+          if (options.closeModal) {
+            this.memoActionId = '';
+            this._closeModalWithData(Object.assign({ memoActionId: '' }, dataToSet));
+            return;
+          }
+
+          this.finishMemoAction(dataToSet);
+        } finally {
+          if (this.memoActionId === id) {
+            this.finishMemoAction();
+          }
         }
-
-        this.showToast(text.deleted, 'success');
-        this.memoDates = updatedMemoDates;
-
-        const dataToSet = {
-          memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, updatedMemoDates[selectedDate]),
-          swipedMemoId: ''
-        };
-
-        if (options.closeModal) {
-          this._closeModalWithData(dataToSet, () => {
-            this.updateSelectedMemos();
-          });
-          return;
-        }
-
-        this.setData(dataToSet, () => {
-          this.updateSelectedMemos();
-        });
       },
-      cancel: () => {
-        if (options.clearSwipeOnCancel) {
-          this.setData({ swipedMemoId: '' });
-        }
-      }
+      cancel: finishCancelledAction,
+      fail: finishCancelledAction
     });
   },
 
   onSwipeDeleteTap(e) {
     const { id } = e.currentTarget.dataset;
-
-    this.vibrate('medium');
     this.deleteMemoById(id, {
       clearSwipeOnCancel: true
     });
@@ -1241,6 +1283,10 @@ Page({
           const action = res.confirm ? 'Confirm' : 'Cancel';
           console.error(`${action} callback failed:`, err);
         }
+      },
+      fail: (err) => {
+        console.error('Failed to show confirm modal:', err);
+        if (options.fail) options.fail(err);
       }
     });
   },

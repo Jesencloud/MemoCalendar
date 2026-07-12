@@ -1,5 +1,6 @@
 // pages/index/index.js
-const { t } = require('../../utils/i18n.js');
+const { t, getTranslations } = require('../../utils/i18n.js');
+const { formatDate, isValidDateString } = require('../../utils/date.js');
 const {
   parseBackupData,
   mergeImportedData,
@@ -40,95 +41,7 @@ const STORAGE_KEYS = {
   CUSTOM_CATEGORIES: 'memoCustomCategories'
 };
 const DRAG_TRANSLATE_THROTTLE_MS = 48;
-const TEXT_CACHE = {};
 
-function getText(lang) {
-  if (TEXT_CACHE[lang]) return TEXT_CACHE[lang];
-
-  const keys = [
-    'title',
-    'subtitle',
-    'shareTitle',
-    'shareMemo',
-    'shareMemoTitlePrefix',
-    'shareDataTooLong',
-    'sharedMemoTitle',
-    'sharedMemoDesc',
-    'addSharedMemo',
-    'sharedMemoAdded',
-    'today',
-    'events',
-    'noEventsTitle',
-    'noEventsDesc',
-    'langToggle',
-    'addMemo',
-    'editMemo',
-    'delete',
-    'done',
-    'todo',
-    'save',
-    'saved',
-    'cancel',
-    'confirm',
-    'created',
-    'deleted',
-    'storageFailed',
-    'inputTitlePlaceholder',
-    'inputTimePlaceholder',
-    'inputLocationPlaceholder',
-    'inputNotesPlaceholder',
-    'selectCategory',
-    'customCategory',
-    'newCustomCategory',
-    'editCustomCategory',
-    'customCategoryPlaceholder',
-    'categoryNameEmpty',
-    'categoryNameTooLong',
-    'categoryExistsSelected',
-    'deleteCategoryTitle',
-    'deleteCategoryPrefix',
-    'deleteCategorySuffix',
-    'confirmDeleteTitle',
-    'confirmDelete',
-    'discardTitle',
-    'discardChanges',
-    'discard',
-    'continueEditing',
-    'titleRequired',
-    'invalidDate',
-    'sortAsc',
-    'sortDesc',
-    'markCompleted',
-    'time',
-    'location',
-    'notes',
-    'dataBackupTitle',
-    'exportData',
-    'exportDesc',
-    'copyBackupData',
-    'importData',
-    'importDesc',
-    'importFromClipboard',
-    'manualPasteLabel',
-    'pastePlaceholder',
-    'mergeImport',
-    'overwriteImport',
-    'copySuccess',
-    'clipboardEmpty',
-    'clipboardReadFailed',
-    'clipboardWriteFailed',
-    'invalidBackupFormat',
-    'importSuccess',
-    'confirmOverwriteTitle',
-    'confirmOverwriteDesc'
-  ];
-  const text = keys.reduce((result, key) => {
-    result[key] = t(key, lang);
-    return result;
-  }, {});
-  TEXT_CACHE[lang] = text;
-  return text;
-}
 
 Page({
   todayDate: '',
@@ -140,7 +53,7 @@ Page({
     memoDateMeta: {},
     showTodayButton: false,
     lang: 'zh',
-    text: getText('zh'),
+    text: getTranslations('zh'),
     modalVisible: false,
     modalClosing: false,
     customCategoryModalVisible: false,
@@ -177,7 +90,7 @@ Page({
     let selectedDate = todayDate;
     let invalidDateFromOptions = false;
     if (options && options.date) {
-      if (this.isValidDateString(options.date)) {
+      if (isValidDateString(options.date)) {
         selectedDate = options.date;
       } else {
         invalidDateFromOptions = true;
@@ -208,7 +121,7 @@ Page({
 
     this.setData({
       lang,
-      text: getText(lang),
+      text: getTranslations(lang),
       selectedDate,
       selectedMemos,
       showTodayButton: selectedDate !== todayDate,
@@ -618,20 +531,6 @@ Page({
     this.setBusyState(key, false);
   },
 
-  async loadCategories() {
-    try {
-      const custom = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
-      this.setData({
-        categories: mergeCategories(custom)
-      });
-    } catch (e) {
-      console.error('Failed to load custom categories:', e);
-      this.setData({
-        categories: DEFAULT_CATEGORIES
-      });
-    }
-  },
-
   onAddCustomTag() {
     this.vibrate();
     this.setData({
@@ -702,71 +601,49 @@ Page({
     if (!this.startBusyState('savingCategory')) return;
 
     try {
-      let custom = [];
-      try {
-        custom = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
-      } catch (e) {
-        console.error('Failed to read custom categories:', e);
-        this.showStorageFailureToast();
-        return;
-      }
+      const storedCategories = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
+      const custom = Array.isArray(storedCategories) ? [...storedCategories] : [];
+      let selectedCategory;
+      let successMessage;
 
       if (editingCategoryKey) {
         const idx = custom.findIndex(c => c.key === editingCategoryKey);
         if (idx !== -1) {
-          custom[idx].labelCn = content;
-          custom[idx].labelEn = content;
+          custom[idx] = Object.assign({}, custom[idx], {
+            labelCn: content,
+            labelEn: content
+          });
         }
-
-        try {
-          await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, custom);
-        } catch (e) {
-          console.error('Failed to save custom category:', e);
-          this.showStorageFailureToast();
-          return;
-        }
-
-        await this.loadCategories();
-
-        this.setData({
-          'memoForm.tag': editingCategoryKey,
-          'memoForm.color': custom[idx] ? custom[idx].color : this.data.memoForm.color,
-          customCategoryModalVisible: false,
-          customCategoryName: '',
-          editingCategoryKey: null
-        });
-
-        this.vibrate('medium');
-        this.showToast(text.saved, 'success');
+        selectedCategory = custom[idx] || {
+          key: editingCategoryKey,
+          color: this.data.memoForm.color
+        };
+        successMessage = text.saved;
       } else {
-        const newCategory = createCustomCategory(
+        selectedCategory = createCustomCategory(
           this.generateCategoryKey(),
           content,
           getNextCategoryColor(custom)
         );
-
-        custom.push(newCategory);
-        try {
-          await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, custom);
-        } catch (e) {
-          console.error('Failed to save custom category:', e);
-          this.showStorageFailureToast();
-          return;
-        }
-
-        await this.loadCategories();
-
-        this.setData({
-          'memoForm.tag': newCategory.key,
-          'memoForm.color': newCategory.color,
-          customCategoryModalVisible: false,
-          customCategoryName: '',
-          editingCategoryKey: null
-        });
-
-        this.vibrate('medium');
-        this.showToast(text.created, 'success');
+        custom.push(selectedCategory);
+        successMessage = text.created;
       }
+
+      await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, custom);
+      this.setData({
+        categories: mergeCategories(custom),
+        'memoForm.tag': selectedCategory.key,
+        'memoForm.color': selectedCategory.color,
+        customCategoryModalVisible: false,
+        customCategoryName: '',
+        editingCategoryKey: null
+      });
+
+      this.vibrate('medium');
+      this.showToast(successMessage, 'success');
+    } catch (e) {
+      console.error('Failed to save custom category:', e);
+      this.showStorageFailureToast();
     } finally {
       this.finishBusyState('savingCategory');
     }
@@ -787,16 +664,14 @@ Page({
           const updated = custom.filter(c => c.key !== key);
           await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, updated);
 
-          // Reload categories
-          await this.loadCategories();
-
-          // If the deleted category was currently selected, reset it to the default category.
+          const nextData = {
+            categories: mergeCategories(updated)
+          };
           if (this.data.memoForm.tag === key) {
-            this.setData({
-              'memoForm.tag': DEFAULT_CATEGORY.key,
-              'memoForm.color': DEFAULT_CATEGORY.color
-            });
+            nextData['memoForm.tag'] = DEFAULT_CATEGORY.key;
+            nextData['memoForm.color'] = DEFAULT_CATEGORY.color;
           }
+          this.setData(nextData);
 
           this.vibrate();
           this.showToast(text.deleted, 'success');
@@ -862,7 +737,7 @@ Page({
     this.vibrate();
     this.setData({
       lang: nextLang,
-      text: getText(nextLang)
+      text: getTranslations(nextLang)
     });
     this.updateNavigationTitle(nextLang);
   },
@@ -874,28 +749,7 @@ Page({
   },
 
   getTodayDate() {
-    return this.formatDate(new Date());
-  },
-
-  formatDate(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  },
-
-  isValidDateString(date) {
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
-    if (!match) return false;
-
-    const year = Number(match[1]);
-    const month = Number(match[2]);
-    const day = Number(match[3]);
-    const parsed = new Date(year, month - 1, day);
-
-    return parsed.getFullYear() === year &&
-      parsed.getMonth() === month - 1 &&
-      parsed.getDate() === day;
+    return formatDate(new Date());
   },
 
   onDateSelect(e) {
@@ -915,7 +769,7 @@ Page({
   },
 
   selectDate(date) {
-    if (!this.isValidDateString(date)) {
+    if (!isValidDateString(date)) {
       this.showToast(this.data.text.invalidDate);
       return;
     }
@@ -1519,7 +1373,7 @@ Page({
       const importedData = parseBackupData(text, {
         defaultCategories: DEFAULT_CATEGORIES,
         palette: CATEGORY_PALETTE,
-        isValidDateString: this.isValidDateString.bind(this)
+        isValidDateString
       });
       if (!importedData) {
         this.showToast(txt.invalidBackupFormat);
@@ -1543,10 +1397,10 @@ Page({
 
       if (!await this.saveImportedDataSafely(finalData, previousData)) return;
 
-      await this.loadCategories();
       this.memoDates = finalData.memos;
       const selectedMemos = cleanMemosUIFields(finalData.memos[this.data.selectedDate] || []);
       this.setData({
+        categories: mergeCategories(finalData.categories),
         selectedMemos,
         memoDateMeta: this.updateMemoDateMeta({}, this.data.selectedDate, selectedMemos),
         backupModalVisible: false,

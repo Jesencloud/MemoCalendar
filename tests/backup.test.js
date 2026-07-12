@@ -5,6 +5,7 @@ const {
   mergeImportedData,
   normalizeImportedCategories
 } = require('../utils/backup.js');
+const { isValidDateString } = require('../utils/date.js');
 
 // Mock data structures
 const MOCK_DEFAULT_CATEGORIES = [
@@ -13,10 +14,6 @@ const MOCK_DEFAULT_CATEGORIES = [
 ];
 
 const MOCK_PALETTE = ['#ff3b30', '#ff9500', '#ffcc00'];
-
-const isValidDateString = (dateStr) => {
-  return /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
-};
 
 const options = {
   defaultCategories: MOCK_DEFAULT_CATEGORIES,

@@ -146,6 +146,7 @@ page {
 }
 
 .memo-card-wrapper {
+  --swipe-actions-width: 280rpx;
   position: relative;
   width: 100%;
   overflow: hidden;
@@ -184,7 +185,7 @@ page {
 }
 
 .memo-card-wrapper.swiped .memo-card {
-  transform: translateX(-280rpx);
+  transform: translateX(calc(0rpx - var(--swipe-actions-width)));
 }
 
 .swipe-actions {
@@ -192,7 +193,7 @@ page {
   right: 0;
   top: 0;
   bottom: 0;
-  width: 280rpx;
+  width: var(--swipe-actions-width);
   display: flex;
   gap: 12rpx;
   z-index: 1;
@@ -238,6 +239,16 @@ page {
 
 .memo-card-wrapper.swiped .swipe-btn.btn-delete {
   transition-delay: 0.04s;
+}
+
+.memo-card-wrapper.swiped .swipe-btn-hover {
+  filter: brightness(0.92);
+}
+
+.swipe-actions.is-processing .swipe-btn {
+  opacity: 0.55;
+  pointer-events: none;
+  filter: saturate(0.7);
 }
 
 .memo-card-completed .memo-card-main {

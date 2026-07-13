@@ -9,11 +9,7 @@ const {
   mergeCategories
 } = require('../../utils/categories.js');
 const { isValidDateString } = require('../../utils/date.js');
-
-const STORAGE_KEYS = {
-  MEMOS: 'memoCalendarMemos',
-  CUSTOM_CATEGORIES: 'memoCustomCategories'
-};
+const { STORAGE_KEYS } = require('./constants.js');
 
 module.exports = {
   async getBackupStorageSnapshot() {

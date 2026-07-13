@@ -159,10 +159,12 @@ module.exports = {
       this.showToast(text.saved, 'success');
       this.memoDates = updatedMemoDates;
 
+      this.clearSwipeCloseTimer();
       closeStarted = this._closeModalWithData({
-        memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, dayMemos)
+        memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, dayMemos),
+        selectedMemos: cleanMemosUIFields(dayMemos),
+        swipedMemoId: ''
       }, () => {
-        this.updateSelectedMemos();
         this.finishBusyState('savingMemo');
       });
     } finally {

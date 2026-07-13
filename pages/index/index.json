@@ -2,5 +2,9 @@
   "usingComponents": {
     "calendar": "/components/calendar/calendar"
   },
+  "backgroundColor": "#ffffff",
+  "backgroundColorTop": "#ffffff",
+  "backgroundColorBottom": "#ffffff",
+  "backgroundTextStyle": "dark",
   "navigationBarTitleText": "备忘录日历"
 }

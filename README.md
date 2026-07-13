@@ -55,15 +55,24 @@
 │   └── calendar/        # 核心手风琴折叠日历组件 (包含周/月视图计算)
 ├── pages/
 │   └── index/           # 主手账日历页面 (包含拖拽、侧滑、多弹窗交互)
-│       ├── index.js     # 控制器核心逻辑 (防重入、防爆字数、归一化导入)
+│       ├── constants.js # 集中共享常量 (STORAGE_KEYS, DEFAULT_FORM 等)
+│       ├── index.js     # 控制器核心框架 (核心生命周期、存储加载与路由绑定)
+│       ├── gestureHandlers.js # 手势操作处理器 (侧滑操作与拖拽重排逻辑)
+│       ├── formHandlers.js    # 表单与自定义分类处理器 (模态框交互逻辑)
+│       ├── backupHandlers.js  # 数据备份与恢复处理器 (导入导出与防覆盖保护)
 │       ├── index.wxml   # 极简手账排版结构
 │       └── index.wxss   # 活力橙橘质感样式与弹性动画定义
 ├── tests/               # 自动化单元测试目录 (本地开发测试，打包上传时自动忽略)
-│   ├── backup.test.js   # 备份与合并算法单元测试
+│   ├── backup.test.js   # 备份与合并底层算法单元测试
+│   ├── backup-handlers.test.js # 页面备份与还原交互逻辑测试
+│   ├── calendar.test.js  # 日历组件核心算法与行数状态机测试
+│   ├── categories.test.js # 分类创建与配色循环算法测试
 │   ├── date.test.js     # 日期格式化与合法性校验测试
-│   ├── i18n.test.js     # 国际化字典与回退测试
+│   ├── drag-handlers.test.js # 拖拽排序逻辑单元测试
+│   ├── form-handlers.test.js # 日程表单保存与异步并发覆盖守护测试
+│   ├── i18n.test.js     # 国际化字典完整性与回退测试
 │   ├── share.test.js    # 好友日程分享逻辑单元测试
-│   └── swipe-actions.test.js # 左滑操作与日程写入并发锁测试
+│   └── swipe-actions.test.js # 左滑完成/删除手势操作与系统中断捕获测试
 ├── utils/
 │   ├── backup.js        # 备份导出/解析归一化及合并核心算法
 │   ├── categories.js    # 内置与自定义分类域模型、色板及创建工厂

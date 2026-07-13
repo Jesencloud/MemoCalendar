@@ -7,6 +7,7 @@ const {
   createCustomCategory,
   resolveCategory
 } = require('../../utils/categories.js');
+const { cleanMemosUIFields } = require('../../utils/backup.js');
 
 const DEFAULT_FORM = {
   id: '',
@@ -159,12 +160,14 @@ module.exports = {
       this.showToast(text.saved, 'success');
       this.memoDates = updatedMemoDates;
 
-      this.clearSwipeCloseTimer();
-      closeStarted = this._closeModalWithData({
+      const closeData = {
         memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, dayMemos),
-        selectedMemos: cleanMemosUIFields(dayMemos),
         swipedMemoId: ''
-      }, () => {
+      };
+      if (this.data.selectedDate === selectedDate) {
+        closeData.selectedMemos = cleanMemosUIFields(dayMemos);
+      }
+      closeStarted = this._closeModalWithData(closeData, () => {
         this.finishBusyState('savingMemo');
       });
     } finally {

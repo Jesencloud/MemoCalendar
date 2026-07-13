@@ -36,7 +36,9 @@ page {
 
 .lang-toggle {
   background: #fff;
-  padding: 12rpx 28rpx;
+  width: 88rpx;
+  text-align: center;
+  padding: 12rpx 0;
   border-radius: 99rpx;
   font-size: 24rpx;
   font-weight: 500;
@@ -106,7 +108,9 @@ page {
 }
 
 .today-btn {
-  padding: 10rpx 26rpx;
+  width: 120rpx;
+  text-align: center;
+  padding: 10rpx 0;
   border-radius: 99rpx;
   background: #fff1e6; /* Citrus Orange light background */
   color: #fa8231;      /* Citrus Orange text */

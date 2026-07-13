@@ -786,6 +786,11 @@ Page({
     }
   },
 
+  onSwipeTouchCancel() {
+    this.swipeTouchActive = false;
+    this.activeId = '';
+  },
+
   onDragStart(e) {
     if (this.memoMutationLock) return;
     this.clearSwipeCloseTimer();
@@ -923,6 +928,18 @@ Page({
         this.releaseMemoMutation();
       }
     }
+  },
+
+  onDragCancel() {
+    if (!this.data.draggingId) return;
+
+    this.cardRects = null;
+    this.lastDragTranslateY = 0;
+    this.setData({
+      draggingId: '',
+      dragTranslateY: 0,
+      sortOrder: 'desc'
+    }, () => this.updateSelectedMemos());
   },
 
   async onSwipeDoneTap(e) {

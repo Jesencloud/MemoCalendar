@@ -254,6 +254,56 @@ test('opened swipe actions close automatically after three seconds', () => {
   }
 });
 
+test('cancelled swipe clears gesture state without opening actions', () => {
+  const page = createPage();
+  const fakeTimers = installFakeTimers();
+
+  try {
+    page.onSwipeTouchStart({
+      currentTarget: { dataset: { id: 'memo-1' } },
+      touches: [{ clientX: 100, clientY: 20 }]
+    });
+    page.onSwipeTouchCancel();
+
+    assert.strictEqual(page.swipeTouchActive, false);
+    assert.strictEqual(page.activeId, '');
+    assert.strictEqual(page.data.swipedMemoId, '');
+    assert.strictEqual(fakeTimers.timers.length, 0);
+  } finally {
+    fakeTimers.restore();
+  }
+});
+
+test('cancelled drag restores stored order without saving', () => {
+  const page = createPage();
+  const date = '2026-07-09';
+  let saveCalled = false;
+  page.data.selectedDate = date;
+  page.data.draggingId = 'memo-2';
+  page.data.dragTranslateY = 80;
+  page.data.selectedMemos = [
+    { id: 'memo-2', title: 'Two' },
+    { id: 'memo-1', title: 'One' }
+  ];
+  page.memoDates = {
+    [date]: [
+      { id: 'memo-1', title: 'One' },
+      { id: 'memo-2', title: 'Two' }
+    ]
+  };
+  page.saveMemosToStorage = async () => {
+    saveCalled = true;
+    return true;
+  };
+
+  page.onDragCancel();
+
+  assert.strictEqual(saveCalled, false);
+  assert.strictEqual(page.data.draggingId, '');
+  assert.strictEqual(page.data.dragTranslateY, 0);
+  assert.deepStrictEqual(page.data.selectedMemos.map(item => item.id), ['memo-1', 'memo-2']);
+});
+
 test('opening another memo for editing closes existing swipe actions', () => {
   const page = createPage();
   const date = '2026-07-09';

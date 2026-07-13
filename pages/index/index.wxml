@@ -49,7 +49,7 @@
           data-index="{{index}}"
           bindtouchstart="onSwipeTouchStart"
           bindtouchend="onSwipeTouchEnd"
-          bindtouchcancel="onSwipeTouchEnd"
+          bindtouchcancel="onSwipeTouchCancel"
           style="transform: translateY({{item.id === draggingId ? dragTranslateY : 0}}px);"
         >
           <view
@@ -72,7 +72,7 @@
                   catchtouchstart="onDragStart"
                   catchtouchmove="onDragMove"
                   catchtouchend="onDragEnd"
-                  catchtouchcancel="onDragEnd"
+                  catchtouchcancel="onDragCancel"
                   data-id="{{item.id}}"
                   data-index="{{index}}"
                 >

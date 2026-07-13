@@ -159,6 +159,36 @@ test('import from empty clipboard shows error', async () => {
   assert.strictEqual(page.importingData, false);
 });
 
+test('finish import state releases only the matching mutation lock', () => {
+  const page = createPage();
+  page.importingData = true;
+  page.data.importingData = true;
+  page.memoMutationLock = 'save-memo';
+
+  page.finishImportState('import');
+
+  assert.strictEqual(page.memoMutationLock, 'save-memo');
+  assert.strictEqual(page.importingData, false);
+  assert.strictEqual(page.data.importingData, false);
+});
+
+test('clipboard read failure releases import state', () => {
+  const page = createPage();
+  page.data.text = {
+    clipboardEmpty: '剪贴板为空',
+    clipboardReadFailed: '读取失败'
+  };
+  global.wx.getClipboardData = ({ fail }) => {
+    fail();
+  };
+
+  page.onImportFromClipboard();
+
+  assert.strictEqual(page.memoMutationLock, '');
+  assert.strictEqual(page.importingData, false);
+  assert.strictEqual(page.data.importingData, false);
+});
+
 test('import invalid format shows error', async () => {
   const page = createPage();
   page.data.selectedDate = '2026-07-09';

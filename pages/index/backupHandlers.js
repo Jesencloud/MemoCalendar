@@ -52,6 +52,13 @@ module.exports = {
     }
   },
 
+  finishImportState(mutationOwner) {
+    if (this.memoMutationLock === mutationOwner) {
+      this.releaseMemoMutation();
+    }
+    this.finishBusyState('importingData');
+  },
+
   onOpenBackupModal() {
     this.setData({
       backupModalVisible: true,
@@ -113,10 +120,7 @@ module.exports = {
         const text = res.data ? res.data.trim() : '';
         if (!text) {
           this.showToast(txt.clipboardEmpty);
-          if (this.memoMutationLock === mutationOwner) {
-            this.releaseMemoMutation();
-          }
-          this.finishBusyState('importingData');
+          this.finishImportState(mutationOwner);
           return;
         }
         // One-click clipboard import always merges for safety
@@ -124,10 +128,7 @@ module.exports = {
       },
       fail: () => {
         this.showToast(txt.clipboardReadFailed);
-        if (this.memoMutationLock === mutationOwner) {
-          this.releaseMemoMutation();
-        }
-        this.finishBusyState('importingData');
+        this.finishImportState(mutationOwner);
       }
     });
   },
@@ -225,10 +226,7 @@ module.exports = {
       console.error('Failed to import data:', e);
       this.showStorageFailureToast();
     } finally {
-      if (this.memoMutationLock === mutationOwner) {
-        this.releaseMemoMutation();
-      }
-      this.finishBusyState('importingData');
+      this.finishImportState(mutationOwner);
     }
   }
 };

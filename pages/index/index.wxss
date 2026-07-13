@@ -205,6 +205,14 @@ page {
   z-index: 1;
   padding: 0;
   box-sizing: border-box;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.memo-card-wrapper.swiped .swipe-actions {
+  opacity: 1;
+  visibility: visible;
 }
 
 .swipe-btn {
@@ -254,8 +262,8 @@ page {
 }
 
 .memo-card-hover {
-  transform: translateY(-2rpx);
-  box-shadow: 0 10rpx 25rpx rgba(0, 0, 0, 0.05);
+  background-color: #f6f8fa !important;
+  opacity: 0.88;
 }
 
 .memo-card-main {

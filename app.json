@@ -3,7 +3,10 @@
     "pages/index/index"
   ],
   "window": {
-    "backgroundTextStyle": "light",
+    "backgroundColor": "#ffffff",
+    "backgroundColorTop": "#ffffff",
+    "backgroundColorBottom": "#ffffff",
+    "backgroundTextStyle": "dark",
     "navigationBarBackgroundColor": "#fff",
     "navigationBarTitleText": "备忘录日历",
     "navigationBarTextStyle": "black",

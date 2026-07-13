@@ -1,4 +1,4 @@
-const { cleanMemosUIFields } = require('../../utils/backup.js');
+const { cleanMemosUIFields } = require('../../utils/memos.js');
 
 const DRAG_TRANSLATE_THROTTLE_MS = 48;
 const SWIPE_AUTO_CLOSE_MS = 3000;

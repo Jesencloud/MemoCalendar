@@ -1,7 +1,7 @@
 // pages/index/index.js
 const { getTranslations } = require('../../utils/i18n.js');
 const { formatDate, isValidDateString } = require('../../utils/date.js');
-const { cleanMemosUIFields, cleanMemoDatesUIFields } = require('../../utils/backup.js');
+const { cleanMemosUIFields, cleanMemoDatesUIFields } = require('../../utils/memos.js');
 const {
   DEFAULT_CATEGORIES,
   mergeCategories

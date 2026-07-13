@@ -1,4 +1,5 @@
 const {
+  DEFAULT_CATEGORY,
   findCategoryByKey,
   findCategoryByName,
   mergeCategories,
@@ -7,7 +8,7 @@ const {
   resolveCategory
 } = require('../../utils/categories.js');
 const { cleanMemosUIFields } = require('../../utils/memos.js');
-const { DEFAULT_FORM, STORAGE_KEYS, DEFAULT_CATEGORY } = require('./constants.js');
+const { DEFAULT_FORM, STORAGE_KEYS } = require('./constants.js');
 
 module.exports = {
   onAddMemoTap() {

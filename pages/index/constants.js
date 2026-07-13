@@ -18,6 +18,5 @@ const DEFAULT_FORM = {
 
 module.exports = {
   STORAGE_KEYS,
-  DEFAULT_FORM,
-  DEFAULT_CATEGORY
+  DEFAULT_FORM
 };

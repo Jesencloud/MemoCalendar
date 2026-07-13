@@ -4,7 +4,6 @@ const { formatDate, isValidDateString } = require('../../utils/date.js');
 const { cleanMemosUIFields, cleanMemoDatesUIFields } = require('../../utils/backup.js');
 const {
   DEFAULT_CATEGORIES,
-  DEFAULT_CATEGORY,
   mergeCategories
 } = require('../../utils/categories.js');
 const {
@@ -13,26 +12,11 @@ const {
   parseSharedMemoPayload,
   createSharedMemoImportForSave
 } = require('../../utils/share.js');
+const { STORAGE_KEYS, DEFAULT_FORM } = require('./constants.js');
 
 const gestureHandlers = require('./gestureHandlers.js');
 const formHandlers = require('./formHandlers.js');
 const backupHandlers = require('./backupHandlers.js');
-
-const DEFAULT_FORM = {
-  id: '',
-  title: '',
-  time: '',
-  location: '',
-  tag: DEFAULT_CATEGORY.key,
-  color: DEFAULT_CATEGORY.color,
-  notes: '',
-  completed: false
-};
-
-const STORAGE_KEYS = {
-  MEMOS: 'memoCalendarMemos',
-  CUSTOM_CATEGORIES: 'memoCustomCategories'
-};
 
 Page(Object.assign({
   todayDate: '',

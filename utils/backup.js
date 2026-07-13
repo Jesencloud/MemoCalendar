@@ -1,4 +1,5 @@
 const { DEFAULT_CATEGORY } = require('./categories.js');
+const { cleanMemoDatesUIFields } = require('./memos.js');
 
 const BACKUP_APP = 'MemoCalendar';
 const DEFAULT_COLOR = '#fa8231';
@@ -134,24 +135,6 @@ function parseBackupData(text, options = {}) {
   };
 }
 
-function cleanMemosUIFields(memos) {
-  if (!Array.isArray(memos)) return [];
-  return memos.map(item => {
-    const cleanItem = Object.assign({}, item);
-    delete cleanItem.isSwiped;
-    return cleanItem;
-  });
-}
-
-function cleanMemoDatesUIFields(memoDates) {
-  const cleanMemoDates = {};
-  Object.keys(memoDates || {}).forEach(date => {
-    const list = memoDates[date];
-    cleanMemoDates[date] = Array.isArray(list) ? cleanMemosUIFields(list) : list;
-  });
-  return cleanMemoDates;
-}
-
 function mergeImportedData(importedData, localMemos = {}, localCategories = [], options = {}) {
   const finalMemos = cleanMemoDatesUIFields(localMemos);
   Object.keys(importedData.memos).forEach(date => {
@@ -189,8 +172,6 @@ function mergeImportedData(importedData, localMemos = {}, localCategories = [], 
 module.exports = {
   parseBackupData,
   mergeImportedData,
-  cleanMemosUIFields,
-  cleanMemoDatesUIFields,
   normalizeImportedCategories,
   normalizeImportedMemoDates,
   normalizeImportedMemo

@@ -71,13 +71,15 @@
 │   ├── drag-handlers.test.js # 拖拽排序逻辑单元测试
 │   ├── form-handlers.test.js # 日程表单保存与异步并发覆盖守护测试
 │   ├── i18n.test.js     # 国际化字典完整性与回退测试
+│   ├── memos.test.js    # 日程数据清洗与非突变行为测试
 │   ├── share.test.js    # 好友日程分享逻辑单元测试
 │   └── swipe-actions.test.js # 左滑完成/删除手势操作与系统中断捕获测试
 ├── utils/
 │   ├── backup.js        # 备份导出/解析归一化及合并核心算法
 │   ├── categories.js    # 内置与自定义分类域模型、色板及创建工厂
 │   ├── date.js          # 日期格式化、解析与合法性校验
-│   └── i18n.js          # 集中式多语言字典 (支持中英一键切换)
+│   ├── i18n.js          # 集中式多语言字典 (支持中英一键切换)
+│   └── memos.js         # 日程数据清洗与 UI 临时字段移除
 ├── app.js               # 小程序入口
 ├── app.json             # 路由与全局窗口配置
 ├── project.config.json  # 微信开发者工具编译配置

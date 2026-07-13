@@ -6,7 +6,7 @@ const {
   createCustomCategory,
   resolveCategory
 } = require('../../utils/categories.js');
-const { cleanMemosUIFields } = require('../../utils/backup.js');
+const { cleanMemosUIFields } = require('../../utils/memos.js');
 const { DEFAULT_FORM, STORAGE_KEYS, DEFAULT_CATEGORY } = require('./constants.js');
 
 module.exports = {

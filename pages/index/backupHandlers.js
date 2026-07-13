@@ -1,8 +1,8 @@
 const {
   parseBackupData,
-  mergeImportedData,
-  cleanMemosUIFields
+  mergeImportedData
 } = require('../../utils/backup.js');
+const { cleanMemosUIFields } = require('../../utils/memos.js');
 const {
   DEFAULT_CATEGORIES,
   CATEGORY_PALETTE,

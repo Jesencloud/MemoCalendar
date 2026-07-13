@@ -213,11 +213,6 @@ page {
   font-weight: 600;
   color: #fff;
   border-radius: 0;
-  
-  /* Initial offset & transparency for slide parallax */
-  transform: translateX(120rpx);
-  opacity: 0;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
 }
 
 button.swipe-btn {
@@ -244,23 +239,6 @@ button.swipe-btn::after {
   background: #ad6060; /* Premium Muted Terra Cotta Red */
 }
 
-/* Entrance when revealed */
-.memo-card-wrapper.swiped .swipe-btn {
-  transform: translateX(0);
-  opacity: 1;
-}
-
-.memo-card-wrapper.swiped .swipe-btn.btn-share {
-  transition-delay: 0s;
-}
-
-.memo-card-wrapper.swiped .swipe-btn.btn-done {
-  transition-delay: 0.04s;
-}
-
-.memo-card-wrapper.swiped .swipe-btn.btn-delete {
-  transition-delay: 0.08s;
-}
 
 .memo-card-wrapper.swiped .swipe-btn-hover {
   filter: brightness(0.92);

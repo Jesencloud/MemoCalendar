@@ -627,7 +627,9 @@ Page({
   },
 
   onCustomCategoryNameInput(e) {
-    this.data.customCategoryName = e.detail.value;
+    this.setData({
+      customCategoryName: e.detail.value
+    });
   },
 
   onCloseCustomCategoryModal() {
@@ -1272,7 +1274,9 @@ Page({
 
   // Form Inputs
   onFormTitleInput(e) {
-    this.data.memoForm.title = e.detail.value;
+    this.setData({
+      'memoForm.title': e.detail.value
+    });
   },
 
   onFormCompletedChange(e) {
@@ -1282,13 +1286,15 @@ Page({
   },
 
   onFormLocationInput(e) {
-    this.data.memoForm.location = e.detail.value;
+    this.setData({
+      'memoForm.location': e.detail.value
+    });
   },
 
   onFormNotesInput(e) {
     const notes = e.detail.value;
-    this.data.memoForm.notes = notes;
     this.setData({
+      'memoForm.notes': notes,
       memoNotesLength: notes.length
     });
   },
@@ -1502,7 +1508,9 @@ Page({
   },
 
   onImportTextInput(e) {
-    this.data.importInputText = e.detail.value;
+    this.setData({
+      importInputText: e.detail.value
+    });
   },
 
   onTriggerMergeImport() {

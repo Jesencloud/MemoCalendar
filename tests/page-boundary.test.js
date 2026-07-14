@@ -26,6 +26,7 @@ function createPage() {
   page.data = JSON.parse(JSON.stringify(pageDefinition.data));
   page.memoDates = {};
   page.todayDate = '2026-07-13';
+  page.getTodayDate = () => '2026-07-13';
   page.setDataCalls = [];
   page.setData = function(update, callback) {
     this.setDataCalls.push(update);

@@ -88,6 +88,9 @@ page {
   color: #1f2937;
   padding-left: 20rpx;
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
 }
 
 .section-title::before {

@@ -113,7 +113,7 @@
     <view class="modal-panel">
       <view class="modal-header">
         <text class="modal-title">{{memoForm.id ? text.editMemo : text.addMemo}}</text>
-        <view class="modal-close" catchtap="closeModal">×</view>
+        <view class="modal-close" hover-class="modal-close-hover" hover-stay-time="100" catchtap="closeModal">×</view>
       </view>
       
       <scroll-view scroll-y class="modal-form">
@@ -284,7 +284,7 @@
     <view class="modal-panel backup-panel">
       <view class="modal-header">
         <text class="modal-title">{{text.dataBackupTitle}}</text>
-        <view class="modal-close" catchtap="onCloseBackupModal">×</view>
+        <view class="modal-close" hover-class="modal-close-hover" hover-stay-time="100" catchtap="onCloseBackupModal">×</view>
       </view>
 
       <scroll-view scroll-y class="modal-form backup-form">

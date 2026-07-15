@@ -231,11 +231,11 @@ page {
 }
 
 .swipe-btn.btn-done {
-  background: #73917d; /* Premium Muted Sage Green */
+  background: #278553; /* Fresh Green */
 }
 
 .swipe-btn.btn-delete {
-  background: #ad6060; /* Premium Muted Terra Cotta Red */
+  background: #cb4843; /* Warm Coral Red */
 }
 
 .memo-card-wrapper.swiped .swipe-btn-hover {
@@ -523,13 +523,27 @@ page {
 }
 
 .modal-close {
-  font-size: 56rpx;
-  color: #9ca3af;
-  padding: 16rpx;
-  margin-top: -12rpx;
-  margin-right: -12rpx;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 24rpx;
+  padding: 0;
+  font-size: 40rpx;
+  font-weight: 400;
+  color: #6b7280;
   line-height: 1;
-  transition: color 0.2s ease;
+  transition: background-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.modal-close-hover {
+  background: #e5e7eb;
+  color: #374151;
+  transform: scale(0.94);
 }
 
 .modal-form {

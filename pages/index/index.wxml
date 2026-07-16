@@ -300,29 +300,36 @@
 
       <scroll-view scroll-y class="modal-form share-preview-body">
         <view
-          class="share-preview-card {{sharedMemo.notes ? '' : 'share-preview-card-no-notes'}}"
+          class="share-preview-card {{sharedMemo.notes || sharedMemoChangedFields.notes ? '' : 'share-preview-card-no-notes'}}"
           style="--memo-color: {{sharedMemo.completed ? '#d1d5db' : (sharedMemo.color || '#fa8231')}}; --memo-border-color: {{sharedMemo.completed ? '#e5e7eb' : (sharedMemo.color || '#fa8231') + '40'}};"
         >
-          <text class="share-preview-title">{{sharedMemo.title}}</text>
+          <text class="share-preview-title {{sharedMemoChangedFields.title ? 'is-changed' : ''}}">{{sharedMemo.title}}</text>
 
           <view class="share-preview-row">
-            <text class="share-preview-label">{{text.time}}</text>
-            <text class="share-preview-value">{{sharedMemoDate}}{{sharedMemo.time ? ' ' + sharedMemo.time : ''}}</text>
+            <text class="share-preview-label {{sharedMemoChangedFields.date || sharedMemoChangedFields.time ? 'is-changed' : ''}}">{{text.time}}</text>
+            <text class="share-preview-value">{{sharedMemoDate}}{{sharedMemo.time ? ' ' + sharedMemo.time : ''}}<text wx:if="{{!sharedMemo.time && sharedMemoChangedFields.time}}" class="share-preview-removed">{{text.sharedMemoTimeRemoved}}</text></text>
           </view>
 
-          <view class="share-preview-row" wx:if="{{sharedMemo.location}}">
-            <text class="share-preview-label">{{text.location}}</text>
-            <text class="share-preview-value">{{sharedMemo.location}}</text>
+          <view class="share-preview-row" wx:if="{{sharedMemo.location || sharedMemoChangedFields.location}}">
+            <text class="share-preview-label {{sharedMemoChangedFields.location ? 'is-changed' : ''}}">{{text.location}}</text>
+            <text class="share-preview-value" wx:if="{{sharedMemo.location}}">{{sharedMemo.location}}</text>
+            <text class="share-preview-value share-preview-removed" wx:else>{{text.sharedMemoFieldRemoved}}</text>
           </view>
 
           <view class="share-preview-row share-preview-category-row">
-            <text class="share-preview-label">{{text.selectCategory}}</text>
+            <text class="share-preview-label {{sharedMemoChangedFields.category ? 'is-changed' : ''}}">{{text.selectCategory}}</text>
             <text class="share-preview-value">{{sharedMemo.categoryIcon === '🏷️' ? (lang === 'zh' ? sharedMemo.tagCn : sharedMemo.tagEn) : sharedMemo.categoryIcon}}</text>
           </view>
 
-          <view class="share-preview-notes" wx:if="{{sharedMemo.notes}}">
-            <text class="share-preview-label">{{text.notes}}</text>
-            <text class="share-preview-note-text">{{sharedMemo.notes}}</text>
+          <view class="share-preview-row" wx:if="{{sharedMemoChangedFields.completed}}">
+            <text class="share-preview-label is-changed">{{text.sharedMemoStatus}}</text>
+            <text class="share-preview-value">{{sharedMemo.completed ? text.sharedMemoCompleted : text.sharedMemoPending}}</text>
+          </view>
+
+          <view class="share-preview-notes" wx:if="{{sharedMemo.notes || sharedMemoChangedFields.notes}}">
+            <text class="share-preview-label {{sharedMemoChangedFields.notes ? 'is-changed' : ''}}">{{text.notes}}</text>
+            <text class="share-preview-note-text" wx:if="{{sharedMemo.notes}}">{{sharedMemo.notes}}</text>
+            <text class="share-preview-note-text share-preview-removed" wx:else>{{text.sharedMemoFieldRemoved}}</text>
           </view>
         </view>
 

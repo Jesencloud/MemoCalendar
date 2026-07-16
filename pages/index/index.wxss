@@ -876,6 +876,12 @@ button.swipe-btn::after {
   flex-shrink: 0;
 }
 
+.share-preview-label.is-changed,
+.share-preview-title.is-changed {
+  color: #d96b20;
+  font-weight: 700;
+}
+
 .share-preview-value {
   font-size: 26rpx;
   color: #1f2937;
@@ -898,6 +904,11 @@ button.swipe-btn::after {
   color: #1f2937;
   line-height: 1.55;
   word-break: break-word;
+}
+
+.share-preview-removed {
+  color: #d65454;
+  font-weight: 500;
 }
 
 .share-preview-desc {

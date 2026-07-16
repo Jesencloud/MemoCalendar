@@ -201,11 +201,60 @@ test('shared memo save state distinguishes unchanged, changed and moved memos', 
   assert.strictEqual(getSharedMemoSaveState(sharedMemoImport, fastPathMemos).status, 'unchanged');
 
   localMemos['2026-07-09'][0].title = '本地旧标题';
-  assert.strictEqual(getSharedMemoSaveState(sharedMemoImport, localMemos).status, 'changed');
+  const titleChangedState = getSharedMemoSaveState(sharedMemoImport, localMemos);
+  assert.strictEqual(titleChangedState.status, 'changed');
+  assert.strictEqual(titleChangedState.changedFields.title, true);
+  assert.strictEqual(titleChangedState.changedFields.date, false);
+  assert.strictEqual(titleChangedState.changedFields.time, false);
 
   const movedMemos = { '2026-07-08': [Object.assign({}, sharedMemoImport.memo)] };
-  assert.strictEqual(getSharedMemoSaveState(sharedMemoImport, movedMemos).status, 'changed');
+  const movedState = getSharedMemoSaveState(sharedMemoImport, movedMemos);
+  assert.strictEqual(movedState.status, 'changed');
+  assert.strictEqual(movedState.changedFields.date, true);
+  assert.strictEqual(movedState.changedFields.time, false);
   assert.deepStrictEqual(removeMemoByIdFromDates(movedMemos, memo.id), {});
+});
+
+test('shared memo save state reports changed and removed fields', () => {
+  const memo = {
+    id: 'memo-field-changes',
+    title: '新标题',
+    time: '',
+    location: '',
+    notes: '',
+    tag: 'Sport',
+    color: '#ff9500',
+    completed: false
+  };
+  const payload = createSharedMemoPayload('2026-07-09', memo, DEFAULT_CATEGORIES[0]);
+  const sharedMemoImport = parseSharedMemoPayload(payload, options);
+  const existingMemo = Object.assign({}, sharedMemoImport.memo, {
+    title: '旧标题',
+    time: '10:30',
+    location: '旧地点',
+    notes: '旧备注',
+    tag: 'Work',
+    color: '#ff2d55',
+    tagCn: '工作',
+    tagEn: 'Work',
+    categoryIcon: '🚀',
+    completed: true
+  });
+
+  const state = getSharedMemoSaveState(sharedMemoImport, {
+    '2026-07-09': [existingMemo]
+  });
+
+  assert.strictEqual(state.status, 'changed');
+  assert.deepStrictEqual(state.changedFields, {
+    title: true,
+    date: false,
+    time: true,
+    location: true,
+    category: true,
+    notes: true,
+    completed: true
+  });
 });
 
 test('card share button returns a path containing the selected memo', () => {
@@ -460,10 +509,14 @@ test('shared memo preview identifies duplicates and updates before saving', asyn
   );
   page.showSharedMemoPreview(page.parseSharedMemoOption(updatedPayload));
   assert.strictEqual(page.data.sharedMemoSaveStatus, 'changed');
+  assert.strictEqual(page.data.sharedMemoChangedFields.title, true);
+  assert.strictEqual(page.data.sharedMemoChangedFields.date, false);
+  assert.strictEqual(page.data.sharedMemoChangedFields.time, false);
   await page.onSaveSharedMemo();
 
   assert.strictEqual(saveCount, 2);
   assert.strictEqual(page.data.sharedMemoSaveStatus, 'new');
+  assert.deepStrictEqual(page.data.sharedMemoChangedFields, {});
   assert.strictEqual(page.data.sharePreviewVisible, false);
   assert.strictEqual(page.memoDates['2026-07-11'].length, 1);
   assert.strictEqual(page.memoDates['2026-07-11'][0].title, '接收分享测试（更新）');

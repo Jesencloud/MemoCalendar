@@ -4,7 +4,7 @@ const { encodeJsonPayload, decodeJsonPayload } = require('./encoding.js');
 const SHARE_APP = 'MemoCalendar';
 const SHARE_TYPE = 'memo-share';
 const MAX_SHARE_PATH_LENGTH = 2048;
-const MEMO_CONTENT_FIELDS = ['title', 'time', 'location', 'notes', 'tag', 'color', 'completed'];
+const CATEGORY_CONTENT_FIELDS = ['tag', 'color', 'tagCn', 'tagEn', 'categoryIcon'];
 
 function isPlainObject(value) {
   return Object.prototype.toString.call(value) === '[object Object]';
@@ -152,13 +152,31 @@ function getSharedMemoSaveState(sharedMemoImport, localMemos = {}) {
       ? dayMemos.find(item => item && item.id === memo.id)
       : null;
   };
-  const contentMatches = existingMemo => {
-    return MEMO_CONTENT_FIELDS.every(field => existingMemo[field] === memo[field]);
+  const getChangedFields = (existingDate, existingMemo) => {
+    const dateChanged = existingDate !== date;
+    const timeChanged = existingMemo.time !== memo.time;
+    return {
+      title: existingMemo.title !== memo.title,
+      date: dateChanged,
+      time: timeChanged,
+      location: existingMemo.location !== memo.location,
+      category: CATEGORY_CONTENT_FIELDS.some(field => existingMemo[field] !== memo[field]),
+      notes: existingMemo.notes !== memo.notes,
+      completed: existingMemo.completed !== memo.completed
+    };
+  };
+  const createChangedState = (existingDate, existingMemo) => {
+    const changedFields = getChangedFields(existingDate, existingMemo);
+    const changed = Object.keys(changedFields).some(field => changedFields[field]);
+    return {
+      status: changed ? 'changed' : 'unchanged',
+      changedFields
+    };
   };
 
   const sameDateMemo = getMatchingMemo(localMemos[date]);
   if (sameDateMemo) {
-    return { status: contentMatches(sameDateMemo) ? 'unchanged' : 'changed' };
+    return createChangedState(date, sameDateMemo);
   }
 
   const dates = Object.keys(localMemos || {});
@@ -167,7 +185,7 @@ function getSharedMemoSaveState(sharedMemoImport, localMemos = {}) {
     if (existingDate === date) continue;
     const existingMemo = getMatchingMemo(localMemos[existingDate]);
     if (!existingMemo) continue;
-    return { status: 'changed' };
+    return createChangedState(existingDate, existingMemo);
   }
 
   return { status: 'new' };

@@ -50,6 +50,7 @@ Page(Object.assign({
     sharedMemoDate: '',
     sharedMemo: null,
     sharedMemoSaveStatus: 'new',
+    sharedMemoChangedFields: {},
     savingSharedMemo: false,
     categories: DEFAULT_CATEGORIES,
     memoForm: Object.assign({}, DEFAULT_FORM),
@@ -407,6 +408,9 @@ Page(Object.assign({
       sharedMemoDate: sharedMemoImport.date,
       sharedMemo: sharedMemoImport.memo,
       sharedMemoSaveStatus: saveState ? saveState.status : 'new',
+      sharedMemoChangedFields: saveState && saveState.changedFields
+        ? saveState.changedFields
+        : {},
       swipedMemoId: ''
     });
   },
@@ -417,7 +421,8 @@ Page(Object.assign({
       sharePreviewVisible: false,
       sharedMemoDate: '',
       sharedMemo: null,
-      sharedMemoSaveStatus: 'new'
+      sharedMemoSaveStatus: 'new',
+      sharedMemoChangedFields: {}
     }, extraData), callback);
   },
 

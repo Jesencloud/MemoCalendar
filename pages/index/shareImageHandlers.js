@@ -3,6 +3,8 @@ const { createWeekDays } = require('../../utils/date.js');
 const CANVAS_ID = 'memoShareCanvas';
 const IMAGE_WIDTH = 500;
 const IMAGE_HEIGHT = 400;
+const IMAGE_RENDER_TIMEOUT_MS = 1800;
+const IMAGE_CACHE_LIMIT = 12;
 const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function createShareImageCacheKey(date, memo, lang) {
@@ -16,6 +18,35 @@ function createShareImageCacheKey(date, memo, lang) {
     memo.color,
     memo.categoryIcon
   ]);
+}
+
+function touchCacheKey(page, cacheKey) {
+  const order = page.memoShareImageCacheOrder;
+  const index = order.indexOf(cacheKey);
+  if (index !== -1) order.splice(index, 1);
+  order.push(cacheKey);
+}
+
+function removeCacheEntry(page, cacheKey, expectedPromise) {
+  if (
+    !page.memoShareImageCache ||
+    page.memoShareImageCache[cacheKey] !== expectedPromise
+  ) {
+    return;
+  }
+  delete page.memoShareImageCache[cacheKey];
+  if (!page.memoShareImageCacheOrder) return;
+  const index = page.memoShareImageCacheOrder.indexOf(cacheKey);
+  if (index !== -1) page.memoShareImageCacheOrder.splice(index, 1);
+}
+
+function storeCacheEntry(page, cacheKey, promise) {
+  page.memoShareImageCache[cacheKey] = promise;
+  touchCacheKey(page, cacheKey);
+  while (page.memoShareImageCacheOrder.length > IMAGE_CACHE_LIMIT) {
+    const oldestKey = page.memoShareImageCacheOrder.shift();
+    delete page.memoShareImageCache[oldestKey];
+  }
 }
 
 function truncateText(ctx, value, maxWidth) {
@@ -69,14 +100,33 @@ module.exports = {
 
     if (!this.memoShareImageCache) {
       this.memoShareImageCache = Object.create(null);
+      this.memoShareImageCacheOrder = [];
     }
     const cacheKey = createShareImageCacheKey(date, memo, this.data.lang);
     if (this.memoShareImageCache[cacheKey]) {
+      touchCacheKey(this, cacheKey);
       return this.memoShareImageCache[cacheKey];
     }
 
     const renderPromise = new Promise((resolve, reject) => {
-      const ctx = wx.createCanvasContext(CANVAS_ID, this);
+      let settled = false;
+      let timeoutId = null;
+      const settle = (callback, value) => {
+        if (settled) return;
+        settled = true;
+        if (timeoutId !== null) clearTimeout(timeoutId);
+        callback(value);
+      };
+      timeoutId = setTimeout(() => {
+        settle(resolve, '');
+      }, IMAGE_RENDER_TIMEOUT_MS);
+      let ctx;
+      try {
+        ctx = wx.createCanvasContext(CANVAS_ID, this);
+      } catch (error) {
+        settle(reject, error);
+        return;
+      }
       const lang = this.data.lang;
       const weekdays = Array.isArray(this.data.text.weekdays) ? this.data.text.weekdays : [];
       const padding = 28;
@@ -154,24 +204,25 @@ module.exports = {
           destWidth: IMAGE_WIDTH,
           destHeight: IMAGE_HEIGHT,
           fileType: 'png',
-          success: result => resolve(result.tempFilePath || ''),
-          fail: reject
+          success: result => settle(resolve, result.tempFilePath || ''),
+          fail: error => settle(reject, error)
         }, this);
       });
     });
 
     const cachedPromise = renderPromise.then(imageUrl => {
-      if (!imageUrl) delete this.memoShareImageCache[cacheKey];
+      if (!imageUrl) removeCacheEntry(this, cacheKey, cachedPromise);
       return imageUrl;
     }).catch(error => {
-      delete this.memoShareImageCache[cacheKey];
+      removeCacheEntry(this, cacheKey, cachedPromise);
       throw error;
     });
-    this.memoShareImageCache[cacheKey] = cachedPromise;
+    storeCacheEntry(this, cacheKey, cachedPromise);
     return cachedPromise;
   },
 
   clearMemoShareImageCache() {
     this.memoShareImageCache = null;
+    this.memoShareImageCacheOrder = null;
   }
 };

@@ -147,21 +147,27 @@ function getSharedMemoSaveState(sharedMemoImport, localMemos = {}) {
   const { date, memo } = sharedMemoImport;
   if (typeof date !== 'string' || typeof memo.id !== 'string' || !memo.id) return null;
 
+  const getMatchingMemo = dayMemos => {
+    return Array.isArray(dayMemos)
+      ? dayMemos.find(item => item && item.id === memo.id)
+      : null;
+  };
+  const contentMatches = existingMemo => {
+    return MEMO_CONTENT_FIELDS.every(field => existingMemo[field] === memo[field]);
+  };
+
+  const sameDateMemo = getMatchingMemo(localMemos[date]);
+  if (sameDateMemo) {
+    return { status: contentMatches(sameDateMemo) ? 'unchanged' : 'changed' };
+  }
+
   const dates = Object.keys(localMemos || {});
   for (let i = 0; i < dates.length; i += 1) {
     const existingDate = dates[i];
-    const dayMemos = localMemos[existingDate];
-    if (!Array.isArray(dayMemos)) continue;
-
-    const existingMemo = dayMemos.find(item => item && item.id === memo.id);
+    if (existingDate === date) continue;
+    const existingMemo = getMatchingMemo(localMemos[existingDate]);
     if (!existingMemo) continue;
-
-    const contentMatches = MEMO_CONTENT_FIELDS.every(field => {
-      return existingMemo[field] === memo[field];
-    });
-    return {
-      status: existingDate === date && contentMatches ? 'unchanged' : 'changed'
-    };
+    return { status: 'changed' };
   }
 
   return { status: 'new' };

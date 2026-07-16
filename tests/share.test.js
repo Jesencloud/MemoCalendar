@@ -193,6 +193,13 @@ test('shared memo save state distinguishes unchanged, changed and moved memos', 
   assert.strictEqual(getSharedMemoSaveState(sharedMemoImport, {}).status, 'new');
   assert.strictEqual(getSharedMemoSaveState(sharedMemoImport, localMemos).status, 'unchanged');
 
+  const fastPathMemos = new Proxy(localMemos, {
+    ownKeys() {
+      throw new Error('same-date lookup should not enumerate other dates');
+    }
+  });
+  assert.strictEqual(getSharedMemoSaveState(sharedMemoImport, fastPathMemos).status, 'unchanged');
+
   localMemos['2026-07-09'][0].title = '本地旧标题';
   assert.strictEqual(getSharedMemoSaveState(sharedMemoImport, localMemos).status, 'changed');
 
@@ -325,8 +332,75 @@ test('card share button resolves a generated weekly preview image', async () => 
     assert.strictEqual((await changedConfig.promise).imageUrl, '/tmp/memo-share.png');
     assert.strictEqual(canvasCreateCount, 2);
     assert.strictEqual(imageExportCount, 2);
+
+    for (let i = 0; i < 13; i += 1) {
+      memo.title = `周历缓存测试-${i}`;
+      const nextConfig = page.onShareAppMessage({
+        from: 'button',
+        target: {
+          dataset: { id: memo.id, date: '2026-08-01' }
+        }
+      });
+      await nextConfig.promise;
+    }
+    assert.strictEqual(Object.keys(page.memoShareImageCache).length, 12);
+    assert.strictEqual(page.memoShareImageCacheOrder.length, 12);
+
+    const countBeforeEvictedRetry = canvasCreateCount;
+    memo.title = '周历分享图';
+    const evictedConfig = page.onShareAppMessage({
+      from: 'button',
+      target: {
+        dataset: { id: memo.id, date: '2026-08-01' }
+      }
+    });
+    await evictedConfig.promise;
+    assert.strictEqual(canvasCreateCount, countBeforeEvictedRetry + 1);
   } finally {
     global.wx = originalWx;
+  }
+});
+
+test('share image generation falls back when canvas rendering times out', async () => {
+  const page = createIndexPage();
+  const memo = {
+    id: 'memo-share-timeout',
+    title: '超时回退',
+    time: '',
+    location: '',
+    color: '#ff9500'
+  };
+  const context = new Proxy({
+    measureText: text => ({ width: Array.from(text).length * 12 }),
+    draw: () => {}
+  }, {
+    get(target, property) {
+      if (property in target) return target[property];
+      return () => {};
+    }
+  });
+  const originalWx = global.wx;
+  const originalSetTimeout = global.setTimeout;
+  const originalClearTimeout = global.clearTimeout;
+  global.wx = {
+    createCanvasContext: () => context,
+    canvasToTempFilePath: () => {
+      throw new Error('canvas export should not run after a draw timeout');
+    }
+  };
+  global.setTimeout = callback => {
+    callback();
+    return 1;
+  };
+  global.clearTimeout = () => {};
+
+  try {
+    assert.strictEqual(await page.createMemoShareImage('2026-08-01', memo), '');
+    assert.strictEqual(Object.keys(page.memoShareImageCache).length, 0);
+  } finally {
+    global.wx = originalWx;
+    global.setTimeout = originalSetTimeout;
+    global.clearTimeout = originalClearTimeout;
   }
 });
 

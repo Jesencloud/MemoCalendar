@@ -304,12 +304,22 @@ test('card share button resolves a generated weekly preview image', async () => 
     time: '09:30',
     location: '会议室',
     notes: '',
-    tag: 'Sport',
+    tag: 'custom-design',
     color: '#ff9500',
-    categoryIcon: '🏋',
+    tagCn: '设计',
+    tagEn: 'Design',
+    categoryIcon: '🏷️',
     completed: false
   };
   page.data.lang = 'zh';
+  page.data.categories = page.data.categories.concat({
+    key: 'custom-design',
+    labelCn: '设计',
+    labelEn: 'Design',
+    color: '#ff9500',
+    icon: '🏷️',
+    isCustom: true
+  });
   page.memoDates = new Proxy({ '2026-08-01': [memo] }, {
     get(target, property) {
       if (typeof property === 'string' && property !== '2026-08-01') {
@@ -360,7 +370,8 @@ test('card share button resolves a generated weekly preview image', async () => 
     assert.ok(drawnText.includes('2026年8月1日'));
     assert.ok(!drawnText.some(text => typeof text === 'string' && text.includes(' - ')));
     assert.ok(!drawnText.includes('备忘录日历'));
-    assert.ok(drawnText.includes('🏋'));
+    assert.ok(drawnText.includes('设计'));
+    assert.ok(!drawnText.includes('🏷️'));
 
     const cachedConfig = page.onShareAppMessage({
       from: 'button',

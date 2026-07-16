@@ -7,7 +7,17 @@ const IMAGE_RENDER_TIMEOUT_MS = 1800;
 const IMAGE_CACHE_LIMIT = 12;
 const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-function createShareImageCacheKey(date, memo, lang) {
+function getMemoCategoryContent(memo, lang) {
+  const isCustomCategory = typeof memo.tag === 'string'
+    && memo.tag.indexOf('custom-') === 0;
+  if (!isCustomCategory) return memo.categoryIcon || '';
+
+  const primaryLabel = lang === 'en' ? memo.tagEn : memo.tagCn;
+  const fallbackLabel = lang === 'en' ? memo.tagCn : memo.tagEn;
+  return primaryLabel || fallbackLabel || '';
+}
+
+function createShareImageCacheKey(date, memo, lang, categoryContent) {
   return JSON.stringify([
     lang,
     date,
@@ -16,7 +26,7 @@ function createShareImageCacheKey(date, memo, lang) {
     memo.time,
     memo.location,
     memo.color,
-    memo.categoryIcon
+    categoryContent
   ]);
 }
 
@@ -96,7 +106,8 @@ module.exports = {
       this.memoShareImageCache = Object.create(null);
       this.memoShareImageCacheOrder = [];
     }
-    const cacheKey = createShareImageCacheKey(date, memo, this.data.lang);
+    const categoryContent = getMemoCategoryContent(memo, this.data.lang);
+    const cacheKey = createShareImageCacheKey(date, memo, this.data.lang, categoryContent);
     if (this.memoShareImageCache[cacheKey]) {
       touchCacheKey(this, cacheKey);
       return this.memoShareImageCache[cacheKey];
@@ -186,10 +197,10 @@ module.exports = {
       ctx.setFontSize(17);
       ctx.fillText(truncateText(ctx, details.join('  ·  '), 410), 48, 294);
 
-      if (memo.categoryIcon) {
+      if (categoryContent) {
         ctx.setFillStyle('#374151');
         ctx.setFontSize(20);
-        ctx.fillText(memo.categoryIcon, 48, 338);
+        ctx.fillText(truncateText(ctx, categoryContent, 410), 48, 338);
       }
 
       ctx.draw(false, () => {

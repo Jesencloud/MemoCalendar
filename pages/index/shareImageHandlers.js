@@ -72,17 +72,11 @@ function getSelectedDateLabel(days, lang) {
   return `${selected.year}年${selected.month}月${selected.day}日`;
 }
 
-function drawMemoDots(ctx, colors, centerX, centerY) {
-  const visibleColors = Array.isArray(colors) ? colors.slice(0, 3) : [];
-  const totalWidth = visibleColors.length * 6 + Math.max(0, visibleColors.length - 1) * 4;
-  let x = centerX - totalWidth / 2 + 3;
-  visibleColors.forEach(color => {
-    ctx.beginPath();
-    ctx.setFillStyle(color || '#fa8231');
-    ctx.arc(x, centerY, 3, 0, Math.PI * 2);
-    ctx.fill();
-    x += 10;
-  });
+function drawMemoDot(ctx, color, centerX, centerY) {
+  ctx.beginPath();
+  ctx.setFillStyle(color || '#fa8231');
+  ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 module.exports = {
@@ -166,7 +160,9 @@ module.exports = {
         ctx.setFontSize(18);
         ctx.fillText(String(day.day), centerX, 131);
 
-        drawMemoDots(ctx, day.selected ? [memo.color || '#fa8231'] : [], centerX, 160);
+        if (day.selected) {
+          drawMemoDot(ctx, memo.color, centerX, 160);
+        }
       });
 
       ctx.setStrokeStyle('#e5e7eb');

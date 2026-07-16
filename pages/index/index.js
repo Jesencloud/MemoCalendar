@@ -4,19 +4,25 @@ const { formatDate, isValidDateString } = require('../../utils/date.js');
 const { cleanMemosUIFields, cleanMemoDatesUIFields } = require('../../utils/memos.js');
 const {
   DEFAULT_CATEGORIES,
+  CATEGORY_PALETTE,
+  findCategoryByKey,
   mergeCategories
 } = require('../../utils/categories.js');
+const { mergeImportedData } = require('../../utils/backup.js');
 const {
   MAX_SHARE_PATH_LENGTH,
   createSharedMemoPayload,
   parseSharedMemoPayload,
-  createSharedMemoImportForSave
+  createSharedMemoImportForSave,
+  getSharedMemoSaveState,
+  removeMemoByIdFromDates
 } = require('../../utils/share.js');
 const { STORAGE_KEYS, DEFAULT_FORM } = require('./constants.js');
 
 const gestureHandlers = require('./gestureHandlers.js');
 const formHandlers = require('./formHandlers.js');
 const backupHandlers = require('./backupHandlers.js');
+const shareImageHandlers = require('./shareImageHandlers.js');
 
 Page(Object.assign({
   todayDate: '',
@@ -43,6 +49,7 @@ Page(Object.assign({
     sharePreviewVisible: false,
     sharedMemoDate: '',
     sharedMemo: null,
+    sharedMemoSaveStatus: 'new',
     savingSharedMemo: false,
     categories: DEFAULT_CATEGORIES,
     memoForm: Object.assign({}, DEFAULT_FORM),
@@ -139,6 +146,7 @@ Page(Object.assign({
   onUnload() {
     this.clearModalCloseTimer();
     this.clearSwipeCloseTimer();
+    this.clearMemoShareImageCache();
   },
 
   getDefaultShareConfig() {
@@ -150,7 +158,7 @@ Page(Object.assign({
   },
 
   findMemoForShare(date, id) {
-    if (!this.isValidDateString(date) || !id) return null;
+    if (!isValidDateString(date) || !id) return null;
     const dayMemos = this.memoDates[date] || [];
     return dayMemos.find(memo => memo.id === id) || null;
   },
@@ -185,10 +193,22 @@ Page(Object.assign({
       return defaultConfig;
     }
 
-    return {
+    const shareConfig = {
       title: this.createMemoShareTitle(memo, date),
       path
     };
+    if (typeof this.createMemoShareImage !== 'function') return shareConfig;
+
+    return Object.assign({}, shareConfig, {
+      promise: this.createMemoShareImage(date, memo)
+        .then(imageUrl => {
+          return imageUrl ? Object.assign({}, shareConfig, { imageUrl }) : shareConfig;
+        })
+        .catch(error => {
+          console.error('Failed to create memo share image:', error);
+          return shareConfig;
+        })
+    });
   },
 
   onShareTimeline() {
@@ -375,29 +395,35 @@ Page(Object.assign({
     return parseSharedMemoPayload(share, {
       defaultCategories: DEFAULT_CATEGORIES,
       palette: CATEGORY_PALETTE,
-      isValidDateString: this.isValidDateString.bind(this)
+      isValidDateString
     });
   },
 
   showSharedMemoPreview(sharedMemoImport) {
+    const saveState = getSharedMemoSaveState(sharedMemoImport, this.memoDates);
     this.sharedMemoImport = sharedMemoImport;
     this.setData({
       sharePreviewVisible: true,
       sharedMemoDate: sharedMemoImport.date,
       sharedMemo: sharedMemoImport.memo,
+      sharedMemoSaveStatus: saveState ? saveState.status : 'new',
       swipedMemoId: ''
     });
   },
 
-  onCloseSharePreview() {
-    if (this.savingSharedMemo) return;
-
+  closeSharedMemoPreview(extraData = {}, callback = null) {
     this.sharedMemoImport = null;
-    this.setData({
+    this.setData(Object.assign({
       sharePreviewVisible: false,
       sharedMemoDate: '',
-      sharedMemo: null
-    });
+      sharedMemo: null,
+      sharedMemoSaveStatus: 'new'
+    }, extraData), callback);
+  },
+
+  onCloseSharePreview() {
+    if (this.savingSharedMemo) return;
+    this.closeSharedMemoPreview();
   },
 
   async onSaveSharedMemo() {
@@ -414,17 +440,29 @@ Page(Object.assign({
         return;
       }
 
-      const importedData = createSharedMemoImportForSave(
-        sharedMemoImport,
-        previousData.memos,
-        this.generateMemoId.bind(this)
-      );
+      const importedData = createSharedMemoImportForSave(sharedMemoImport);
       if (!importedData) {
         this.showToast(txt.invalidBackupFormat);
         return;
       }
 
-      const finalData = mergeImportedData(importedData, previousData.memos, previousData.categories, {
+      const saveState = getSharedMemoSaveState(sharedMemoImport, previousData.memos);
+      if (!saveState) {
+        this.showToast(txt.invalidBackupFormat);
+        return;
+      }
+      if (saveState.status === 'unchanged') {
+        this.closeSharedMemoPreview({}, () => {
+          this.showToast(txt.sharedMemoAlreadySaved);
+        });
+        return;
+      }
+
+      const baseMemos = saveState.status === 'changed'
+        ? removeMemoByIdFromDates(previousData.memos, sharedMemoImport.memo.id)
+        : previousData.memos;
+
+      const finalData = mergeImportedData(importedData, baseMemos, previousData.categories, {
         palette: CATEGORY_PALETTE
       });
 
@@ -435,20 +473,19 @@ Page(Object.assign({
       const selectedMemos = cleanMemosUIFields(finalData.memos[selectedDate] || []);
       const todayDate = this.todayDate || this.getTodayDate();
 
-      this.sharedMemoImport = null;
-      this.setData({
+      this.closeSharedMemoPreview({
         selectedDate,
         selectedMemos,
         categories: mergeCategories(finalData.categories),
         showTodayButton: selectedDate !== todayDate,
         memoDateMeta: this.updateMemoDateMeta({}, selectedDate, selectedMemos),
-        sharePreviewVisible: false,
-        sharedMemoDate: '',
-        sharedMemo: null,
         swipedMemoId: ''
       }, () => {
         this.refreshMemoDateMetaAsync(finalData.memos);
-        this.showToast(txt.sharedMemoAdded, 'success');
+        const message = saveState.status === 'changed'
+          ? txt.sharedMemoReplaced
+          : txt.sharedMemoAdded;
+        this.showToast(message, 'success');
       });
     } finally {
       this.finishBusyState('savingSharedMemo');
@@ -709,4 +746,4 @@ Page(Object.assign({
   stopBubble() {
     // Empty handler to prevent event bubbling/scroll penetration
   }
-}, gestureHandlers, formHandlers, backupHandlers));
+}, gestureHandlers, formHandlers, backupHandlers, shareImageHandlers));

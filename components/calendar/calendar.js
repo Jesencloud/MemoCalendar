@@ -1,6 +1,6 @@
 // components/calendar/calendar.js
 const { getTranslations } = require('../../utils/i18n.js');
-const { formatDate, parseDate } = require('../../utils/date.js');
+const { formatDate, parseDate, createWeekDays: createDateWeekDays } = require('../../utils/date.js');
 const { CHINA_HOLIDAYS_2026 } = require('../../data/china_holidays.js');
 
 const SWIPER_CENTER_INDEX = 1;
@@ -145,18 +145,11 @@ Component({
     },
 
     createWeekDays(baseDateStr, todayDate) {
-      const baseDate = parseDate(baseDateStr);
-      if (!baseDate) return [];
-      const dateObj = new Date(baseDate.year, baseDate.month, baseDate.day);
-      const dayOfWeek = dateObj.getDay();
-      const emptyDaysBefore = (dayOfWeek + 6) % 7;
-      const days = [];
       const memoDateMeta = this.data.memoDateMeta || {};
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(baseDate.year, baseDate.month, baseDate.day - emptyDaysBefore + i);
-        days.push(this.createDayItem(d, todayDate, memoDateMeta));
-      }
-      return days;
+      return createDateWeekDays(baseDateStr).map(day => {
+        const date = new Date(day.year, day.month - 1, day.day);
+        return this.createDayItem(date, todayDate, memoDateMeta);
+      });
     },
 
     createDayItem(date, todayDate, memoDateMeta) {

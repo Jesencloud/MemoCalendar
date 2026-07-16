@@ -4,6 +4,7 @@ const { encodeJsonPayload, decodeJsonPayload } = require('./encoding.js');
 const SHARE_APP = 'MemoCalendar';
 const SHARE_TYPE = 'memo-share';
 const MAX_SHARE_PATH_LENGTH = 2048;
+const MEMO_CONTENT_FIELDS = ['title', 'time', 'location', 'notes', 'tag', 'color', 'completed'];
 
 function isPlainObject(value) {
   return Object.prototype.toString.call(value) === '[object Object]';
@@ -131,29 +132,65 @@ function cloneImportedData(importedData) {
   };
 }
 
-function createSharedMemoImportForSave(sharedMemoImport, localMemos, createMemoId) {
+function createSharedMemoImportForSave(sharedMemoImport) {
   if (!sharedMemoImport || !isPlainObject(sharedMemoImport.importedData)) return null;
 
   const importedData = cloneImportedData(sharedMemoImport.importedData);
   const dayMemos = importedData.memos[sharedMemoImport.date];
   if (!Array.isArray(dayMemos) || dayMemos.length !== 1) return null;
+  return importedData;
+}
 
-  const memo = Object.assign({}, dayMemos[0]);
-  const localDayMemos = Array.isArray(localMemos && localMemos[sharedMemoImport.date])
-    ? localMemos[sharedMemoImport.date]
-    : [];
-  if (localDayMemos.some(item => item.id === memo.id)) {
-    if (typeof createMemoId !== 'function') return null;
-    memo.id = createMemoId();
+function getSharedMemoSaveState(sharedMemoImport, localMemos = {}) {
+  if (!sharedMemoImport || !isPlainObject(sharedMemoImport.memo)) return null;
+
+  const { date, memo } = sharedMemoImport;
+  if (typeof date !== 'string' || typeof memo.id !== 'string' || !memo.id) return null;
+
+  const dates = Object.keys(localMemos || {});
+  for (let i = 0; i < dates.length; i += 1) {
+    const existingDate = dates[i];
+    const dayMemos = localMemos[existingDate];
+    if (!Array.isArray(dayMemos)) continue;
+
+    const existingMemo = dayMemos.find(item => item && item.id === memo.id);
+    if (!existingMemo) continue;
+
+    const contentMatches = MEMO_CONTENT_FIELDS.every(field => {
+      return existingMemo[field] === memo[field];
+    });
+    return {
+      status: existingDate === date && contentMatches ? 'unchanged' : 'changed'
+    };
   }
 
-  dayMemos[0] = memo;
-  return importedData;
+  return { status: 'new' };
+}
+
+function removeMemoByIdFromDates(memoDates = {}, id) {
+  const nextMemoDates = Object.assign({}, memoDates);
+  if (!id) return nextMemoDates;
+
+  Object.keys(nextMemoDates).forEach(date => {
+    const dayMemos = nextMemoDates[date];
+    if (!Array.isArray(dayMemos)) return;
+
+    const filteredMemos = dayMemos.filter(item => !item || item.id !== id);
+    if (filteredMemos.length === 0) {
+      delete nextMemoDates[date];
+    } else if (filteredMemos.length !== dayMemos.length) {
+      nextMemoDates[date] = filteredMemos;
+    }
+  });
+
+  return nextMemoDates;
 }
 
 module.exports = {
   MAX_SHARE_PATH_LENGTH,
   createSharedMemoPayload,
   parseSharedMemoPayload,
-  createSharedMemoImportForSave
+  createSharedMemoImportForSave,
+  getSharedMemoSaveState,
+  removeMemoByIdFromDates
 };

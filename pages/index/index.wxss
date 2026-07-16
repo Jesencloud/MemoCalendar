@@ -844,6 +844,10 @@ button.swipe-btn::after {
   box-sizing: border-box;
 }
 
+.share-preview-card-no-notes {
+  padding-bottom: 0;
+}
+
 .share-preview-date {
   display: block;
   font-size: 24rpx;
@@ -867,6 +871,10 @@ button.swipe-btn::after {
   gap: 24rpx;
   padding: 16rpx 0;
   border-top: 2rpx solid #f3f4f6;
+}
+
+.share-preview-category-row {
+  align-items: center;
 }
 
 .share-preview-label {
@@ -1029,4 +1037,13 @@ button.swipe-btn::after {
   background: #ef4444 !important; /* Alert Red */
   color: #fff !important;
   box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.2);
+}
+
+.memo-share-canvas {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 500px;
+  height: 400px;
+  pointer-events: none;
 }

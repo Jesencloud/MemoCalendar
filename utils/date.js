@@ -33,8 +33,30 @@ function isValidDateString(dateString) {
   return parseDate(dateString) !== null;
 }
 
+function createWeekDays(dateString) {
+  const parsed = parseDate(dateString);
+  if (!parsed) return [];
+
+  const selected = new Date(parsed.year, parsed.month, parsed.day);
+  const mondayOffset = (selected.getDay() + 6) % 7;
+  const days = [];
+  for (let i = 0; i < 7; i += 1) {
+    const current = new Date(parsed.year, parsed.month, parsed.day - mondayOffset + i);
+    const date = formatDate(current);
+    days.push({
+      date,
+      year: current.getFullYear(),
+      month: current.getMonth() + 1,
+      day: current.getDate(),
+      selected: date === dateString
+    });
+  }
+  return days;
+}
+
 module.exports = {
   formatDate,
   parseDate,
-  isValidDateString
+  isValidDateString,
+  createWeekDays
 };

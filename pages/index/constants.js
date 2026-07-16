@@ -2,7 +2,8 @@ const { DEFAULT_CATEGORY } = require('../../utils/categories.js');
 
 const STORAGE_KEYS = {
   MEMOS: 'memoCalendarMemos',
-  CUSTOM_CATEGORIES: 'memoCustomCategories'
+  CUSTOM_CATEGORIES: 'memoCustomCategories',
+  LANGUAGE: 'memoCalendarLanguage'
 };
 
 const DEFAULT_FORM = {

@@ -121,7 +121,7 @@ test('shared memo payload remains within configured share path limit for max fie
   };
 
   const payload = createSharedMemoPayload('2026-07-07', memo, DEFAULT_CATEGORIES[0]);
-  const path = `/pages/index/index?lang=zh&share=${payload}`;
+  const path = `/pages/index/index?share=${payload}`;
   assert.ok(path.length <= MAX_SHARE_PATH_LENGTH);
 });
 
@@ -287,8 +287,9 @@ test('card share button returns a path containing the selected memo', () => {
 
   assert.match(config.title, /页面分享测试/);
   assert.match(config.path, /[?&]share=/);
+  assert.doesNotMatch(config.path, /[?&]lang=/);
 
-  const payload = config.path.split('&share=')[1];
+  const payload = config.path.split('share=')[1];
   const parsed = page.parseSharedMemoOption(payload);
   assert.ok(parsed);
   assert.strictEqual(parsed.date, '2026-07-10');

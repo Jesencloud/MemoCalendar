@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
+const { STORAGE_KEYS } = require('../pages/index/constants.js');
 
 let pageDefinition;
 const originalPage = global.Page;
@@ -325,14 +326,20 @@ test('toggleLang: switches from zh to en', () => {
   page.todayDate = '2026-07-13';
   page.data.text = { navTitle: '备忘录日历' };
   let navTitle;
+  let storedLanguage;
   global.wx = global.wx || {};
   global.wx.setNavigationBarTitle = ({ title }) => { navTitle = title; };
+  page.setStorage = async (key, value) => {
+    assert.strictEqual(key, STORAGE_KEYS.LANGUAGE);
+    storedLanguage = value;
+  };
 
   page.toggleLang();
 
   assert.strictEqual(page.data.lang, 'en');
   assert.strictEqual(page.data.text.today, 'Today');
   assert.strictEqual(navTitle, 'Memo Calendar');
+  assert.strictEqual(storedLanguage, 'en');
 });
 
 test('toggleLang: switches from en to zh', () => {
@@ -341,14 +348,37 @@ test('toggleLang: switches from en to zh', () => {
   page.todayDate = '2026-07-13';
   page.data.text = { navTitle: 'Memo Calendar' };
   let navTitle;
+  let storedLanguage;
   global.wx = global.wx || {};
   global.wx.setNavigationBarTitle = ({ title }) => { navTitle = title; };
+  page.setStorage = async (key, value) => {
+    assert.strictEqual(key, STORAGE_KEYS.LANGUAGE);
+    storedLanguage = value;
+  };
 
   page.toggleLang();
 
   assert.strictEqual(page.data.lang, 'zh');
   assert.strictEqual(page.data.text.today, '今天');
   assert.strictEqual(navTitle, '备忘录日历');
+  assert.strictEqual(storedLanguage, 'zh');
+});
+
+test('onLoad: local language preference overrides the entry language parameter', async () => {
+  const page = createPage();
+  page.loadMemosFromStorage = async () => ({});
+  page.getStorage = async key => {
+    if (key === STORAGE_KEYS.LANGUAGE) return 'zh';
+    if (key === STORAGE_KEYS.CUSTOM_CATEGORIES) return [];
+    return {};
+  };
+  page.refreshMemoDateMetaAsync = () => {};
+  page.updateNavigationTitle = () => {};
+
+  await page.onLoad({ lang: 'en' });
+
+  assert.strictEqual(page.data.lang, 'zh');
+  assert.strictEqual(page.data.text.today, '今天');
 });
 
 // ========== showConfirm ==========

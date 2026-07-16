@@ -63,10 +63,9 @@ Page(Object.assign({
   },
 
   async onLoad(options) {
-    let lang = this.data.lang;
-    if (options && options.lang && (options.lang === 'zh' || options.lang === 'en')) {
-      lang = options.lang;
-    }
+    const optionLang = options && (options.lang === 'zh' || options.lang === 'en')
+      ? options.lang
+      : '';
 
     const todayDate = this.getTodayDate();
     this.todayDate = todayDate;
@@ -93,12 +92,16 @@ Page(Object.assign({
     }
 
     // Load memos and custom categories from local storage in parallel
-    const [memoDates, customCategories] = await Promise.all([
+    const [memoDates, customCategories, storedLang] = await Promise.all([
       this.loadMemosFromStorage(),
       this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []).catch(() => {
         return [];
-      })
+      }),
+      this.getStorage(STORAGE_KEYS.LANGUAGE, '').catch(() => '')
     ]);
+    const lang = storedLang === 'zh' || storedLang === 'en'
+      ? storedLang
+      : (optionLang || this.data.lang);
     this.memoDates = memoDates;
     const selectedMemos = cleanMemosUIFields(memoDates[selectedDate] || []);
     const initialMemoDateMeta = this.updateMemoDateMeta({}, selectedDate, selectedMemos);
@@ -151,10 +154,10 @@ Page(Object.assign({
   },
 
   getDefaultShareConfig() {
-    const { lang, text } = this.data;
+    const { text } = this.data;
     return {
       title: text.shareTitle,
-      path: `/pages/index/index?lang=${lang}`
+      path: '/pages/index/index'
     };
   },
 
@@ -183,10 +186,10 @@ Page(Object.assign({
 
     const category = findCategoryByKey(this.data.categories, memo.tag);
     let payload = createSharedMemoPayload(date, memo, category);
-    let path = `/pages/index/index?lang=${this.data.lang}&share=${payload}`;
+    let path = `/pages/index/index?share=${payload}`;
     if (payload && path.length > MAX_SHARE_PATH_LENGTH && memo.notes) {
       payload = createSharedMemoPayload(date, memo, category, { includeNotes: false });
-      path = `/pages/index/index?lang=${this.data.lang}&share=${payload}`;
+      path = `/pages/index/index?share=${payload}`;
     }
 
     if (!payload || path.length > MAX_SHARE_PATH_LENGTH) {
@@ -213,10 +216,9 @@ Page(Object.assign({
   },
 
   onShareTimeline() {
-    const { lang, text } = this.data;
+    const { text } = this.data;
     return {
-      title: text.shareTitle,
-      query: `lang=${lang}`
+      title: text.shareTitle
     };
   },
 
@@ -600,6 +602,7 @@ Page(Object.assign({
       text: getTranslations(nextLang)
     });
     this.updateNavigationTitle(nextLang);
+    this.setStorage(STORAGE_KEYS.LANGUAGE, nextLang).catch(() => {});
   },
 
   updateNavigationTitle(lang) {

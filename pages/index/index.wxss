@@ -848,13 +848,6 @@ button.swipe-btn::after {
   padding-bottom: 0;
 }
 
-.share-preview-date {
-  display: block;
-  font-size: 24rpx;
-  color: #6b7280;
-  margin-bottom: 10rpx;
-}
-
 .share-preview-title {
   display: block;
   font-size: 34rpx;

@@ -105,7 +105,7 @@ const translations = {
     sharedMemoAdded: 'Added to your memos',
     sharedMemoSavedTitle: 'Memo Already Exists',
     sharedMemoAlreadySaved: 'This memo is already saved',
-    sharedMemoAlreadySavedDesc: 'The local memo already matches this share.',
+    sharedMemoAlreadySavedDesc: 'An identical memo is already saved. No action is needed.',
     sharedMemoChangedTitle: 'Memo Content Differs',
     sharedMemoChangedDesc: 'Replace with the shared version.',
     replaceSharedMemo: 'Replace',

@@ -303,12 +303,11 @@
           class="share-preview-card {{sharedMemo.notes ? '' : 'share-preview-card-no-notes'}}"
           style="--memo-color: {{sharedMemo.completed ? '#d1d5db' : (sharedMemo.color || '#fa8231')}}; --memo-border-color: {{sharedMemo.completed ? '#e5e7eb' : (sharedMemo.color || '#fa8231') + '40'}};"
         >
-          <text class="share-preview-date">{{sharedMemoDate}}</text>
           <text class="share-preview-title">{{sharedMemo.title}}</text>
 
-          <view class="share-preview-row" wx:if="{{sharedMemo.time}}">
+          <view class="share-preview-row">
             <text class="share-preview-label">{{text.time}}</text>
-            <text class="share-preview-value">{{sharedMemo.time}}</text>
+            <text class="share-preview-value">{{sharedMemoDate}}{{sharedMemo.time ? ' ' + sharedMemo.time : ''}}</text>
           </view>
 
           <view class="share-preview-row" wx:if="{{sharedMemo.location}}">
@@ -318,7 +317,7 @@
 
           <view class="share-preview-row share-preview-category-row">
             <text class="share-preview-label">{{text.selectCategory}}</text>
-            <text class="share-preview-value">{{sharedMemo.categoryIcon === '🏷️' ? '#' + (lang === 'zh' ? sharedMemo.tagCn : sharedMemo.tagEn) : sharedMemo.categoryIcon}}</text>
+            <text class="share-preview-value">{{sharedMemo.categoryIcon === '🏷️' ? (lang === 'zh' ? sharedMemo.tagCn : sharedMemo.tagEn) : sharedMemo.categoryIcon}}</text>
           </view>
 
           <view class="share-preview-notes" wx:if="{{sharedMemo.notes}}">

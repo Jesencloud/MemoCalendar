@@ -208,8 +208,8 @@ module.exports = {
           canvasId: CANVAS_ID,
           width: IMAGE_WIDTH,
           height: IMAGE_HEIGHT,
-          destWidth: IMAGE_WIDTH,
-          destHeight: IMAGE_HEIGHT,
+          destWidth: IMAGE_WIDTH * 2,
+          destHeight: IMAGE_HEIGHT * 2,
           fileType: 'png',
           success: result => settle(resolve, result.tempFilePath || ''),
           fail: error => settle(reject, error)

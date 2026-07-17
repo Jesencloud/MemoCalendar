@@ -118,14 +118,21 @@ test('createMonthDays: days without memo have hasMemo=false', () => {
 
 // ========== createWeekDays ==========
 
-test('createWeekDays: returns 7 days starting from Monday of the week', () => {
+test('createWeekDays: returns 7 days starting from Monday of the week with metadata', () => {
   const comp = createComponent();
-  comp.data.memoDateMeta = {};
+  comp.data.memoDateMeta = {
+    '2026-07-06': { hasMemo: true, memoColors: ['#ff0000'] }
+  };
   const days = comp.createWeekDays('2026-07-09', '2026-07-20');
 
   assert.strictEqual(days.length, 7);
   assert.strictEqual(days[0].fullDate, '2026-07-06');
+  assert.strictEqual(days[0].hasMemo, true);
+  assert.deepStrictEqual(days[0].memoColors, ['#ff0000']);
+  assert.strictEqual(days[0].isPast, true);
+  assert.ok(days[0].holidayInfo === null);
   assert.strictEqual(days[6].fullDate, '2026-07-12');
+  assert.strictEqual(days[6].isPast, true);
 });
 
 test('createWeekDays: handles week containing month boundary', () => {
@@ -149,8 +156,7 @@ test('createWeekDays: returns empty array for invalid date', () => {
 
 test('createDayItem: returns correct structure', () => {
   const comp = createComponent();
-  comp.data.memoDateMeta = {};
-  const item = comp.createDayItem(new Date(2026, 6, 15), '2026-07-20', {});
+  const item = comp.createDayItem(15, '2026-07-15', '2026-07-20', {});
 
   assert.strictEqual(item.day, 15);
   assert.strictEqual(item.fullDate, '2026-07-15');
@@ -162,8 +168,7 @@ test('createDayItem: returns correct structure', () => {
 
 test('createDayItem: returns holidayInfo for Chinese holiday', () => {
   const comp = createComponent();
-  comp.data.memoDateMeta = {};
-  const item = comp.createDayItem(new Date(2026, 0, 1), '2026-07-20', {});
+  const item = comp.createDayItem(1, '2026-01-01', '2026-07-20', {});
 
   assert.ok(item.holidayInfo);
   assert.strictEqual(item.holidayInfo.type, 'holiday');
@@ -172,8 +177,7 @@ test('createDayItem: returns holidayInfo for Chinese holiday', () => {
 
 test('createDayItem: returns null holidayInfo for non-holiday', () => {
   const comp = createComponent();
-  comp.data.memoDateMeta = {};
-  const item = comp.createDayItem(new Date(2026, 6, 15), '2026-07-20', {});
+  const item = comp.createDayItem(15, '2026-07-15', '2026-07-20', {});
 
   assert.strictEqual(item.holidayInfo, null);
 });

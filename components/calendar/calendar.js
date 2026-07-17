@@ -142,16 +142,7 @@ Component({
       for (let i = 1; i <= daysInMonth; i++) {
         const dayStr = String(i).padStart(2, '0');
         const fullDate = `${year}-${monthStr}-${dayStr}`;
-        const meta = memoDateMeta[fullDate] || {};
-        days.push({
-          day: i,
-          fullDate,
-          dateKey: fullDate,
-          hasMemo: meta.hasMemo === true,
-          memoColors: Array.isArray(meta.memoColors) ? meta.memoColors : [],
-          isPast: fullDate < todayDate,
-          holidayInfo: CHINA_HOLIDAYS_2026[fullDate] || null
-        });
+        days.push(this.createDayItem(i, fullDate, todayDate, memoDateMeta));
       }
       return days;
     },
@@ -159,29 +150,18 @@ Component({
     createWeekDays(baseDateStr, todayDate) {
       const memoDateMeta = this.data.memoDateMeta || {};
       return createDateWeekDays(baseDateStr).map(day => {
-        const fullDate = day.date;
-        const meta = memoDateMeta[fullDate] || {};
-        return {
-          day: day.day,
-          fullDate,
-          dateKey: fullDate,
-          hasMemo: meta.hasMemo === true,
-          memoColors: Array.isArray(meta.memoColors) ? meta.memoColors : [],
-          isPast: fullDate < todayDate,
-          holidayInfo: CHINA_HOLIDAYS_2026[fullDate] || null
-        };
+        return this.createDayItem(day.day, day.date, todayDate, memoDateMeta);
       });
     },
 
-    createDayItem(date, todayDate, memoDateMeta) {
-      const fullDate = formatDate(date);
-      const meta = memoDateMeta[fullDate] || {};
+    createDayItem(day, fullDate, todayDate, memoDateMeta) {
+      const meta = memoDateMeta[fullDate];
       return {
-        day: date.getDate(),
+        day,
         fullDate,
         dateKey: fullDate,
-        hasMemo: meta.hasMemo === true,
-        memoColors: Array.isArray(meta.memoColors) ? meta.memoColors : [],
+        hasMemo: !!(meta && meta.hasMemo === true),
+        memoColors: meta && Array.isArray(meta.memoColors) ? meta.memoColors : [],
         isPast: fullDate < todayDate,
         holidayInfo: CHINA_HOLIDAYS_2026[fullDate] || null
       };

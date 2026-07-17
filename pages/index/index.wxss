@@ -163,8 +163,16 @@ page {
 }
 
 .memo-card-wrapper.dragging {
+  position: fixed;
   transition: none !important;
   z-index: 99;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.memo-card-placeholder {
+  width: 100%;
+  flex-shrink: 0;
 }
 
 .memo-card-wrapper.dragging .memo-card {

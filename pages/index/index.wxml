@@ -44,13 +44,18 @@
     <view wx:if="{{selectedMemos.length > 0}}" class="memo-list">
       <block wx:for="{{selectedMemos}}" wx:key="id">
         <view
-          class="memo-card-wrapper {{item.id === swipedMemoId ? 'swiped' : ''}} {{item.id === draggingId ? 'dragging' : ''}}"
+          wx:if="{{item.id === draggingId && dragPreviewReady}}"
+          class="memo-card-placeholder"
+          style="height: {{dragPreviewHeight}}px;"
+        ></view>
+        <view
+          class="memo-card-wrapper {{item.id === swipedMemoId ? 'swiped' : ''}} {{item.id === draggingId && dragPreviewReady ? 'dragging' : ''}}"
           data-id="{{item.id}}"
           data-index="{{index}}"
           bindtouchstart="onSwipeTouchStart"
           bindtouchend="onSwipeTouchEnd"
           bindtouchcancel="onSwipeTouchCancel"
-          style="transform: translateY({{item.id === draggingId ? dragTranslateY : 0}}px);"
+          style="{{item.id === draggingId && dragPreviewReady ? 'top:' + dragPreviewTop + 'px;left:' + dragPreviewLeft + 'px;width:' + dragPreviewWidth + 'px;transform:translate3d(0,' + dragTranslateY + 'px,0);' : ''}}"
         >
           <view
             class="memo-card {{item.completed ? 'memo-card-completed' : ''}}"

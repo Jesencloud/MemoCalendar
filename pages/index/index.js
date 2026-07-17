@@ -59,6 +59,11 @@ Page(Object.assign({
     memoActionId: '',
     draggingId: '',
     dragTranslateY: 0,
+    dragPreviewReady: false,
+    dragPreviewTop: 0,
+    dragPreviewLeft: 0,
+    dragPreviewWidth: 0,
+    dragPreviewHeight: 0,
     sortOrder: 'desc'
   },
 
@@ -150,6 +155,7 @@ Page(Object.assign({
   onUnload() {
     this.clearModalCloseTimer();
     this.clearSwipeCloseTimer();
+    this.stopDragAutoScroll();
     this.clearMemoShareImageCache();
   },
 

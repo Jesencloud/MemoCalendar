@@ -205,6 +205,19 @@ page {
   border-bottom-right-radius: 0;
 }
 
+.memo-color-hit-area {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 68rpx;
+}
+
+.memo-card-wrapper.swiped .memo-color-hit-area {
+  display: none;
+}
+
 .swipe-actions {
   position: absolute;
   right: 0;

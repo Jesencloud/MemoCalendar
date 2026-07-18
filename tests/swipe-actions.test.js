@@ -68,7 +68,7 @@ test('swipe done toggles and commits UI state once after saving', async () => {
   page.saveMemosToStorage = async () => true;
   page.updateMemoDateMeta = () => ({ updated: true });
 
-  await page.onSwipeDoneTap({ currentTarget: { dataset: { id: 'memo-1' } } });
+  await page.onMemoCompletedTap({ currentTarget: { dataset: { id: 'memo-1' } } });
 
   assert.strictEqual(page.memoDates[date][0].completed, true);
   assert.strictEqual(Object.hasOwn(page.memoDates[date][0], 'isSwiped'), false);
@@ -88,7 +88,7 @@ test('memo action lock blocks overlapping swipe actions', async () => {
     return true;
   };
 
-  await page.onSwipeDoneTap({ currentTarget: { dataset: { id: 'memo-2' } } });
+  await page.onMemoCompletedTap({ currentTarget: { dataset: { id: 'memo-2' } } });
 
   assert.strictEqual(saveCalled, false);
   assert.strictEqual(page.memoMutationLock, 'swipe-done:memo-in-progress');
@@ -154,7 +154,7 @@ test('storage failure releases the swipe mutation lock', async () => {
   page.saveMemosToStorage = async () => false;
 
   try {
-    await page.onSwipeDoneTap({ currentTarget: { dataset: { id: 'memo-1' } } });
+    await page.onMemoCompletedTap({ currentTarget: { dataset: { id: 'memo-1' } } });
 
     assert.strictEqual(page.memoMutationLock, '');
     assert.strictEqual(page.data.memoActionId, '');

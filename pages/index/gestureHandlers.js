@@ -456,10 +456,10 @@ module.exports = {
     }), () => this.updateSelectedMemos());
   },
 
-  async onSwipeDoneTap(e) {
+  async onMemoCompletedTap(e) {
     const { id } = e.currentTarget.dataset;
     const { selectedDate } = this.data;
-    const mutationOwner = `swipe-done:${id}`;
+    const mutationOwner = `toggle-completed:${id}`;
     if (!this.startMemoMutation(mutationOwner, id)) return;
 
     try {

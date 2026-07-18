@@ -58,6 +58,13 @@
           style="{{item.id === draggingId && dragPreviewReady ? 'top:' + dragPreviewTop + 'px;left:' + dragPreviewLeft + 'px;width:' + dragPreviewWidth + 'px;transform:translate3d(0,' + dragTranslateY + 'px,0);' : ''}}"
         >
           <view
+            class="memo-color-hit-area"
+            data-id="{{item.id}}"
+            catchtap="onMemoCompletedTap"
+            aria-role="button"
+            aria-label="{{item.completed ? text.todo : text.done}}"
+          ></view>
+          <view
             class="memo-card {{item.completed ? 'memo-card-completed' : ''}}"
             hover-class="{{item.id === swipedMemoId || draggingId ? 'none' : 'memo-card-hover'}}"
             data-id="{{item.id}}"
@@ -97,7 +104,7 @@
             >
               <text>{{text.shareMemo}}</text>
             </button>
-            <view class="swipe-btn btn-done" hover-class="swipe-btn-hover" catchtap="onSwipeDoneTap" data-id="{{item.id}}">
+            <view class="swipe-btn btn-done" hover-class="swipe-btn-hover" catchtap="onMemoCompletedTap" data-id="{{item.id}}">
               <text>{{item.completed ? text.todo : text.done}}</text>
             </view>
             <view class="swipe-btn btn-delete" hover-class="swipe-btn-hover" catchtap="onSwipeDeleteTap" data-id="{{item.id}}">

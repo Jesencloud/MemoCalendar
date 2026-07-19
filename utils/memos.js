@@ -1,6 +1,6 @@
 function cleanMemosUIFields(memos) {
   if (!Array.isArray(memos)) return [];
-  
+
   const hasDirty = memos.some(item => 'isSwiped' in item);
   if (!hasDirty) return memos;
 
@@ -14,7 +14,7 @@ function cleanMemosUIFields(memos) {
 
 function cleanMemoDatesUIFields(memoDates) {
   if (!memoDates) return {};
-  
+
   let hasDirty = false;
   for (const date in memoDates) {
     const list = memoDates[date];

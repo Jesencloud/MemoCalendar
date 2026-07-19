@@ -224,6 +224,25 @@ test('9. mergeImportedData - 同 ID 日程覆盖合并与追加', () => {
   assert.strictEqual(memo3.title, '新增日程3');
 });
 
+test('mergeImportedData does not mutate a clean local memo root', () => {
+  const localMemos = {
+    '2026-07-04': [{ id: 'memo-1', title: 'Local memo' }]
+  };
+  const importedData = {
+    memos: {
+      '2026-07-05': [{ id: 'memo-2', title: 'Imported memo' }]
+    },
+    categories: []
+  };
+
+  const merged = mergeImportedData(importedData, localMemos, [], { palette: MOCK_PALETTE });
+
+  assert.notStrictEqual(merged.memos, localMemos);
+  assert.deepStrictEqual(Object.keys(localMemos), ['2026-07-04']);
+  assert.strictEqual(localMemos['2026-07-05'], undefined);
+  assert.strictEqual(merged.memos['2026-07-05'][0].id, 'memo-2');
+});
+
 test('10. mergeImportedData - 重复分类的去重逻辑', () => {
   const localCategories = [
     { key: 'custom-1', labelCn: '设计', labelEn: 'Design', color: '#ff3b30' }

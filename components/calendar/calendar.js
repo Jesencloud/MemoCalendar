@@ -6,6 +6,15 @@ const { CHINA_HOLIDAYS_2026 } = require('../../data/china_holidays.js');
 const SWIPER_CENTER_INDEX = 1;
 const SWIPER_DURATION_MS = 220;
 
+function areMemoColorsEqual(currentColors, nextColors) {
+  if (currentColors === nextColors) return true;
+  if (!Array.isArray(currentColors) || currentColors.length !== nextColors.length) return false;
+  for (let i = 0; i < currentColors.length; i += 1) {
+    if (currentColors[i] !== nextColors[i]) return false;
+  }
+  return true;
+}
+
 Component({
   calendarSwipeAnimating: false,
 
@@ -30,33 +39,22 @@ Component({
         if (!this.data.currentYear) return;
         if (newVal === oldVal) return;
 
-        if (oldVal && this.data.swiperPanels && this.data.swiperPanels.length > 0) {
-          const changedDates = new Set();
-          for (const date in newVal) {
-            if (JSON.stringify(newVal[date]) !== JSON.stringify(oldVal[date])) {
-              changedDates.add(date);
-            }
-          }
-          for (const date in oldVal) {
-            if (!(date in newVal)) changedDates.add(date);
-          }
-
-          if (changedDates.size === 0) return;
-
+        if (this.data.swiperPanels && this.data.swiperPanels.length > 0) {
+          const memoDateMeta = newVal || {};
           const patch = {};
           this.data.swiperPanels.forEach((panel, pIdx) => {
             panel.days.forEach((dayItem, dIdx) => {
-              if (dayItem.fullDate && changedDates.has(dayItem.fullDate)) {
-                const meta = newVal[dayItem.fullDate];
-                const hasMemo = !!(meta && meta.hasMemo === true);
-                const memoColors = meta && Array.isArray(meta.memoColors) ? meta.memoColors : [];
+              if (!dayItem.fullDate) return;
 
-                if (dayItem.hasMemo !== hasMemo) {
-                  patch[`swiperPanels[${pIdx}].days[${dIdx}].hasMemo`] = hasMemo;
-                }
-                if (dayItem.memoColors.join(',') !== memoColors.join(',')) {
-                  patch[`swiperPanels[${pIdx}].days[${dIdx}].memoColors`] = memoColors;
-                }
+              const meta = memoDateMeta[dayItem.fullDate];
+              const hasMemo = !!(meta && meta.hasMemo === true);
+              const memoColors = meta && Array.isArray(meta.memoColors) ? meta.memoColors : [];
+
+              if (dayItem.hasMemo !== hasMemo) {
+                patch[`swiperPanels[${pIdx}].days[${dIdx}].hasMemo`] = hasMemo;
+              }
+              if (!areMemoColorsEqual(dayItem.memoColors, memoColors)) {
+                patch[`swiperPanels[${pIdx}].days[${dIdx}].memoColors`] = memoColors;
               }
             });
           });

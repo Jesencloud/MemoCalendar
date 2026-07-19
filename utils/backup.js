@@ -136,7 +136,7 @@ function parseBackupData(text, options = {}) {
 }
 
 function mergeImportedData(importedData, localMemos = {}, localCategories = [], options = {}) {
-  const finalMemos = cleanMemoDatesUIFields(localMemos);
+  const finalMemos = Object.assign({}, cleanMemoDatesUIFields(localMemos));
   Object.keys(importedData.memos).forEach(date => {
     if (!Array.isArray(finalMemos[date])) {
       finalMemos[date] = importedData.memos[date];

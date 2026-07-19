@@ -12,6 +12,15 @@ try {
   global.Component = originalComponent;
 }
 
+function setDataValue(data, path, value) {
+  const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.');
+  let target = data;
+  for (let i = 0; i < parts.length - 1; i += 1) {
+    target = target[parts[i]];
+  }
+  target[parts[parts.length - 1]] = value;
+}
+
 function createComponent() {
   const comp = {};
   comp.data = JSON.parse(JSON.stringify(componentDefinition.data));
@@ -24,7 +33,7 @@ function createComponent() {
     this.setDataCalls.push(update);
     const keys = Object.keys(update);
     for (let i = 0; i < keys.length; i += 1) {
-      this.data[keys[i]] = update[keys[i]];
+      setDataValue(this.data, keys[i], update[keys[i]]);
     }
     if (callback) callback();
   };
@@ -39,6 +48,49 @@ function createComponent() {
 
   return comp;
 }
+
+test('memoDateMeta observer patches only changed visible day fields', () => {
+  const comp = createComponent();
+  comp.data.currentYear = 2026;
+  comp.data.swiperPanels = [
+    {
+      days: [
+        { fullDate: '2026-07-19', hasMemo: false, memoColors: [] },
+        { fullDate: '', hasMemo: false }
+      ]
+    }
+  ];
+  const oldMeta = {
+    '2026-01-01': { hasMemo: true, memoColors: ['#111111'] }
+  };
+  const newMeta = {
+    '2026-01-01': { hasMemo: false, memoColors: [] },
+    '2026-07-19': { hasMemo: true, memoColors: ['#fa8231'] }
+  };
+
+  componentDefinition.properties.memoDateMeta.observer.call(comp, newMeta, oldMeta);
+
+  assert.deepStrictEqual(comp.setDataCalls, [{
+    'swiperPanels[0].days[0].hasMemo': true,
+    'swiperPanels[0].days[0].memoColors': ['#fa8231']
+  }]);
+  assert.strictEqual(comp.data.swiperPanels[0].days[0].hasMemo, true);
+  assert.deepStrictEqual(comp.data.swiperPanels[0].days[0].memoColors, ['#fa8231']);
+});
+
+test('memoDateMeta observer skips setData when only off-screen dates change', () => {
+  const comp = createComponent();
+  comp.data.currentYear = 2026;
+  comp.data.swiperPanels = [{
+    days: [{ fullDate: '2026-07-19', hasMemo: false, memoColors: [] }]
+  }];
+
+  componentDefinition.properties.memoDateMeta.observer.call(comp, {
+    '2026-08-20': { hasMemo: true, memoColors: ['#fa8231'] }
+  }, {});
+
+  assert.strictEqual(comp.setDataCalls.length, 0);
+});
 
 // ========== createMonthDays ==========
 

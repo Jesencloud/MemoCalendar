@@ -185,6 +185,7 @@ test('selectDate: sets selectedDate and updates today button', () => {
   assert.strictEqual(page.data.selectedDate, '2026-07-15');
   assert.strictEqual(page.data.showTodayButton, true);
   assert.strictEqual(page.data.sortOrder, 'desc');
+  assert.strictEqual(page.setDataCalls.length, 1);
 });
 
 test('selectDate: hides today button when selecting today', () => {

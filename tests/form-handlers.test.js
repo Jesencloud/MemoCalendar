@@ -38,6 +38,38 @@ function createPage() {
   return page;
 }
 
+function createCategoryRenamePage() {
+  const page = createPage();
+  const date = '2026-07-13';
+  const category = {
+    key: 'custom-1',
+    labelCn: '旧分类',
+    labelEn: 'Old category',
+    color: '#34c759',
+    icon: '🏷️',
+    isCustom: true
+  };
+  const originalMemos = {
+    [date]: [{
+      id: 'memo-1',
+      title: 'Memo',
+      tag: category.key,
+      tagCn: category.labelCn,
+      tagEn: category.labelEn
+    }]
+  };
+  page.data.text = { saved: 'saved' };
+  page.data.categories = [category];
+  page.data.selectedDate = date;
+  page.data.selectedMemos = originalMemos[date];
+  page.data.memoForm = { tag: category.key, color: category.color };
+  page.data.customCategoryName = '新分类';
+  page.data.customCategoryModalVisible = true;
+  page.data.editingCategoryKey = category.key;
+  page.memoDates = originalMemos;
+  return { page, date, category, originalMemos };
+}
+
 test('text inputs update logic data without setData', () => {
   const page = createPage();
 
@@ -151,4 +183,85 @@ test('saving does not replace the visible list after the selected date changes',
   assert.strictEqual(Object.hasOwn(closeData, 'selectedMemos'), false);
   assert.deepStrictEqual(page.data.selectedMemos.map(item => item.id), ['current']);
   assert.deepStrictEqual(page.memoDates[savedDate].map(item => item.id), ['memo-new']);
+});
+
+test('renaming a category commits memos and categories before updating UI', async () => {
+  const { page, date, category, originalMemos } = createCategoryRenamePage();
+  const writes = [];
+  page.getStorage = async key => key === 'memoCalendarMemos' ? originalMemos : [category];
+  page.setStorage = async (key, value) => {
+    writes.push({ key, value });
+  };
+
+  await page.onSaveCustomCategory();
+
+  assert.deepStrictEqual(writes.map(item => item.key), [
+    'memoCalendarMemos',
+    'memoCustomCategories'
+  ]);
+  assert.strictEqual(page.memoDates[date][0].tagCn, '新分类');
+  assert.strictEqual(page.memoDates[date][0].tagEn, '新分类');
+  assert.strictEqual(page.data.selectedMemos[0].tagCn, '新分类');
+  assert.strictEqual(page.data.customCategoryModalVisible, false);
+});
+
+test('category rename rolls back storage and keeps UI unchanged when category write fails', async () => {
+  const { page, category, originalMemos } = createCategoryRenamePage();
+  const snapshot = { memos: originalMemos, categories: [category] };
+  let rollbackSnapshot;
+  let storageFailureShown = false;
+  const originalConsoleError = console.error;
+  console.error = () => {};
+  page.getStorage = async key => key === 'memoCalendarMemos' ? originalMemos : [category];
+  page.setStorage = async key => {
+    if (key === 'memoCustomCategories') throw new Error('category write failed');
+  };
+  page.rollbackBackupStorage = async value => {
+    rollbackSnapshot = value;
+  };
+  page.showStorageFailureToast = () => {
+    storageFailureShown = true;
+  };
+
+  try {
+    await page.onSaveCustomCategory();
+
+    assert.deepStrictEqual(rollbackSnapshot, snapshot);
+    assert.strictEqual(page.memoDates, originalMemos);
+    assert.strictEqual(page.data.selectedMemos[0].tagCn, '旧分类');
+    assert.strictEqual(page.data.customCategoryModalVisible, true);
+    assert.strictEqual(page.data.editingCategoryKey, category.key);
+    assert.strictEqual(storageFailureShown, true);
+  } finally {
+    console.error = originalConsoleError;
+  }
+});
+
+test('new category stays open when storage fails', async () => {
+  const page = createPage();
+  let storageFailureShown = false;
+  const originalConsoleError = console.error;
+  console.error = () => {};
+  page.data.text = { created: 'created' };
+  page.data.categories = [];
+  page.data.customCategoryName = '新分类';
+  page.data.customCategoryModalVisible = true;
+  page.data.editingCategoryKey = null;
+  page.getStorage = async () => [];
+  page.setStorage = async () => {
+    throw new Error('category write failed');
+  };
+  page.showStorageFailureToast = () => {
+    storageFailureShown = true;
+  };
+
+  try {
+    await page.onSaveCustomCategory();
+
+    assert.strictEqual(page.data.customCategoryModalVisible, true);
+    assert.strictEqual(page.data.customCategoryName, '新分类');
+    assert.strictEqual(storageFailureShown, true);
+  } finally {
+    console.error = originalConsoleError;
+  }
 });

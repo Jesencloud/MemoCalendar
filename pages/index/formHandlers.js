@@ -12,6 +12,21 @@ const { DEFAULT_FORM, STORAGE_KEYS } = require('./constants.js');
 
 const MEMO_NOTES_COUNT_THROTTLE_MS = 80;
 
+async function persistCategoryChanges(page, categories, updatedMemoDates, previousData) {
+  if (!updatedMemoDates) {
+    await page.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, categories);
+    return;
+  }
+
+  try {
+    await page.setStorage(STORAGE_KEYS.MEMOS, updatedMemoDates);
+    await page.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, categories);
+  } catch (error) {
+    await page.rollbackBackupStorage(previousData);
+    throw error;
+  }
+}
+
 module.exports = {
   onAddMemoTap() {
     this.vibrate();
@@ -321,32 +336,31 @@ module.exports = {
 
     try {
       const storedCategories = await this.getStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, []);
-      const custom = Array.isArray(storedCategories) ? [...storedCategories] : [];
+      const previousCategories = Array.isArray(storedCategories) ? storedCategories : [];
+      const custom = [...previousCategories];
       let selectedCategory;
       let successMessage;
+      let updatedMemoDates = null;
+      let updatedSelectedMemos = null;
 
       if (editingCategoryKey) {
         const idx = custom.findIndex(c => c.key === editingCategoryKey);
-        if (idx !== -1) {
-          custom[idx] = Object.assign({}, custom[idx], {
-            labelCn: content,
-            labelEn: content
-          });
+        if (idx === -1) {
+          throw new Error(`Custom category not found: ${editingCategoryKey}`);
         }
-        selectedCategory = custom[idx] || {
-          key: editingCategoryKey,
-          color: this.data.memoForm.color
-        };
+        custom[idx] = Object.assign({}, custom[idx], {
+          labelCn: content,
+          labelEn: content
+        });
+        selectedCategory = custom[idx];
         successMessage = text.saved;
 
-        // Sync denormalized fields across all memos
         let memoDatesChanged = false;
-        const updatedMemoDates = Object.assign({}, this.memoDates);
-        let updatedSelectedMemos = null;
-        for (const date in updatedMemoDates) {
-          const list = updatedMemoDates[date];
+        const renamedMemoDates = Object.assign({}, this.memoDates);
+        for (const date in renamedMemoDates) {
+          const list = renamedMemoDates[date];
           if (!Array.isArray(list)) continue;
-          
+
           let dateChanged = false;
           const newList = list.map(memo => {
             if (memo.tag === editingCategoryKey && (memo.tagCn !== content || memo.tagEn !== content)) {
@@ -355,34 +369,16 @@ module.exports = {
             }
             return memo;
           });
-          
+
           if (dateChanged) {
-            updatedMemoDates[date] = newList;
+            renamedMemoDates[date] = newList;
             memoDatesChanged = true;
             if (date === this.data.selectedDate) {
               updatedSelectedMemos = newList;
             }
           }
         }
-        
-        if (memoDatesChanged) {
-          this.memoDates = updatedMemoDates;
-          await this.saveMemosToStorage(updatedMemoDates, '', { changedDateIsClean: true });
-        }
-        
-        const nextData = {
-          categories: mergeCategories(custom),
-          'memoForm.tag': selectedCategory.key,
-          'memoForm.color': selectedCategory.color,
-          customCategoryModalVisible: false,
-          customCategoryName: '',
-          editingCategoryKey: null
-        };
-        if (updatedSelectedMemos) {
-          nextData.selectedMemos = updatedSelectedMemos;
-        }
-        this.setData(nextData);
-
+        updatedMemoDates = memoDatesChanged ? renamedMemoDates : null;
       } else {
         selectedCategory = createCustomCategory(
           this.generateCategoryKey(),
@@ -391,18 +387,33 @@ module.exports = {
         );
         custom.push(selectedCategory);
         successMessage = text.created;
-        
-        this.setData({
-          categories: mergeCategories(custom),
-          'memoForm.tag': selectedCategory.key,
-          'memoForm.color': selectedCategory.color,
-          customCategoryModalVisible: false,
-          customCategoryName: '',
-          editingCategoryKey: null
-        });
       }
 
-      await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, custom);
+      let previousData = null;
+      if (updatedMemoDates) {
+        const storedMemos = await this.getStorage(STORAGE_KEYS.MEMOS, {});
+        previousData = {
+          memos: storedMemos || {},
+          categories: previousCategories
+        };
+      }
+      await persistCategoryChanges(this, custom, updatedMemoDates, previousData);
+
+      if (updatedMemoDates) {
+        this.memoDates = updatedMemoDates;
+      }
+      const nextData = {
+        categories: mergeCategories(custom),
+        'memoForm.tag': selectedCategory.key,
+        'memoForm.color': selectedCategory.color,
+        customCategoryModalVisible: false,
+        customCategoryName: '',
+        editingCategoryKey: null
+      };
+      if (updatedSelectedMemos) {
+        nextData.selectedMemos = cleanMemosUIFields(updatedSelectedMemos);
+      }
+      this.setData(nextData);
 
       this.vibrate('medium');
       this.showToast(successMessage, 'success');

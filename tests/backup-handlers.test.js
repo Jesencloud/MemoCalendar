@@ -270,13 +270,15 @@ test('import blocked when mutation lock is active', async () => {
   assert.strictEqual(page.importingData, false);
 });
 
-test('import text input updates data', () => {
+test('import text input updates logic data without setData', () => {
   const page = createPage();
   page.data.importInputText = '';
+  page.setDataCalls = [];
 
   page.onImportTextInput({ detail: { value: 'test data' } });
 
   assert.strictEqual(page.data.importInputText, 'test data');
+  assert.strictEqual(page.setDataCalls.length, 0);
 });
 
 test('trigger merge import calls processImportData', async () => {

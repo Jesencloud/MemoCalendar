@@ -25,7 +25,9 @@ function createPage() {
   const page = Object.assign({}, pageDefinition);
   page.data = JSON.parse(JSON.stringify(pageDefinition.data));
   page.memoDates = {};
+  page.setDataCalls = [];
   page.setData = function(update, callback) {
+    this.setDataCalls.push(update);
     Object.keys(update).forEach(key => setDataValue(this.data, key, update[key]));
     if (callback) callback();
   };
@@ -35,6 +37,49 @@ function createPage() {
   page.generateMemoId = () => 'memo-new';
   return page;
 }
+
+test('text inputs update logic data without setData', () => {
+  const page = createPage();
+
+  page.onFormTitleInput({ detail: { value: 'Updated title' } });
+  page.onFormLocationInput({ detail: { value: 'Updated location' } });
+  page.onCustomCategoryNameInput({ detail: { value: 'Updated category' } });
+
+  assert.strictEqual(page.data.memoForm.title, 'Updated title');
+  assert.strictEqual(page.data.memoForm.location, 'Updated location');
+  assert.strictEqual(page.data.customCategoryName, 'Updated category');
+  assert.strictEqual(page.setDataCalls.length, 0);
+});
+
+test('notes input throttles counter setData while keeping the latest value', () => {
+  const page = createPage();
+  const originalSetTimeout = global.setTimeout;
+  const originalClearTimeout = global.clearTimeout;
+  let scheduledCallback;
+  let scheduledDelay;
+  global.setTimeout = (callback, delay) => {
+    scheduledCallback = callback;
+    scheduledDelay = delay;
+    return 1;
+  };
+  global.clearTimeout = () => {};
+
+  try {
+    page.onFormNotesInput({ detail: { value: 'first' } });
+    page.onFormNotesInput({ detail: { value: 'latest notes' } });
+
+    assert.strictEqual(page.data.memoForm.notes, 'latest notes');
+    assert.strictEqual(page.setDataCalls.length, 0);
+    assert.strictEqual(scheduledDelay, 80);
+
+    scheduledCallback();
+    assert.strictEqual(page.data.memoNotesLength, 12);
+    assert.strictEqual(page.setDataCalls.length, 1);
+  } finally {
+    global.setTimeout = originalSetTimeout;
+    global.clearTimeout = originalClearTimeout;
+  }
+});
 
 test('saving a memo closes the modal with the cleaned selected list', async () => {
   const page = createPage();

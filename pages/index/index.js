@@ -154,6 +154,7 @@ Page(Object.assign({
 
   onUnload() {
     this.clearModalCloseTimer();
+    this.clearMemoNotesCountTimer();
     this.clearSwipeCloseTimer();
     this.stopDragAutoScroll();
     this.clearMemoShareImageCache();

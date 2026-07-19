@@ -134,9 +134,7 @@ module.exports = {
   },
 
   onImportTextInput(e) {
-    this.setData({
-      importInputText: e.detail.value
-    });
+    this.data.importInputText = e.detail.value;
   },
 
   onTriggerMergeImport() {

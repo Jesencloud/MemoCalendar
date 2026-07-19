@@ -10,10 +10,13 @@ const {
 const { cleanMemosUIFields } = require('../../utils/memos.js');
 const { DEFAULT_FORM, STORAGE_KEYS } = require('./constants.js');
 
+const MEMO_NOTES_COUNT_THROTTLE_MS = 80;
+
 module.exports = {
   onAddMemoTap() {
     this.vibrate();
     this.clearModalCloseTimer();
+    this.clearMemoNotesCountTimer();
     this.clearSwipeCloseTimer();
     this.originalForm = JSON.stringify(DEFAULT_FORM);
     this.setData({
@@ -39,6 +42,7 @@ module.exports = {
 
     this.vibrate();
     this.clearModalCloseTimer();
+    this.clearMemoNotesCountTimer();
     this.clearSwipeCloseTimer();
     this.originalForm = JSON.stringify(memo);
     this.setData({
@@ -51,9 +55,7 @@ module.exports = {
   },
 
   onFormTitleInput(e) {
-    this.setData({
-      'memoForm.title': e.detail.value
-    });
+    this.data.memoForm.title = e.detail.value;
   },
 
   onFormCompletedChange(e) {
@@ -63,17 +65,44 @@ module.exports = {
   },
 
   onFormLocationInput(e) {
-    this.setData({
-      'memoForm.location': e.detail.value
-    });
+    this.data.memoForm.location = e.detail.value;
   },
 
   onFormNotesInput(e) {
     const notes = e.detail.value;
-    this.setData({
-      'memoForm.notes': notes,
-      memoNotesLength: notes.length
-    });
+    this.data.memoForm.notes = notes;
+    this.pendingMemoNotesLength = notes.length;
+    if (this.memoNotesCountTimer) return;
+
+    this.memoNotesCountTimer = setTimeout(() => {
+      this.flushMemoNotesLength();
+    }, MEMO_NOTES_COUNT_THROTTLE_MS);
+  },
+
+  onFormNotesBlur() {
+    this.flushMemoNotesLength();
+  },
+
+  flushMemoNotesLength() {
+    if (this.memoNotesCountTimer) {
+      clearTimeout(this.memoNotesCountTimer);
+      this.memoNotesCountTimer = null;
+    }
+    if (typeof this.pendingMemoNotesLength !== 'number') return;
+
+    const memoNotesLength = this.pendingMemoNotesLength;
+    this.pendingMemoNotesLength = null;
+    if (this.data.memoNotesLength !== memoNotesLength) {
+      this.setData({ memoNotesLength });
+    }
+  },
+
+  clearMemoNotesCountTimer() {
+    if (this.memoNotesCountTimer) {
+      clearTimeout(this.memoNotesCountTimer);
+      this.memoNotesCountTimer = null;
+    }
+    this.pendingMemoNotesLength = null;
   },
 
   onFormTimeChange(e) {
@@ -197,6 +226,7 @@ module.exports = {
   _closeModalWithData(extraData = {}, callback = null) {
     if (!this.data.modalVisible || this.data.modalClosing) return false;
 
+    this.clearMemoNotesCountTimer();
     const dataToSet = Object.assign({ modalClosing: true }, extraData);
     this.setData(dataToSet, () => {
       wx.hideKeyboard({ fail: () => {} });
@@ -243,9 +273,7 @@ module.exports = {
   },
 
   onCustomCategoryNameInput(e) {
-    this.setData({
-      customCategoryName: e.detail.value
-    });
+    this.data.customCategoryName = e.detail.value;
   },
 
   onCloseCustomCategoryModal() {

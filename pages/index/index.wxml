@@ -230,6 +230,7 @@
             placeholder="{{text.inputNotesPlaceholder}}"
             value="{{memoForm.notes}}"
             bindinput="onFormNotesInput"
+            bindblur="onFormNotesBlur"
             maxlength="200"
             fixed="{{true}}"
             cursor-spacing="50"

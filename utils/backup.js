@@ -109,14 +109,7 @@ function normalizeImportedMemo(item, categoryMap, fallbackCategory) {
   };
 }
 
-function parseBackupData(text, options = {}) {
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch (e) {
-    return null;
-  }
-
+function normalizeBackupObject(data, options = {}) {
   if (!isPlainObject(data) || data.app !== BACKUP_APP) return null;
 
   const importedCategories = normalizeImportedCategories(data.categories, options.palette);
@@ -133,6 +126,16 @@ function parseBackupData(text, options = {}) {
     memos: importedMemos,
     categories: importedCategories
   };
+}
+
+function parseBackupData(text, options = {}) {
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    return null;
+  }
+  return normalizeBackupObject(data, options);
 }
 
 function mergeImportedData(importedData, localMemos = {}, localCategories = [], options = {}) {
@@ -171,6 +174,7 @@ function mergeImportedData(importedData, localMemos = {}, localCategories = [], 
 
 module.exports = {
   parseBackupData,
+  normalizeBackupObject,
   mergeImportedData,
   normalizeImportedCategories,
   normalizeImportedMemoDates,

@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const {
   parseBackupData,
+  normalizeBackupObject,
   mergeImportedData,
   normalizeImportedCategories
 } = require('../utils/backup.js');
@@ -66,6 +67,28 @@ test('3. parseBackupData - 正常数据导入解析', () => {
   assert.strictEqual(result.memos['2026-07-04'][0].title, '工作日程');
   assert.strictEqual(result.categories.length, 1);
   assert.strictEqual(result.categories[0].key, 'custom-1');
+});
+
+test('normalizeBackupObject matches the text parsing normalization result', () => {
+  const backupObject = {
+    version: 1,
+    app: 'MemoCalendar',
+    memos: {
+      '2026-07-19': [{
+        id: 'memo-object',
+        title: ' Object import ',
+        time: '9:05',
+        tag: 'Sport',
+        completed: false
+      }]
+    },
+    categories: []
+  };
+
+  assert.deepStrictEqual(
+    normalizeBackupObject(backupObject, options),
+    parseBackupData(JSON.stringify(backupObject), options)
+  );
 });
 
 test('4. parseBackupData - 字段超长裁剪规则', () => {

@@ -1,4 +1,4 @@
-const { parseBackupData } = require('./backup.js');
+const { normalizeBackupObject } = require('./backup.js');
 const { encodeJsonPayload, decodeJsonPayload } = require('./encoding.js');
 
 const SHARE_APP = 'MemoCalendar';
@@ -97,7 +97,7 @@ function parseSharedMemoPayload(text, options = {}) {
   const backupData = expandSharedMemoData(compactData);
   if (!backupData) return null;
 
-  const importedData = parseBackupData(JSON.stringify(backupData), options);
+  const importedData = normalizeBackupObject(backupData, options);
   if (!importedData) return null;
 
   const dates = Object.keys(importedData.memos);

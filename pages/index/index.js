@@ -544,16 +544,6 @@ Page(Object.assign({
     this.setData(this.releaseMemoMutation(extraData));
   },
 
-  updateSelectedMemos() {
-    this.clearSwipeCloseTimer();
-    const { selectedDate } = this.data;
-    const list = this.memoDates[selectedDate] || [];
-    this.setData({
-      selectedMemos: cleanMemosUIFields(list),
-      swipedMemoId: ''
-    });
-  },
-
   async sortByTime() {
     const { selectedMemos, selectedDate, text, sortOrder } = this.data;
     if (!selectedMemos || selectedMemos.length <= 1) return;
@@ -644,14 +634,15 @@ Page(Object.assign({
       return;
     }
 
+    this.clearSwipeCloseTimer();
     const todayDate = this.todayDate || this.getTodayDate();
+    const list = this.memoDates[date] || [];
     this.setData({
       selectedDate: date,
+      selectedMemos: cleanMemosUIFields(list),
       showTodayButton: date !== todayDate,
       swipedMemoId: '',
       sortOrder: 'desc'
-    }, () => {
-      this.updateSelectedMemos();
     });
   },
 

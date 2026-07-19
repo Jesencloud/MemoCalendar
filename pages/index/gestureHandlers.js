@@ -401,9 +401,13 @@ module.exports = {
     if (!this.data.draggingId) return;
     const mutationOwner = 'drag';
     if (!this.startMemoMutation(mutationOwner)) {
+      this.clearSwipeCloseTimer();
+      const list = this.memoDates[this.data.selectedDate] || [];
       this.setData(getDragResetData({
-        sortOrder: 'desc'
-      }), () => this.updateSelectedMemos());
+        sortOrder: 'desc',
+        selectedMemos: cleanMemosUIFields(list),
+        swipedMemoId: ''
+      }));
       this.cardRects = null;
       this.lastDragTranslateY = 0;
       return;
@@ -420,11 +424,13 @@ module.exports = {
         { changedDateIsClean: true }
       );
       if (!saveSucceeded) {
+        this.clearSwipeCloseTimer();
+        const list = this.memoDates[this.data.selectedDate] || [];
         this.setData(getDragResetData({
-          sortOrder: 'desc'
-        }), () => {
-          this.updateSelectedMemos();
-        });
+          sortOrder: 'desc',
+          selectedMemos: cleanMemosUIFields(list),
+          swipedMemoId: ''
+        }));
         return;
       }
 
@@ -451,9 +457,13 @@ module.exports = {
 
     this.cardRects = null;
     this.lastDragTranslateY = 0;
+    this.clearSwipeCloseTimer();
+    const list = this.memoDates[this.data.selectedDate] || [];
     this.setData(getDragResetData({
-      sortOrder: 'desc'
-    }), () => this.updateSelectedMemos());
+      sortOrder: 'desc',
+      selectedMemos: cleanMemosUIFields(list),
+      swipedMemoId: ''
+    }));
   },
 
   async onMemoCompletedTap(e) {

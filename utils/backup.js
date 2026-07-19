@@ -173,6 +173,8 @@ function mergeImportedData(importedData, localMemos = {}, localCategories = [], 
 }
 
 module.exports = {
+  isPlainObject,
+  normalizeImportedTime,
   parseBackupData,
   normalizeBackupObject,
   mergeImportedData,

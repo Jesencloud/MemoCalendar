@@ -145,14 +145,14 @@
   - `"app"`: 必须为固定的 `"MemoCalendar"`。导入模块会校验该指纹，非本应用的数据会被拒绝，防止数据污染。
 * **日程列表 (`"memos"`)**：
   - 以日期 `"YYYY-MM-DD"` 为 Key，对应的值是当天日程的数组。
-  - `id` (必填): 唯一标识符。系统采用 `memo-YYYYMMDD-HHMMSSms-random` 命名格式以极大提升导出数据的可读性。
+  - `id` (必填): 唯一标识符。系统采用 `memo-时间戳-随机字符` 命名格式以兼顾轻量化与绝对唯一性。
   - `title` (必填): 日程标题（限制 40 字内）。
   - `tag` (必填): 分类 Key（如 `Work`, `Life`, `Sport`, `Study`, `Important` 或自定义的 `custom-xxx`）。
   - `completed` (必填): 是否已完成（布尔值 `true`/`false`）。
   - `time`, `location`, `notes` (选填): 包含相应的长度防爆校验。
 * **自定义分类列表 (`"categories"`)**：
   - 存放用户自定义的分类项。
-  - `key` (必填): 必须以 `"custom-` 开头。系统采用 `custom-YYYYMMDD-HHMMSSms` 命名格式以兼顾唯一性与可读性。
+  - `key` (必填): 必须以 `"custom-"` 开头。系统采用 `custom-时间戳` 命名格式以兼顾唯一性与轻量化。
   - `labelCn` / `labelEn` (必填): 中英文显示名（限制 10 字内）。
   - `color`: Hex 颜色代码（如 `"#34c759"`）。
   - `icon` (选填): 单个 Emoji 图标。

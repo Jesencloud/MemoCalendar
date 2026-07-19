@@ -465,19 +465,19 @@ module.exports = {
     if (!this.startMemoMutation(mutationOwner, id)) return;
 
     try {
+      const rawList = this.memoDates[selectedDate] || [];
       let found = false;
-      const dayMemos = (this.memoDates[selectedDate] || []).map(item => {
-        const cleanItem = Object.assign({}, item);
-        delete cleanItem.isSwiped;
-        if (cleanItem.id === id) {
-          cleanItem.completed = !cleanItem.completed;
+      const toggled = rawList.map(item => {
+        if (item.id === id) {
           found = true;
+          return Object.assign({}, item, { completed: !item.completed });
         }
-        return cleanItem;
+        return item;
       });
       if (!found) return;
 
       this.vibrate();
+      const dayMemos = cleanMemosUIFields(toggled);
       const updatedMemoDates = Object.assign({}, this.memoDates, {
         [selectedDate]: dayMemos
       });

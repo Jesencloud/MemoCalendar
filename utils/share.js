@@ -1,4 +1,4 @@
-const { normalizeBackupObject } = require('./backup.js');
+const { normalizeBackupObject, isPlainObject, normalizeImportedTime } = require('./backup.js');
 const { encodeJsonPayload, decodeJsonPayload } = require('./encoding.js');
 
 const SHARE_APP = 'MemoCalendar';
@@ -6,18 +6,8 @@ const SHARE_TYPE = 'memo-share';
 const MAX_SHARE_PATH_LENGTH = 2048;
 const CATEGORY_CONTENT_FIELDS = ['tag', 'color', 'tagCn', 'tagEn', 'categoryIcon'];
 
-function isPlainObject(value) {
-  return Object.prototype.toString.call(value) === '[object Object]';
-}
-
 function normalizeShareText(value, maxLength) {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
-}
-
-function normalizeShareTime(value) {
-  if (typeof value !== 'string') return '';
-  const match = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(value.trim());
-  return match ? `${match[1].padStart(2, '0')}:${match[2]}` : '';
 }
 
 function createSharedMemoPayload(date, memo, category, options = {}) {
@@ -32,7 +22,7 @@ function createSharedMemoPayload(date, memo, category, options = {}) {
     m: {
       i: normalizeShareText(memo.id, 80),
       ti: normalizeShareText(memo.title, 40),
-      tm: normalizeShareTime(memo.time),
+      tm: normalizeImportedTime(memo.time),
       l: normalizeShareText(memo.location, 100),
       n: includeNotes ? normalizeShareText(memo.notes, 200) : '',
       g: normalizeShareText(memo.tag, 80),

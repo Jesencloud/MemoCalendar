@@ -279,13 +279,6 @@ Page(Object.assign({
     });
   },
 
-  cleanMemoDateUIFields(memoDates, date) {
-    const cleanMemoDates = Object.assign({}, memoDates);
-    if (Object.prototype.hasOwnProperty.call(cleanMemoDates, date) && Array.isArray(cleanMemoDates[date])) {
-      cleanMemoDates[date] = cleanMemosUIFields(cleanMemoDates[date]);
-    }
-    return cleanMemoDates;
-  },
 
   refreshMemoDateMetaAsync(memoDates = this.memoDates) {
     const source = memoDates || {};
@@ -352,34 +345,27 @@ Page(Object.assign({
     return nextMeta;
   },
 
-  getFormattedDateTime() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    const ms = String(now.getMilliseconds()).padStart(3, '0');
-    return `${year}${month}${day}-${hours}${minutes}${seconds}${ms}`;
-  },
-
   generateCategoryKey() {
-    return `custom-${this.getFormattedDateTime()}`;
+    return `custom-${Date.now()}`;
   },
 
   generateMemoId() {
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `memo-${this.getFormattedDateTime()}-${random}`;
+    return `memo-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
   },
 
   async saveMemosToStorage(memoDates, changedDate = '', options = {}) {
     try {
-      const cleanMemoDates = options.changedDateIsClean
-        ? memoDates
-        : changedDate
-        ? this.cleanMemoDateUIFields(memoDates, changedDate)
-        : cleanMemoDatesUIFields(memoDates);
+      let cleanMemoDates;
+      if (options.changedDateIsClean) {
+        cleanMemoDates = memoDates;
+      } else if (changedDate) {
+        cleanMemoDates = Object.assign({}, memoDates);
+        if (Array.isArray(cleanMemoDates[changedDate])) {
+          cleanMemoDates[changedDate] = cleanMemosUIFields(cleanMemoDates[changedDate]);
+        }
+      } else {
+        cleanMemoDates = cleanMemoDatesUIFields(memoDates);
+      }
       await this.setStorage(STORAGE_KEYS.MEMOS, cleanMemoDates);
       return true;
     } catch (e) {

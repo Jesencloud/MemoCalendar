@@ -338,6 +338,51 @@ module.exports = {
           color: this.data.memoForm.color
         };
         successMessage = text.saved;
+
+        // Sync denormalized fields across all memos
+        let memoDatesChanged = false;
+        const updatedMemoDates = Object.assign({}, this.memoDates);
+        let updatedSelectedMemos = null;
+        for (const date in updatedMemoDates) {
+          const list = updatedMemoDates[date];
+          if (!Array.isArray(list)) continue;
+          
+          let dateChanged = false;
+          const newList = list.map(memo => {
+            if (memo.tag === editingCategoryKey && (memo.tagCn !== content || memo.tagEn !== content)) {
+              dateChanged = true;
+              return Object.assign({}, memo, { tagCn: content, tagEn: content });
+            }
+            return memo;
+          });
+          
+          if (dateChanged) {
+            updatedMemoDates[date] = newList;
+            memoDatesChanged = true;
+            if (date === this.data.selectedDate) {
+              updatedSelectedMemos = newList;
+            }
+          }
+        }
+        
+        if (memoDatesChanged) {
+          this.memoDates = updatedMemoDates;
+          await this.saveMemosToStorage(updatedMemoDates, '', { changedDateIsClean: true });
+        }
+        
+        const nextData = {
+          categories: mergeCategories(custom),
+          'memoForm.tag': selectedCategory.key,
+          'memoForm.color': selectedCategory.color,
+          customCategoryModalVisible: false,
+          customCategoryName: '',
+          editingCategoryKey: null
+        };
+        if (updatedSelectedMemos) {
+          nextData.selectedMemos = updatedSelectedMemos;
+        }
+        this.setData(nextData);
+
       } else {
         selectedCategory = createCustomCategory(
           this.generateCategoryKey(),
@@ -346,17 +391,18 @@ module.exports = {
         );
         custom.push(selectedCategory);
         successMessage = text.created;
+        
+        this.setData({
+          categories: mergeCategories(custom),
+          'memoForm.tag': selectedCategory.key,
+          'memoForm.color': selectedCategory.color,
+          customCategoryModalVisible: false,
+          customCategoryName: '',
+          editingCategoryKey: null
+        });
       }
 
       await this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, custom);
-      this.setData({
-        categories: mergeCategories(custom),
-        'memoForm.tag': selectedCategory.key,
-        'memoForm.color': selectedCategory.color,
-        customCategoryModalVisible: false,
-        customCategoryName: '',
-        editingCategoryKey: null
-      });
 
       this.vibrate('medium');
       this.showToast(successMessage, 'success');
@@ -371,6 +417,21 @@ module.exports = {
   onDeleteCustomTag(e) {
     const { key, name } = e.currentTarget.dataset;
     const { text } = this.data;
+
+    let isInUse = false;
+    for (const date in this.memoDates) {
+      const list = this.memoDates[date];
+      if (Array.isArray(list) && list.some(memo => memo.tag === key)) {
+        isInUse = true;
+        break;
+      }
+    }
+
+    if (isInUse) {
+      this.vibrate('medium');
+      this.showToast(text.categoryInUse || '该分类下有日程，无法删除');
+      return;
+    }
 
     this.vibrate('medium');
     this.showConfirm({

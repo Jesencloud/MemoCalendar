@@ -5,6 +5,8 @@ const { getTranslations } = require('../utils/i18n.js');
 test('getTranslations returns the requested language', () => {
   assert.strictEqual(getTranslations('zh').today, '今天');
   assert.strictEqual(getTranslations('en').today, 'Today');
+  assert.strictEqual(getTranslations('zh').shareMemoInviteTitle, '你收到一个日程邀请');
+  assert.strictEqual(getTranslations('en').shareMemoInviteTitle, "You're invited to an event");
 });
 
 test('getTranslations falls back to Chinese for unknown languages', () => {

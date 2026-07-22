@@ -285,7 +285,7 @@ test('card share button returns a path containing the selected memo', () => {
     }
   });
 
-  assert.match(config.title, /页面分享测试/);
+  assert.strictEqual(config.title, '你收到一个日程邀请');
   assert.match(config.path, /[?&]share=/);
   assert.doesNotMatch(config.path, /[?&]lang=/);
 
@@ -366,8 +366,11 @@ test('card share button resolves a generated weekly preview image', async () => 
     const resolvedConfig = await config.promise;
 
     assert.strictEqual(resolvedConfig.imageUrl, '/tmp/memo-share.png');
+    assert.strictEqual(resolvedConfig.title, '你收到一个日程邀请');
     assert.match(resolvedConfig.path, /[?&]share=/);
     assert.ok(drawnText.includes('2026年8月1日'));
+    assert.ok(drawnText.includes('周历分享图'));
+    assert.ok(drawnText.includes('09:30  ·  会议室'));
     assert.ok(!drawnText.some(text => typeof text === 'string' && text.includes(' - ')));
     assert.ok(!drawnText.includes('备忘录日历'));
     assert.ok(drawnText.includes('设计'));

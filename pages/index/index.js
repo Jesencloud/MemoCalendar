@@ -174,14 +174,6 @@ Page(Object.assign({
     return dayMemos.find(memo => memo.id === id) || null;
   },
 
-  createMemoShareTitle(memo, date) {
-    const { text } = this.data;
-    const titleParts = [date];
-    if (memo.time) titleParts.push(memo.time);
-    titleParts.push(memo.title);
-    return `${text.shareMemoTitlePrefix}${titleParts.join(' ')}`.slice(0, 80);
-  },
-
   onShareAppMessage(e) {
     const defaultConfig = this.getDefaultShareConfig();
     if (!e || e.from !== 'button') return defaultConfig;
@@ -205,7 +197,7 @@ Page(Object.assign({
     }
 
     const shareConfig = {
-      title: this.createMemoShareTitle(memo, date),
+      title: this.data.text.shareMemoInviteTitle,
       path
     };
     if (typeof this.createMemoShareImage !== 'function') return shareConfig;

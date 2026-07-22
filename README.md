@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/logo.jpg" alt="Memo Calendar Logo" width="160">
+</p>
+
 # Memo Calendar (备忘录日历)
 
 > 📅 **极致拟物手账美学，丝滑流畅的日程规划小程序**
@@ -174,3 +178,21 @@
 2. 选择本项目的根目录。
 3. 工具会自动读取 `project.config.json` 中的配置。
 4. 在模拟器或真机中预览并测试这款极具质感的小程序！
+
+---
+
+## 🔒 版权与许可
+
+Copyright © 2026 Jesencloud. All Rights Reserved.
+
+本项目为专有软件，仅供查看。未经版权人事先书面授权，任何个人或组织均不得复制、使用、修改、编译、部署、发布、分发、再许可、销售本项目的任何内容，也不得基于本项目创作衍生作品。详情请参阅 [LICENSE](./LICENSE)。
+
+---
+
+## 📱 关注
+
+扫码关注，获取项目相关动态：
+
+<p align="center">
+  <img src="./assets/QRcode.png" alt="关注二维码" width="240">
+</p>

@@ -44,6 +44,10 @@
         "type": "file"
       },
       {
+        "value": "LICENSE",
+        "type": "file"
+      },
+      {
         "value": ".gitignore",
         "type": "file"
       },
@@ -94,6 +98,10 @@
       {
         "value": "build",
         "type": "folder"
+      },
+      {
+        "value":"assets",
+        "type":"folder"
       },
       {
         "value": ".log",

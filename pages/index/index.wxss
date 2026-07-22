@@ -264,15 +264,15 @@ button.swipe-btn::after {
 }
 
 .swipe-btn.btn-share {
-  background: #64748b;
+  background: #1077CD;
 }
 
 .swipe-btn.btn-done {
-  background: #278553; /* Fresh Green */
+  background: #9ca3af; /* Fresh Green */
 }
 
 .swipe-btn.btn-delete {
-  background: #cb4843; /* Warm Coral Red */
+  background: #FA524F; /* Warm Coral Red */
 }
 
 

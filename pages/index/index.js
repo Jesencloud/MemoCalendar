@@ -8,7 +8,7 @@ const {
   findCategoryByKey,
   mergeCategories
 } = require('../../utils/categories.js');
-const { mergeImportedData } = require('../../utils/backup.js');
+const { mergeImportedData, MAX_BACKUP_TEXT_LENGTH } = require('../../utils/backup.js');
 const {
   MAX_SHARE_PATH_LENGTH,
   createSharedMemoPayload,
@@ -17,7 +17,11 @@ const {
   getSharedMemoSaveState,
   removeMemoByIdFromDates
 } = require('../../utils/share.js');
-const { STORAGE_KEYS, DEFAULT_FORM } = require('./constants.js');
+const {
+  STORAGE_KEYS,
+  STORAGE_ROLLBACK_ERROR_CODE,
+  DEFAULT_FORM
+} = require('./constants.js');
 
 const gestureHandlers = require('./gestureHandlers.js');
 const formHandlers = require('./formHandlers.js');
@@ -46,6 +50,7 @@ Page(Object.assign({
     importInputText: '',
     importingData: false,
     exportingData: false,
+    maxBackupTextLength: MAX_BACKUP_TEXT_LENGTH,
     sharePreviewVisible: false,
     sharedMemoDate: '',
     sharedMemo: null,
@@ -375,8 +380,12 @@ Page(Object.assign({
     wx.vibrateShort({ type, fail: () => {} });
   },
 
-  showStorageFailureToast() {
-    this.showToast(this.data.text.storageFailed);
+  showStorageFailureToast(error = null) {
+    const text = this.data.text || {};
+    const title = error && error.code === STORAGE_ROLLBACK_ERROR_CODE
+      ? (text.storageRecoveryFailed || text.storageFailed)
+      : text.storageFailed;
+    this.showToast(title);
   },
 
   parseSharedMemoOption(share) {
@@ -554,13 +563,19 @@ Page(Object.assign({
 
       this.vibrate();
       this.memoDates = updatedMemoDates;
-      this.setData({
-        selectedMemos: sorted,
+      const dateStillSelected = this.data.selectedDate === selectedDate;
+      const nextData = {
         memoDateMeta: this.updateMemoDateMeta(this.data.memoDateMeta, selectedDate, sorted),
-        swipedMemoId: '',
-        sortOrder: nextOrder
-      }, () => {
-        this.showToast(nextOrder === 'asc' ? text.sortAsc : text.sortDesc, 'success');
+        swipedMemoId: ''
+      };
+      if (dateStillSelected) {
+        nextData.selectedMemos = sorted;
+        nextData.sortOrder = nextOrder;
+      }
+      this.setData(nextData, () => {
+        if (dateStillSelected) {
+          this.showToast(nextOrder === 'asc' ? text.sortAsc : text.sortDesc, 'success');
+        }
       });
     } finally {
       if (this.memoMutationLock === mutationOwner) {

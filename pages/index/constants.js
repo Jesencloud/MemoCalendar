@@ -5,6 +5,7 @@ const STORAGE_KEYS = {
   CUSTOM_CATEGORIES: 'memoCustomCategories',
   LANGUAGE: 'memoCalendarLanguage'
 };
+const STORAGE_ROLLBACK_ERROR_CODE = 'STORAGE_ROLLBACK_FAILED';
 
 const DEFAULT_FORM = {
   id: '',
@@ -19,5 +20,6 @@ const DEFAULT_FORM = {
 
 module.exports = {
   STORAGE_KEYS,
+  STORAGE_ROLLBACK_ERROR_CODE,
   DEFAULT_FORM
 };

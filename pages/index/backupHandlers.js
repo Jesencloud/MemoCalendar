@@ -1,4 +1,5 @@
 const {
+  MAX_BACKUP_TEXT_LENGTH,
   parseBackupData,
   mergeImportedData
 } = require('../../utils/backup.js');
@@ -9,7 +10,7 @@ const {
   mergeCategories
 } = require('../../utils/categories.js');
 const { isValidDateString } = require('../../utils/date.js');
-const { STORAGE_KEYS } = require('./constants.js');
+const { STORAGE_KEYS, STORAGE_ROLLBACK_ERROR_CODE } = require('./constants.js');
 
 module.exports = {
   async getBackupStorageSnapshot() {
@@ -25,18 +26,36 @@ module.exports = {
 
   async rollbackBackupStorage(snapshot) {
     const errors = [];
+    const restoreValue = async (key, data) => {
+      let lastError;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          await this.setStorage(key, data);
+          return;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      throw lastError;
+    };
+
     await Promise.all([
-      this.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, snapshot.categories).catch(err => {
+      restoreValue(STORAGE_KEYS.CUSTOM_CATEGORIES, snapshot.categories).catch(err => {
         errors.push(err);
       }),
-      this.setStorage(STORAGE_KEYS.MEMOS, snapshot.memos).catch(err => {
+      restoreValue(STORAGE_KEYS.MEMOS, snapshot.memos).catch(err => {
         errors.push(err);
       })
     ]);
 
     if (errors.length > 0) {
-      console.error('Failed to rollback imported data:', errors);
+      const rollbackError = new Error('Failed to rollback storage');
+      rollbackError.code = STORAGE_ROLLBACK_ERROR_CODE;
+      rollbackError.errors = errors;
+      throw rollbackError;
     }
+
+    return true;
   },
 
   async saveImportedDataSafely(finalData, previousData) {
@@ -46,8 +65,13 @@ module.exports = {
       return true;
     } catch (e) {
       console.error('Failed to save imported data:', e);
-      await this.rollbackBackupStorage(previousData);
-      this.showStorageFailureToast();
+      try {
+        await this.rollbackBackupStorage(previousData);
+        this.showStorageFailureToast();
+      } catch (rollbackError) {
+        console.error('Failed to recover previous storage data:', rollbackError);
+        this.showStorageFailureToast(rollbackError);
+      }
       return false;
     }
   },
@@ -134,7 +158,10 @@ module.exports = {
   },
 
   onImportTextInput(e) {
-    this.data.importInputText = e.detail.value;
+    const value = e && e.detail && typeof e.detail.value === 'string'
+      ? e.detail.value
+      : '';
+    this.data.importInputText = value.slice(0, MAX_BACKUP_TEXT_LENGTH);
   },
 
   onTriggerMergeImport() {
@@ -181,6 +208,11 @@ module.exports = {
 
     const { text: txt } = this.data;
     try {
+      if (typeof text !== 'string' || text.length > MAX_BACKUP_TEXT_LENGTH) {
+        this.showToast(txt.backupDataTooLarge || txt.invalidBackupFormat);
+        return;
+      }
+
       const importedData = parseBackupData(text, {
         defaultCategories: DEFAULT_CATEGORIES,
         palette: CATEGORY_PALETTE,

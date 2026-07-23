@@ -173,6 +173,37 @@ test('sortByTime: releases lock on save failure', async () => {
   assert.strictEqual(page.memoMutationLock, '');
 });
 
+test('sortByTime: does not replace the visible list after the selected date changes', async () => {
+  const page = createPage();
+  const originalDate = '2026-07-13';
+  const nextDate = '2026-07-14';
+  page.data.selectedDate = originalDate;
+  page.data.sortOrder = 'desc';
+  page.data.selectedMemos = [
+    { id: 'memo-1', time: '14:00' },
+    { id: 'memo-2', time: '09:00' }
+  ];
+  page.data.memoDateMeta = {};
+  page.memoDates = {
+    [originalDate]: page.data.selectedMemos,
+    [nextDate]: [{ id: 'memo-next', time: '08:00' }]
+  };
+  let finishSave;
+  page.saveMemosToStorage = () => new Promise(resolve => {
+    finishSave = resolve;
+  });
+
+  const sorting = page.sortByTime();
+  page.selectDate(nextDate);
+  finishSave(true);
+  await sorting;
+
+  assert.strictEqual(page.data.selectedDate, nextDate);
+  assert.deepStrictEqual(page.data.selectedMemos, page.memoDates[nextDate]);
+  assert.strictEqual(page.data.sortOrder, 'desc');
+  assert.strictEqual(page.memoDates[originalDate][0].id, 'memo-2');
+});
+
 // ========== selectDate ==========
 
 test('selectDate: sets selectedDate and updates today button', () => {

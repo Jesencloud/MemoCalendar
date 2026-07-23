@@ -419,7 +419,7 @@ module.exports = {
       this.showToast(successMessage, 'success');
     } catch (e) {
       console.error('Failed to save custom category:', e);
-      this.showStorageFailureToast();
+      this.showStorageFailureToast(e);
     } finally {
       this.finishBusyState('savingCategory');
     }

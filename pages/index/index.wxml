@@ -426,7 +426,7 @@
             placeholder="{{text.pastePlaceholder}}"
             value="{{importInputText}}"
             bindinput="onImportTextInput"
-            maxlength="-1"
+            maxlength="{{maxBackupTextLength}}"
             disabled="{{exportingData || importingData}}"
             disable-default-padding="{{true}}"
           />

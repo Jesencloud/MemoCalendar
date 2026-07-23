@@ -1,6 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const {
+  MAX_BACKUP_TEXT_LENGTH,
+  MAX_MEMOS_PER_DATE,
+  MAX_MEMO_ID_LENGTH,
+  MAX_CATEGORY_ICON_LENGTH,
   parseBackupData,
   normalizeBackupObject,
   mergeImportedData,
@@ -131,6 +135,72 @@ test('4. parseBackupData - 字段超长裁剪规则', () => {
   const cat = result.categories[0];
   assert.strictEqual(cat.labelCn.length, 10);
   assert.strictEqual(cat.labelEn.length, 10);
+});
+
+test('parseBackupData rejects backup text above the size limit', () => {
+  const result = parseBackupData('x'.repeat(MAX_BACKUP_TEXT_LENGTH + 1), options);
+  assert.strictEqual(result, null);
+});
+
+test('parseBackupData rejects memo IDs above the length limit', () => {
+  const data = JSON.stringify({
+    version: 1,
+    app: 'MemoCalendar',
+    memos: {
+      '2026-07-04': [{ id: 'x'.repeat(MAX_MEMO_ID_LENGTH + 1), title: 'Too long ID' }]
+    },
+    categories: []
+  });
+
+  assert.strictEqual(parseBackupData(data, options), null);
+});
+
+test('parseBackupData truncates oversized custom category icons', () => {
+  const data = JSON.stringify({
+    version: 1,
+    app: 'MemoCalendar',
+    memos: {},
+    categories: [{
+      key: 'custom-icon',
+      labelCn: '图标',
+      labelEn: 'Icon',
+      color: '#ff3b30',
+      icon: '😀'.repeat(MAX_CATEGORY_ICON_LENGTH + 1)
+    }]
+  });
+
+  const result = parseBackupData(data, options);
+  assert.ok(result);
+  assert.strictEqual(Array.from(result.categories[0].icon).length, MAX_CATEGORY_ICON_LENGTH);
+});
+
+test('parseBackupData rejects duplicate memo IDs across the backup', () => {
+  const data = JSON.stringify({
+    version: 1,
+    app: 'MemoCalendar',
+    memos: {
+      '2026-07-04': [{ id: 'memo-duplicate', title: 'First' }],
+      '2026-07-05': [{ id: 'memo-duplicate', title: 'Second' }]
+    },
+    categories: []
+  });
+
+  assert.strictEqual(parseBackupData(data, options), null);
+});
+
+test('parseBackupData rejects too many memos on one date', () => {
+  const dayMemos = Array.from({ length: MAX_MEMOS_PER_DATE + 1 }, (_, index) => ({
+    id: `memo-${index}`,
+    title: `Memo ${index}`
+  }));
+  const data = JSON.stringify({
+    version: 1,
+    app: 'MemoCalendar',
+    memos: { '2026-07-04': dayMemos },
+    categories: []
+  });
+
+  assert.strictEqual(parseBackupData(data, options), null);
 });
 
 test('5. parseBackupData - 未知分类回退到默认分类', () => {

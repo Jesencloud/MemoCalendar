@@ -3,14 +3,32 @@ const { cleanMemoDatesUIFields } = require('./memos.js');
 
 const BACKUP_APP = 'MemoCalendar';
 const DEFAULT_COLOR = '#fa8231';
+const MAX_BACKUP_TEXT_LENGTH = 2 * 1024 * 1024;
+const MAX_IMPORTED_CATEGORIES = 200;
+const MAX_IMPORTED_DATES = 3660;
+const MAX_IMPORTED_MEMOS = 10000;
+const MAX_MEMOS_PER_DATE = 500;
+const MAX_MEMO_ID_LENGTH = 80;
+const MAX_CATEGORY_ICON_LENGTH = 8;
 
 function isPlainObject(value) {
   return Object.prototype.toString.call(value) === '[object Object]';
 }
 
+function truncateCodePoints(value, maxLength) {
+  let result = '';
+  let count = 0;
+  for (const character of value) {
+    if (count >= maxLength) break;
+    result += character;
+    count += 1;
+  }
+  return result;
+}
+
 function normalizeImportedCategories(categories, palette = []) {
   if (categories === undefined || categories === null) return [];
-  if (!Array.isArray(categories)) return null;
+  if (!Array.isArray(categories) || categories.length > MAX_IMPORTED_CATEGORIES) return null;
 
   const normalized = [];
   const seenKeys = {};
@@ -26,12 +44,15 @@ function normalizeImportedCategories(categories, palette = []) {
       ? palette[normalized.length % palette.length]
       : DEFAULT_COLOR;
     const color = /^#[0-9a-fA-F]{6}$/.test(item.color) ? item.color : fallbackColor;
+    const icon = typeof item.icon === 'string' && item.icon
+      ? truncateCodePoints(item.icon, MAX_CATEGORY_ICON_LENGTH)
+      : '🏷️';
     normalized.push({
       key,
       labelCn: labelCn.slice(0, 10),
       labelEn: labelEn.slice(0, 10),
       color,
-      icon: typeof item.icon === 'string' && item.icon ? item.icon : '🏷️',
+      icon,
       isCustom: true
     });
     seenKeys[key] = true;
@@ -56,15 +77,24 @@ function normalizeImportedMemoDates(memos, options = {}) {
 
   const normalized = {};
   const dates = Object.keys(memos);
+  if (dates.length > MAX_IMPORTED_DATES) return null;
+
+  const seenMemoIds = new Set();
+  let totalMemoCount = 0;
   for (let i = 0; i < dates.length; i += 1) {
     const date = dates[i];
     const dayMemos = memos[date];
     if (!isValidDateString(date) || !Array.isArray(dayMemos)) return null;
+    if (dayMemos.length > MAX_MEMOS_PER_DATE) return null;
+
+    totalMemoCount += dayMemos.length;
+    if (totalMemoCount > MAX_IMPORTED_MEMOS) return null;
 
     const normalizedDayMemos = [];
     for (let j = 0; j < dayMemos.length; j += 1) {
       const memo = normalizeImportedMemo(dayMemos[j], categoryMap, fallbackCategory);
-      if (!memo) return null;
+      if (!memo || seenMemoIds.has(memo.id)) return null;
+      seenMemoIds.add(memo.id);
       normalizedDayMemos.push(memo);
     }
 
@@ -87,7 +117,7 @@ function normalizeImportedMemo(item, categoryMap, fallbackCategory) {
 
   const id = typeof item.id === 'string' ? item.id.trim() : '';
   const title = typeof item.title === 'string' ? item.title.trim() : '';
-  if (!id || !title) return null;
+  if (!id || id.length > MAX_MEMO_ID_LENGTH || !title) return null;
 
   const importedTag = typeof item.tag === 'string' && item.tag ? item.tag : fallbackCategory.key;
   const category = categoryMap[importedTag] || fallbackCategory;
@@ -129,6 +159,8 @@ function normalizeBackupObject(data, options = {}) {
 }
 
 function parseBackupData(text, options = {}) {
+  if (typeof text !== 'string' || text.length > MAX_BACKUP_TEXT_LENGTH) return null;
+
   let data;
   try {
     data = JSON.parse(text);
@@ -173,6 +205,13 @@ function mergeImportedData(importedData, localMemos = {}, localCategories = [], 
 }
 
 module.exports = {
+  MAX_BACKUP_TEXT_LENGTH,
+  MAX_IMPORTED_CATEGORIES,
+  MAX_IMPORTED_DATES,
+  MAX_IMPORTED_MEMOS,
+  MAX_MEMOS_PER_DATE,
+  MAX_MEMO_ID_LENGTH,
+  MAX_CATEGORY_ICON_LENGTH,
   isPlainObject,
   normalizeImportedTime,
   parseBackupData,

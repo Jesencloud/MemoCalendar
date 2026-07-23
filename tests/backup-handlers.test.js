@@ -1,5 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
+const { MAX_BACKUP_TEXT_LENGTH } = require('../utils/backup.js');
+const { STORAGE_ROLLBACK_ERROR_CODE } = require('../pages/index/constants.js');
 
 let pageDefinition;
 const originalPage = global.Page;
@@ -281,6 +283,34 @@ test('import text input updates logic data without setData', () => {
   assert.strictEqual(page.setDataCalls.length, 0);
 });
 
+test('import text input is capped at the backup size limit', () => {
+  const page = createPage();
+
+  page.onImportTextInput({
+    detail: { value: 'x'.repeat(MAX_BACKUP_TEXT_LENGTH + 10) }
+  });
+
+  assert.strictEqual(page.data.importInputText.length, MAX_BACKUP_TEXT_LENGTH);
+});
+
+test('oversized import is rejected and releases import state', async () => {
+  const page = createPage();
+  page.data.text = {
+    backupDataTooLarge: '备份过大',
+    invalidBackupFormat: '格式无效'
+  };
+  let toastMessage;
+  page.showToast = message => {
+    toastMessage = message;
+  };
+
+  await page.processImportData('x'.repeat(MAX_BACKUP_TEXT_LENGTH + 1));
+
+  assert.strictEqual(toastMessage, '备份过大');
+  assert.strictEqual(page.importingData, false);
+  assert.strictEqual(page.memoMutationLock, '');
+});
+
 test('trigger merge import calls processImportData', async () => {
   const page = createPage();
   page.data.importInputText = '{"version":1,"app":"MemoCalendar","memos":{},"categories":[]}';
@@ -347,22 +377,56 @@ test('save imported data safely rolls back on failure', async () => {
   }
 });
 
-test('rollback storage handles partial failure', async () => {
+test('rollback storage retries and reports partial failure', async () => {
   const page = createPage();
   const originalConsoleError = console.error;
   console.error = () => {}; // Suppress expected error output
+  let memoWriteAttempts = 0;
   global.wx.setStorage = ({ key, success, fail }) => {
     if (key === 'memoCustomCategories') {
       success();
     } else {
+      memoWriteAttempts += 1;
       fail({ errMsg: 'fail' });
     }
   };
 
   try {
-    await page.rollbackBackupStorage({ memos: {}, categories: [] });
+    await assert.rejects(
+      page.rollbackBackupStorage({ memos: {}, categories: [] }),
+      error => error && error.code === STORAGE_ROLLBACK_ERROR_CODE
+    );
+    assert.strictEqual(memoWriteAttempts, 2);
+  } finally {
+    console.error = originalConsoleError;
+  }
+});
 
-    assert.ok(true);
+test('save imported data reports rollback recovery failure', async () => {
+  const page = createPage();
+  const originalConsoleError = console.error;
+  console.error = () => {};
+  const rollbackError = new Error('rollback failed');
+  rollbackError.code = STORAGE_ROLLBACK_ERROR_CODE;
+  page.setStorage = async key => {
+    if (key === 'memoCalendarMemos') throw new Error('write failed');
+  };
+  page.rollbackBackupStorage = async () => {
+    throw rollbackError;
+  };
+  let shownError;
+  page.showStorageFailureToast = error => {
+    shownError = error;
+  };
+
+  try {
+    const result = await page.saveImportedDataSafely(
+      { memos: {}, categories: [] },
+      { memos: {}, categories: [] }
+    );
+
+    assert.strictEqual(result, false);
+    assert.strictEqual(shownError, rollbackError);
   } finally {
     console.error = originalConsoleError;
   }

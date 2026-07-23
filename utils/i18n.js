@@ -5,7 +5,7 @@
 const translations = {
   zh: {
     title: '备忘录日历',
-    subtitle: '记录日程，规划生活 📅',
+    subtitle: '🗓️记录日程，规划生活',
     navTitle: '备忘录日历',
     shareTitle: '备忘录日历 - 记录日程规划生活',
     shareMemo: '分享',
@@ -47,6 +47,7 @@ const translations = {
     created: '创建成功',
     deleted: '已删除',
     storageFailed: '存储失败',
+    storageRecoveryFailed: '数据恢复失败，请重新打开小程序检查数据',
     inputTitlePlaceholder: '输入日程标题 (必填，40字以内)',
     inputTimePlaceholder: '选择具体时间 (选填)',
     inputLocationPlaceholder: '日程地点 (选填，100字以内)',
@@ -93,13 +94,14 @@ const translations = {
     clipboardReadFailed: '读取剪贴板失败',
     clipboardWriteFailed: '写入剪贴板失败',
     invalidBackupFormat: '无效的备份数据格式',
+    backupDataTooLarge: '备份数据过大，无法导入',
     importSuccess: '数据导入成功',
     confirmOverwriteTitle: '确认覆盖',
     confirmOverwriteDesc: '覆盖导入将彻底删除本地现有的所有日程，此操作不可逆！确定继续吗？'
   },
   en: {
     title: 'Memo Calendar',
-    subtitle: 'Track memos & plan your day 📅',
+    subtitle: '🗓️Track memos & plan your day',
     navTitle: 'Memo Calendar',
     shareTitle: 'Memo Calendar - Track memos & plan your day',
     shareMemo: 'Share',
@@ -141,6 +143,7 @@ const translations = {
     created: 'Created',
     deleted: 'Deleted',
     storageFailed: 'Storage failed',
+    storageRecoveryFailed: 'Data recovery failed. Reopen the mini program and check your data.',
     inputTitlePlaceholder: 'What to do? (Required, max 40 chars)',
     inputTimePlaceholder: 'Select time (Optional)',
     inputLocationPlaceholder: 'Location (Optional, max 100 chars)',
@@ -187,6 +190,7 @@ const translations = {
     clipboardReadFailed: 'Failed to read clipboard',
     clipboardWriteFailed: 'Failed to write clipboard',
     invalidBackupFormat: 'Invalid backup data format',
+    backupDataTooLarge: 'Backup data is too large to import',
     importSuccess: 'Data imported successfully',
     confirmOverwriteTitle: 'Confirm Overwrite',
     confirmOverwriteDesc: 'Overwriting will permanently delete all existing local memos. This cannot be undone! Continue?'

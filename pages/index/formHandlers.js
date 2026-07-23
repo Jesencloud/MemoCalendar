@@ -15,16 +15,13 @@ const MEMO_NOTES_COUNT_THROTTLE_MS = 80;
 async function persistCategoryChanges(page, categories, updatedMemoDates, previousData) {
   if (!updatedMemoDates) {
     await page.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, categories);
-    return;
+    return true;
   }
 
-  try {
-    await page.setStorage(STORAGE_KEYS.MEMOS, updatedMemoDates);
-    await page.setStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, categories);
-  } catch (error) {
-    await page.rollbackBackupStorage(previousData);
-    throw error;
-  }
+  return page.saveImportedDataSafely({
+    memos: updatedMemoDates,
+    categories
+  }, previousData);
 }
 
 module.exports = {
@@ -397,7 +394,7 @@ module.exports = {
           categories: previousCategories
         };
       }
-      await persistCategoryChanges(this, custom, updatedMemoDates, previousData);
+      if (!await persistCategoryChanges(this, custom, updatedMemoDates, previousData)) return;
 
       if (updatedMemoDates) {
         this.memoDates = updatedMemoDates;

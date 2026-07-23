@@ -187,18 +187,23 @@ test('saving does not replace the visible list after the selected date changes',
 
 test('renaming a category commits memos and categories before updating UI', async () => {
   const { page, date, category, originalMemos } = createCategoryRenamePage();
-  const writes = [];
+  let savedData;
+  let savedPreviousData;
   page.getStorage = async key => key === 'memoCalendarMemos' ? originalMemos : [category];
-  page.setStorage = async (key, value) => {
-    writes.push({ key, value });
+  page.saveImportedDataSafely = async (finalData, previousData) => {
+    savedData = finalData;
+    savedPreviousData = previousData;
+    return true;
   };
 
   await page.onSaveCustomCategory();
 
-  assert.deepStrictEqual(writes.map(item => item.key), [
-    'memoCalendarMemos',
-    'memoCustomCategories'
-  ]);
+  assert.strictEqual(savedData.memos[date][0].tagCn, '新分类');
+  assert.strictEqual(savedData.categories[0].labelCn, '新分类');
+  assert.deepStrictEqual(savedPreviousData, {
+    memos: originalMemos,
+    categories: [category]
+  });
   assert.strictEqual(page.memoDates[date][0].tagCn, '新分类');
   assert.strictEqual(page.memoDates[date][0].tagEn, '新分类');
   assert.strictEqual(page.data.selectedMemos[0].tagCn, '新分类');

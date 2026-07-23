@@ -5,8 +5,7 @@ const {
   createSharedMemoPayload,
   parseSharedMemoPayload,
   createSharedMemoImportForSave,
-  getSharedMemoSaveState,
-  removeMemoByIdFromDates
+  getSharedMemoSaveState
 } = require('../utils/share.js');
 const { mergeImportedData } = require('../utils/backup.js');
 
@@ -212,7 +211,6 @@ test('shared memo save state distinguishes unchanged, changed and moved memos', 
   assert.strictEqual(movedState.status, 'changed');
   assert.strictEqual(movedState.changedFields.date, true);
   assert.strictEqual(movedState.changedFields.time, false);
-  assert.deepStrictEqual(removeMemoByIdFromDates(movedMemos, memo.id), {});
 });
 
 test('shared memo save state reports changed and removed fields', () => {
@@ -536,4 +534,44 @@ test('shared memo preview identifies duplicates and updates before saving', asyn
   assert.strictEqual(page.memoDates['2026-07-11'].length, 1);
   assert.strictEqual(page.memoDates['2026-07-11'][0].title, '接收分享测试（更新）');
   assert.ok(toastTitles.includes('已替换本地日程'));
+});
+
+test('saving a moved shared memo removes its old date and resets sort state', async () => {
+  const page = createIndexPage();
+  const memo = {
+    id: 'memo-moved-share',
+    title: '跨日期分享',
+    time: '09:30',
+    location: '',
+    notes: '',
+    tag: 'Sport',
+    color: '#ff9500',
+    completed: false
+  };
+  const payload = createSharedMemoPayload('2026-07-12', memo, DEFAULT_CATEGORIES[0]);
+  const sharedMemoImport = page.parseSharedMemoOption(payload);
+
+  page.todayDate = '2026-07-10';
+  page.data.sortOrder = 'asc';
+  page.memoDates = {
+    '2026-07-11': [Object.assign({}, sharedMemoImport.memo)]
+  };
+  page.getBackupStorageSnapshot = async () => ({
+    memos: page.memoDates,
+    categories: []
+  });
+  page.saveImportedDataSafely = async () => true;
+  page.refreshMemoDateMetaAsync = () => {};
+  page.showToast = () => {};
+
+  page.showSharedMemoPreview(sharedMemoImport);
+  assert.strictEqual(page.data.sharedMemoSaveStatus, 'changed');
+  assert.strictEqual(page.data.sharedMemoChangedFields.date, true);
+
+  await page.onSaveSharedMemo();
+
+  assert.strictEqual(page.memoDates['2026-07-11'], undefined);
+  assert.strictEqual(page.memoDates['2026-07-12'].length, 1);
+  assert.strictEqual(page.data.selectedDate, '2026-07-12');
+  assert.strictEqual(page.data.sortOrder, 'desc');
 });

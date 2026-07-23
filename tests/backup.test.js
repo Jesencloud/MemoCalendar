@@ -301,7 +301,7 @@ test('9. mergeImportedData - 同 ID 日程覆盖合并与追加', () => {
     categories: []
   };
 
-  const merged = mergeImportedData(importedData, localMemos, [], { palette: MOCK_PALETTE });
+  const merged = mergeImportedData(importedData, localMemos, [], options);
   assert.ok(merged);
   const dayMemos = merged.memos['2026-07-04'];
   assert.strictEqual(dayMemos.length, 3); // 1个被覆盖，1个保留，1个追加
@@ -317,6 +317,24 @@ test('9. mergeImportedData - 同 ID 日程覆盖合并与追加', () => {
   assert.strictEqual(memo3.title, '新增日程3');
 });
 
+test('mergeImportedData moves an imported memo when the same id exists on another date', () => {
+  const localMemos = {
+    '2026-07-23': [{ id: 'same-id', title: '旧日期日程', tag: 'Sport' }]
+  };
+  const importedData = {
+    memos: {
+      '2026-07-24': [{ id: 'same-id', title: '导入的新日期日程', tag: 'Sport' }]
+    },
+    categories: []
+  };
+
+  const merged = mergeImportedData(importedData, localMemos, [], options);
+
+  assert.strictEqual(merged.memos['2026-07-23'], undefined);
+  assert.strictEqual(merged.memos['2026-07-24'].length, 1);
+  assert.strictEqual(merged.memos['2026-07-24'][0].title, '导入的新日期日程');
+});
+
 test('mergeImportedData does not mutate a clean local memo root', () => {
   const localMemos = {
     '2026-07-04': [{ id: 'memo-1', title: 'Local memo' }]
@@ -328,7 +346,7 @@ test('mergeImportedData does not mutate a clean local memo root', () => {
     categories: []
   };
 
-  const merged = mergeImportedData(importedData, localMemos, [], { palette: MOCK_PALETTE });
+  const merged = mergeImportedData(importedData, localMemos, [], options);
 
   assert.notStrictEqual(merged.memos, localMemos);
   assert.deepStrictEqual(Object.keys(localMemos), ['2026-07-04']);
@@ -349,7 +367,7 @@ test('10. mergeImportedData - 重复分类的去重逻辑', () => {
     ]
   };
 
-  const merged = mergeImportedData(importedData, {}, localCategories, { palette: MOCK_PALETTE });
+  const merged = mergeImportedData(importedData, {}, localCategories, options);
   assert.ok(merged);
   assert.strictEqual(merged.categories.length, 2); // custom-1 去重，追加 custom-2
 
@@ -360,4 +378,126 @@ test('10. mergeImportedData - 重复分类的去重逻辑', () => {
 
   const cat2 = merged.categories.find(c => c.key === 'custom-2');
   assert.strictEqual(cat2.labelCn, '开发');
+});
+
+test('mergeImportedData keeps the local category definition for a conflicting key', () => {
+  const localCategories = [{
+    key: 'custom-conflict',
+    labelCn: '本地分类',
+    labelEn: 'Local',
+    color: '#654321',
+    icon: 'L'
+  }];
+  const importedData = {
+    memos: {
+      '2026-07-24': [{
+        id: 'memo-conflict',
+        title: '分类冲突',
+        tag: 'custom-conflict',
+        color: '#123456',
+        tagCn: '导入分类',
+        tagEn: 'Imported',
+        categoryIcon: 'I'
+      }]
+    },
+    categories: [{
+      key: 'custom-conflict',
+      labelCn: '导入分类',
+      labelEn: 'Imported',
+      color: '#123456',
+      icon: 'I',
+      isCustom: true
+    }]
+  };
+
+  const merged = mergeImportedData(importedData, {}, localCategories, options);
+  const memo = merged.memos['2026-07-24'][0];
+
+  assert.strictEqual(merged.categories.length, 1);
+  assert.strictEqual(merged.categories[0].labelCn, '本地分类');
+  assert.deepStrictEqual(
+    {
+      tag: memo.tag,
+      color: memo.color,
+      tagCn: memo.tagCn,
+      tagEn: memo.tagEn,
+      categoryIcon: memo.categoryIcon
+    },
+    {
+      tag: 'custom-conflict',
+      color: '#654321',
+      tagCn: '本地分类',
+      tagEn: 'Local',
+      categoryIcon: 'L'
+    }
+  );
+});
+
+test('mergeImportedData maps an imported category with a default name to the default category', () => {
+  const importedData = {
+    memos: {
+      '2026-07-24': [{
+        id: 'memo-sport',
+        title: '运动日程',
+        tag: 'custom-sport',
+        color: '#123456'
+      }]
+    },
+    categories: [{
+      key: 'custom-sport',
+      labelCn: '运动',
+      labelEn: 'Exercise',
+      color: '#123456',
+      icon: 'X',
+      isCustom: true
+    }]
+  };
+
+  const merged = mergeImportedData(importedData, {}, [], options);
+  const memo = merged.memos['2026-07-24'][0];
+
+  assert.deepStrictEqual(merged.categories, []);
+  assert.strictEqual(memo.tag, 'Sport');
+  assert.strictEqual(memo.color, '#ff9500');
+  assert.strictEqual(memo.tagCn, '运动');
+  assert.strictEqual(memo.tagEn, 'Sport');
+  assert.strictEqual(memo.categoryIcon, '🏋');
+});
+
+test('mergeImportedData maps an imported category with a local name to the local category', () => {
+  const localCategories = [{
+    key: 'custom-local-fitness',
+    labelCn: '健身',
+    labelEn: 'Fitness',
+    color: '#654321',
+    icon: 'L'
+  }];
+  const importedData = {
+    memos: {
+      '2026-07-24': [{
+        id: 'memo-fitness',
+        title: '健身日程',
+        tag: 'custom-imported-fitness',
+        color: '#123456'
+      }]
+    },
+    categories: [{
+      key: 'custom-imported-fitness',
+      labelCn: '健身',
+      labelEn: 'Workout',
+      color: '#123456',
+      icon: 'I',
+      isCustom: true
+    }]
+  };
+
+  const merged = mergeImportedData(importedData, {}, localCategories, options);
+  const memo = merged.memos['2026-07-24'][0];
+
+  assert.strictEqual(merged.categories.length, 1);
+  assert.strictEqual(memo.tag, 'custom-local-fitness');
+  assert.strictEqual(memo.color, '#654321');
+  assert.strictEqual(memo.tagCn, '健身');
+  assert.strictEqual(memo.tagEn, 'Fitness');
+  assert.strictEqual(memo.categoryIcon, 'L');
 });

@@ -232,11 +232,15 @@ module.exports = {
         return;
       }
 
-      const finalData = isOverwrite
-        ? importedData
-        : mergeImportedData(importedData, previousData.memos, previousData.categories, {
-          palette: CATEGORY_PALETTE
-        });
+      const finalData = mergeImportedData(
+        importedData,
+        isOverwrite ? {} : previousData.memos,
+        isOverwrite ? [] : previousData.categories,
+        {
+          palette: CATEGORY_PALETTE,
+          defaultCategories: DEFAULT_CATEGORIES
+        }
+      );
 
       if (!await this.saveImportedDataSafely(finalData, previousData)) return;
 
@@ -247,7 +251,8 @@ module.exports = {
         selectedMemos,
         memoDateMeta: this.updateMemoDateMeta({}, this.data.selectedDate, selectedMemos),
         backupModalVisible: false,
-        importInputText: ''
+        importInputText: '',
+        sortOrder: 'desc'
       }, () => {
         this.refreshMemoDateMetaAsync(finalData.memos);
         this.showToast(txt.importSuccess, 'success');

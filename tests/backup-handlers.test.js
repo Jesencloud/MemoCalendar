@@ -210,6 +210,7 @@ test('merge import combines with existing data', async () => {
   const page = createPage();
   const date = '2026-07-09';
   page.data.selectedDate = date;
+  page.data.sortOrder = 'asc';
   page.data.text = { importSuccess: '导入成功' };
   page.memoDates = {
     [date]: [{ id: 'memo-1', title: 'Existing', tag: 'Sport', completed: false }]
@@ -229,13 +230,22 @@ test('merge import combines with existing data', async () => {
   const importData = JSON.stringify({
     version: 1,
     app: 'MemoCalendar',
-    memos: { [date]: [{ id: 'memo-2', title: 'New', tag: 'Sport', completed: false }] },
-    categories: []
+    memos: { [date]: [{ id: 'memo-2', title: 'New', tag: 'custom-sport', completed: false }] },
+    categories: [{
+      key: 'custom-sport',
+      labelCn: '运动',
+      labelEn: 'Exercise',
+      color: '#123456',
+      icon: 'X'
+    }]
   });
 
   await page.processImportData(importData, false);
 
   assert.strictEqual(page.memoDates[date].length, 2);
+  assert.strictEqual(page.memoDates[date][1].tag, 'Sport');
+  assert.strictEqual(page.data.categories.some(category => category.key === 'custom-sport'), false);
+  assert.strictEqual(page.data.sortOrder, 'desc');
 });
 
 test('overwrite import replaces all data', async () => {
@@ -251,14 +261,22 @@ test('overwrite import replaces all data', async () => {
   const importData = JSON.stringify({
     version: 1,
     app: 'MemoCalendar',
-    memos: { [date]: [{ id: 'memo-2', title: 'New', tag: 'Sport', completed: false }] },
-    categories: []
+    memos: { [date]: [{ id: 'memo-2', title: 'New', tag: 'custom-sport', completed: false }] },
+    categories: [{
+      key: 'custom-sport',
+      labelCn: '运动',
+      labelEn: 'Exercise',
+      color: '#123456',
+      icon: 'X'
+    }]
   });
 
   await page.processImportData(importData, true);
 
   assert.strictEqual(page.memoDates[date].length, 1);
   assert.strictEqual(page.memoDates[date][0].id, 'memo-2');
+  assert.strictEqual(page.memoDates[date][0].tag, 'Sport');
+  assert.strictEqual(page.data.categories.some(category => category.key === 'custom-sport'), false);
 });
 
 test('import blocked when mutation lock is active', async () => {

@@ -14,8 +14,7 @@ const {
   createSharedMemoPayload,
   parseSharedMemoPayload,
   createSharedMemoImportForSave,
-  getSharedMemoSaveState,
-  removeMemoByIdFromDates
+  getSharedMemoSaveState
 } = require('../../utils/share.js');
 const {
   STORAGE_KEYS,
@@ -459,12 +458,9 @@ Page(Object.assign({
         return;
       }
 
-      const baseMemos = saveState.status === 'changed'
-        ? removeMemoByIdFromDates(previousData.memos, sharedMemoImport.memo.id)
-        : previousData.memos;
-
-      const finalData = mergeImportedData(importedData, baseMemos, previousData.categories, {
-        palette: CATEGORY_PALETTE
+      const finalData = mergeImportedData(importedData, previousData.memos, previousData.categories, {
+        palette: CATEGORY_PALETTE,
+        defaultCategories: DEFAULT_CATEGORIES
       });
 
       if (!await this.saveImportedDataSafely(finalData, previousData)) return;
@@ -480,7 +476,8 @@ Page(Object.assign({
         categories: mergeCategories(finalData.categories),
         showTodayButton: selectedDate !== todayDate,
         memoDateMeta: this.updateMemoDateMeta({}, selectedDate, selectedMemos),
-        swipedMemoId: ''
+        swipedMemoId: '',
+        sortOrder: 'desc'
       }, () => {
         this.refreshMemoDateMetaAsync(finalData.memos);
         const message = saveState.status === 'changed'

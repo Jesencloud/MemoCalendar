@@ -181,30 +181,10 @@ function getSharedMemoSaveState(sharedMemoImport, localMemos = {}) {
   return { status: 'new' };
 }
 
-function removeMemoByIdFromDates(memoDates = {}, id) {
-  const nextMemoDates = Object.assign({}, memoDates);
-  if (!id) return nextMemoDates;
-
-  Object.keys(nextMemoDates).forEach(date => {
-    const dayMemos = nextMemoDates[date];
-    if (!Array.isArray(dayMemos)) return;
-
-    const filteredMemos = dayMemos.filter(item => !item || item.id !== id);
-    if (filteredMemos.length === 0) {
-      delete nextMemoDates[date];
-    } else if (filteredMemos.length !== dayMemos.length) {
-      nextMemoDates[date] = filteredMemos;
-    }
-  });
-
-  return nextMemoDates;
-}
-
 module.exports = {
   MAX_SHARE_PATH_LENGTH,
   createSharedMemoPayload,
   parseSharedMemoPayload,
   createSharedMemoImportForSave,
-  getSharedMemoSaveState,
-  removeMemoByIdFromDates
+  getSharedMemoSaveState
 };

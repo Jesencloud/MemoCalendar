@@ -1,4 +1,8 @@
-const { DEFAULT_CATEGORY } = require('./categories.js');
+const {
+  DEFAULT_CATEGORIES,
+  DEFAULT_CATEGORY,
+  findCategoryByName
+} = require('./categories.js');
 const { cleanMemoDatesUIFields } = require('./memos.js');
 
 const BACKUP_APP = 'MemoCalendar';
@@ -171,31 +175,71 @@ function parseBackupData(text, options = {}) {
 }
 
 function mergeImportedData(importedData, localMemos = {}, localCategories = [], options = {}) {
-  const finalMemos = Object.assign({}, cleanMemoDatesUIFields(localMemos));
-  Object.keys(importedData.memos).forEach(date => {
-    if (!Array.isArray(finalMemos[date])) {
-      finalMemos[date] = importedData.memos[date];
+  const defaultCategories = Array.isArray(options.defaultCategories) && options.defaultCategories.length > 0
+    ? options.defaultCategories
+    : DEFAULT_CATEGORIES;
+  const fallbackCategory = defaultCategories[0] || DEFAULT_CATEGORY;
+  const finalCategories = normalizeImportedCategories(localCategories, options.palette) || [];
+  const retainedCategories = [...defaultCategories, ...finalCategories];
+  const retainedCategoryByKey = new Map(
+    retainedCategories.map(category => [category.key, category])
+  );
+  const importedCategoryKeyMap = new Map();
+
+  (Array.isArray(importedData.categories) ? importedData.categories : []).forEach(importedCat => {
+    const existingByKey = retainedCategoryByKey.get(importedCat.key);
+    if (existingByKey) return;
+
+    const existingByName = findCategoryByName(retainedCategories, importedCat.labelCn)
+      || findCategoryByName(retainedCategories, importedCat.labelEn);
+    if (existingByName) {
+      importedCategoryKeyMap.set(importedCat.key, existingByName.key);
       return;
     }
 
-    const localDayMemos = [...finalMemos[date]];
-    importedData.memos[date].forEach(importedItem => {
-      const index = localDayMemos.findIndex(m => m.id === importedItem.id);
-      if (index !== -1) {
-        localDayMemos[index] = importedItem;
-      } else {
-        localDayMemos.push(importedItem);
-      }
-    });
-    finalMemos[date] = localDayMemos;
+    finalCategories.push(importedCat);
+    retainedCategories.push(importedCat);
+    retainedCategoryByKey.set(importedCat.key, importedCat);
   });
 
-  const finalCategories = normalizeImportedCategories(localCategories, options.palette) || [];
-  importedData.categories.forEach(importedCat => {
-    const exists = finalCategories.some(c => c.key === importedCat.key);
-    if (!exists) {
-      finalCategories.push(importedCat);
+  const importedMemoIds = new Set();
+  const finalImportedMemos = {};
+  Object.keys(importedData.memos || {}).forEach(date => {
+    const dayMemos = importedData.memos[date];
+    if (!Array.isArray(dayMemos)) return;
+
+    finalImportedMemos[date] = dayMemos.map(importedMemo => {
+      importedMemoIds.add(importedMemo.id);
+      const retainedKey = importedCategoryKeyMap.get(importedMemo.tag) || importedMemo.tag;
+      const category = retainedCategoryByKey.get(retainedKey) || fallbackCategory;
+      return Object.assign({}, importedMemo, {
+        tag: category.key,
+        color: category.color,
+        tagCn: typeof category.labelCn === 'string' ? category.labelCn : '',
+        tagEn: typeof category.labelEn === 'string' ? category.labelEn : '',
+        categoryIcon: typeof category.icon === 'string' ? category.icon : ''
+      });
+    });
+  });
+
+  const cleanedLocalMemos = cleanMemoDatesUIFields(localMemos);
+  const finalMemos = {};
+  Object.keys(cleanedLocalMemos || {}).forEach(date => {
+    const dayMemos = cleanedLocalMemos[date];
+    if (!Array.isArray(dayMemos)) {
+      finalMemos[date] = dayMemos;
+      return;
     }
+
+    const retainedMemos = dayMemos.filter(memo => !memo || !importedMemoIds.has(memo.id));
+    if (retainedMemos.length > 0 || dayMemos.length === 0) {
+      finalMemos[date] = retainedMemos;
+    }
+  });
+
+  Object.keys(finalImportedMemos).forEach(date => {
+    const localDayMemos = Array.isArray(finalMemos[date]) ? finalMemos[date] : [];
+    finalMemos[date] = localDayMemos.concat(finalImportedMemos[date]);
   });
 
   return {
